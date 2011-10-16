@@ -1,0 +1,2 @@
+Cleans up artifacts not downloaded for the last n months.
+Scheduled job that can also be invoked via a REST exit point.
