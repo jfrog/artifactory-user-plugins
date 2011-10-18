@@ -24,6 +24,7 @@ import org.apache.http.HttpRequestInterceptor
 import org.apache.http.entity.InputStreamEntity
 import org.artifactory.checksum.ChecksumsInfo
 import org.artifactory.resource.ResourceStreamHandle
+import org.springframework.util.AntPathMatcher
 import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
 import static org.artifactory.repo.RepoPathFactory.create
@@ -44,7 +45,7 @@ executions {
      *
      * 2. Execute POST request authenticated with Artifactory admin user with the following parameters separated by pipe (|):
      *  2.1. 'stagingProfile': name of the profile file (without the 'properties' extension).
-     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/localOsoDefaultCreds.properties the parameter will be profile=localOsoDefaultCreds
+     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be profile=localOsoDefaultCreds
      *  2.2. Query parameters can be one of the two:
      *      2.2.1. By directory: defined by parameter 'dir'. The format of the parameter is repo-key/relative-path.
      *          It's the desired directory URL just without the base Artifactory URL.
@@ -122,7 +123,7 @@ def findArtifactsBy(Map params) {
     assert params
     def queryParams = params - knownParams
     assert queryParams //at least one param expected being it 'dir' or some property
-    def searchResults
+    def searchResults = []
     if (queryParams.dir) {
         String dir = queryParams.dir[0]
         def parts = dir.tokenize('/') //first part is repoKey
@@ -130,16 +131,26 @@ def findArtifactsBy(Map params) {
             handleError 400, "'${dir}' is invalid directory format. Should be 'repoKey/relativePath'."
         }
         def path = dir - parts[0]
-        collectFiles(repositories.getItemInfo(create(parts[0], path)), []).collect {it.repoPath}
+        searchResults = collectFiles(repositories.getItemInfo(create(parts[0], path)), []).collect {it.repoPath}
     } else { //we now only have properties in params
-        //noinspection GroovyAssignabilityCheck
-        searches.itemsByProperties(queryParams.inject(HashMultimap.create()) {query, entry ->
+        searchResults = searches.itemsByProperties(queryParams.inject(HashMultimap.create()) {query, entry ->
             query.putAll entry.key, entry.value //convert [:[]] parameters to SetMulimap acepted by searches
             query
         }).grep {repoPath -> //filter files only
             !repositories.getItemInfo(repoPath).folder
         }
     }
+    if (stagingProps.exclusions) {
+        def matcher = new AntPathMatcher()
+        def patterns = stagingProps.exclusions.tokenize(',')
+        searchResults = searchResults.grep {repoPath ->
+            !patterns.any { pattern ->
+                matcher.match(pattern, repoPath.path)
+            }
+
+        }
+    }
+    searchResults
 }
 
 //get only files, not directories
