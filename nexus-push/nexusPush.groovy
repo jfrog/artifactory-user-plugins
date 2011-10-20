@@ -201,9 +201,12 @@ def uploadToStagingRepo(searchResults) {
         } finally {
             content.close()
         }
-        ChecksumsInfo checksumsInfo = repositories.getFileInfo(repoPath).checksumsInfo
-        putChecksums("${artifactUrl}.md5", checksumsInfo.md5)
-        putChecksums("${artifactUrl}.sha1", checksumsInfo.sha1)
+        // also push the md5 and sha1 checksums for all artifacts -- except PGP signatures (.asc files)
+        if (!repoPath.path.endsWith(".asc")) {
+            ChecksumsInfo checksumsInfo = repositories.getFileInfo(repoPath).checksumsInfo
+            putChecksums("${artifactUrl}.md5", checksumsInfo.md5)
+            putChecksums("${artifactUrl}.sha1", checksumsInfo.sha1)
+        }
     }
     referenceFileRepoPath = referenceFileRepoPath ?: backupFileRepoPath //if no pom, let's go with some other file
     log.debug "The following file will be used for closing stage repository: ${referenceFileRepoPath}"
