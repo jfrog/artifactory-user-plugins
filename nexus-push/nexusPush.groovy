@@ -150,7 +150,16 @@ def findArtifactsBy(Map params) {
 
         }
     }
-    searchResults
+
+    //find and include PGP sigature (if any) for each search result
+    def signatures = []
+    searchResults.each { repoPath ->
+        def signature = create(repoPath.repoKey, repoPath.path + ".asc")
+        if (!searchResults.contains(signature) && repositories.exists(signature)) {
+            signatures << signature
+        }
+    }
+    searchResults + signatures
 }
 
 //get only files, not directories
