@@ -33,7 +33,7 @@ import static org.artifactory.util.PathUtils.getExtension
 executions {
 
     /**
-     * Artifactory User Execution Plugin for pushing artifacts to Staging Repository (OSO).
+     * Artifactory plugin for pushing artifacts to A Nexus Staging Repository (for example, oss.sonatype.org).
      * 1. Setup:
      *   1.1. Place this script under ${ARTIFACTORY_HOME}/etc/plugins.
      *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/stage.
@@ -45,7 +45,7 @@ executions {
      *
      * 2. Execute POST request authenticated with Artifactory admin user with the following parameters separated by pipe (|):
      *  2.1. 'stagingProfile': name of the profile file (without the 'properties' extension).
-     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be profile=localOsoDefaultCreds
+     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be stagingProfile=sample
      *  2.2. Query parameters can be one of the two:
      *      2.2.1. By directory: defined by parameter 'dir'. The format of the parameter is repo-key/relative-path.
      *          It's the desired directory URL just without the base Artifactory URL.
@@ -59,16 +59,16 @@ executions {
      *
      * 3. Examples of the request using CURL:
      *  3.1. Query by directory, upload only (without closing):
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/osoPush?params=stagingProfile=localOsoDefaultCreds|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
+     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
      *  3.2. Query by properties:
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/osoPush?params=stagingProfile=localOsoDefaultCreds|build.name=spaceship-new-rel|build.number=143"
+     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|build.name=spaceship-new-rel|build.number=143"
      * */
     osoPush() { params ->
         try {
 
             //Defaults for success
             status = 200
-            message = 'Artifact successfully staged at OSO'
+            message = 'Artifact successfully staged on Nexus'
 
             binding.warnings = []
             binding.knownParams = ['stagingProfile': params.stagingProfile, 'async': params.async, 'close': params.close]
@@ -92,7 +92,7 @@ executions {
                     status = 500
                 }
             } else {
-                message = 'Artifact uploaded to OSO, but according to \'close\' parameter the staging repo wasn\'t closed.'
+                message = 'Artifact uploaded to Nexus, but according to \'close\' parameter the staging repo wasn\'t closed.'
             }
 
         } catch (OsoPushException e) { //aborts during execution
