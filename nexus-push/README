@@ -2,9 +2,9 @@ Artifactory plugin for pushing artifacts to A Nexus Staging Repository (for exam
 1. Setup:
   1.1. Place this script under ${ARTIFACTORY_HOME}/etc/plugins.
   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/stage.
-         Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername
-         and stagingPassword and optional parameters.
-         Example for local Nexus install with default credentials:
+         Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername,
+         stagingPassword. The only optional parameter currently supported is comma separated list of exclusions 
+		 in form of ant fileset patterns; files, matched by those patterns won't be staged.         Example for local Nexus install with default credentials:
              stagingUrl=http://localhost:8081/nexus
              stagingUsername=admin
              stagingPassword=admin123

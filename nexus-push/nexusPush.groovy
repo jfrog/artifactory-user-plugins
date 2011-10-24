@@ -37,15 +37,18 @@ executions {
      * 1. Setup:
      *   1.1. Place this script under ${ARTIFACTORY_HOME}/etc/plugins.
      *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/stage.
-     *          Profile file should be a Java properties file and contain 3 parameters: stagingUrl, stagingUsername and stagingPassword
-     *          Example for local Nexus install with default credentials:
-     *              stagingUrl=http://localhost:8081/nexus
-     *              stagingUsername=admin
-     *              stagingPassword=admin123
+     *          Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername,
+     *          stagingPassword. The only optional parameter currently supported is comma separated list of exclusions
+     * 		 in form of ant fileset patterns; files, matched by those patterns won't be staged.         Example for local Nexus install with default credentials:
+     *                 stagingUrl=http://localhost:8081/nexus
+     *                 stagingUsername=admin
+     *                 stagingPassword=admin123
+     *                 # Comma separated exclusions (using Ant pattern format); matched files won't be staged
+     *                 exclusions=**\/*.zip, **\/*.tar.gz
      *
      * 2. Execute POST request authenticated with Artifactory admin user with the following parameters separated by pipe (|):
      *  2.1. 'stagingProfile': name of the profile file (without the 'properties' extension).
-     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be stagingProfile=sample
+     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be profile=sample
      *  2.2. Query parameters can be one of the two:
      *      2.2.1. By directory: defined by parameter 'dir'. The format of the parameter is repo-key/relative-path.
      *          It's the desired directory URL just without the base Artifactory URL.
@@ -63,7 +66,7 @@ executions {
      *  3.2. Query by properties:
      *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|build.name=spaceship-new-rel|build.number=143"
      * */
-    osoPush() { params ->
+    nexusPush { params ->
         try {
 
             //Defaults for success
@@ -95,14 +98,14 @@ executions {
                 message = 'Artifact uploaded to Nexus, but according to \'close\' parameter the staging repo wasn\'t closed.'
             }
 
-        } catch (OsoPushException e) { //aborts during execution
+        } catch (NexusPushException e) { //aborts during execution
             status = e.status
             message = e.message
         }
     }
 }
 
-def validate(params) throws OsoPushException {
+def validate(params) throws NexusPushException {
     if (!params) handleError 400, 'Profile and query parameters are mandatory. Please supply them.'
     if (!params.stagingProfile) handleError 400, 'Profile name is mandatory. Please supply it.'
     //noinspection GroovyAssignabilityCheck
@@ -350,12 +353,12 @@ def closeRepo(stage) {
 }
 
 
-def handleError(int status, message) throws OsoPushException {
+def handleError(int status, message) throws NexusPushException {
     log.error message
-    throw new OsoPushException(message: message, status: status)
+    throw new NexusPushException(message: message, status: status)
 }
 
-def handleError(resp, message) throws OsoPushException {
+def handleError(resp, message) throws NexusPushException {
     message += ": ${resp.statusLine.reasonPhrase}"
     handleError(((int) resp.statusLine.statusCode), message)
 }
@@ -370,7 +373,7 @@ def handleWarning(resp, message) {
     handleWarning message
 }
 
-class OsoPushException extends Exception {
+class NexusPushException extends Exception {
     def status
     def message
 }
