@@ -76,8 +76,33 @@ storage {
         repositories.deploy(signature, signatureIn)
         log.info("Created and deployed signature: ${signature.repoKey}:${signature.path}")
     }
+    
+    afterMove { item, targetRepoPath, properties ->
+        handleCopyMoveAscs(item, targetRepoPath, true)
+    }
+
+    afterCopy { item, targetRepoPath, properties ->
+        handleCopyMoveAscs(item, targetRepoPath, false)
+    }
 }
 
+//Handle after copy/move events to follow with asc's
+private void handleCopyMoveAscs(item, targetRepoPath, boolean move) {
+    if (item.isFolder()) {
+        log.debug("Ignoring copy/move of folder: ${item}")
+        return
+    }
+    srcAscRepoPath = RepoPathFactory.create(item.repoKey, item.relPath + ".asc")
+    if (repositories.exists(srcAscRepoPath)) {
+        tgtAscRepoPath = RepoPathFactory.create(targetRepoPath.repoKey, targetRepoPath.path + ".asc")
+        //Copy/move the asc to the target
+        log.debug("Copy/move: ${srcAscRepoPath} to ${tgtAscRepoPath}")
+        if (move)
+            repositories.move(srcAscRepoPath, tgtAscRepoPath)
+        else
+            repositories.copy(srcAscRepoPath, tgtAscRepoPath)
+    }
+}
 
 import java.security.Security
 
