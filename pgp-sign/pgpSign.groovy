@@ -21,12 +21,14 @@ import java.io.InputStream
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
+import org.artifactory.common.StatusHolder
 
 /**
  * Artifactory user plugin that signs all incoming artifacts using the key
  * and passphrase specified in $ARTIFACTORY_HOME/etc/pgp/signing.properties
  * and deploys the resulting signature in typical fashion as an .asc file
  * parallel to the original artifact.
+ * The plugin will be activated only on repository keys ending with "-local".
  *
  * Purpose-built to meet the needs of promoting artifacts to Maven Central, i.e.
  * not intended in its current form for more general use.
@@ -73,10 +75,14 @@ storage {
         ByteArrayInputStream signatureIn = new ByteArrayInputStream(signatureBytes)
 
         RepoPath signature = RepoPathFactory.create(itemKey, "${itemPath}.asc")
-        repositories.deploy(signature, signatureIn)
-        log.info("Created and deployed signature: ${signature.repoKey}:${signature.path}")
+        StatusHolder status = repositories.deploy(signature, signatureIn)
+        if (status.isError()) {
+            log.info("Deploying signature: ${signature.repoKey}:${signature.path} failed with ${status.getLastError().getMessage()}")
+        } else {
+            log.info("Created and deployed signature: ${signature.repoKey}:${signature.path}")
+        }
     }
-    
+
     afterMove { item, targetRepoPath, properties ->
         handleCopyMoveAscs(item, targetRepoPath, true)
     }
