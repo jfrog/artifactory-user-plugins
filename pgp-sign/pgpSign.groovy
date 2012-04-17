@@ -103,10 +103,19 @@ private void handleCopyMoveAscs(item, targetRepoPath, boolean move) {
         tgtAscRepoPath = RepoPathFactory.create(targetRepoPath.repoKey, targetRepoPath.path + ".asc")
         //Copy/move the asc to the target
         log.debug("Copy/move: ${srcAscRepoPath} to ${tgtAscRepoPath}")
-        if (move)
+        if (move) {
+            //Note: with Artifactory 2.5.1.1 and below, folder-level moving when the folder contains ascs will cause an
+            //error - an asc moved by the plugin does not exist for the folder children move iteration (RTFACT-4878)
             repositories.move(srcAscRepoPath, tgtAscRepoPath)
-        else
+            srcParentDirRepoPath = srcAscRepoPath.parent
+            while (!srcParentDirRepoPath.root && repositories.getChildren(srcParentDirRepoPath).empty) {
+                repositories.delete(srcParentDirRepoPath)
+                srcParentDirRepoPath = srcParentDirRepoPath.parent
+            }
+        }
+        else {
             repositories.copy(srcAscRepoPath, tgtAscRepoPath)
+        }
     }
 }
 
