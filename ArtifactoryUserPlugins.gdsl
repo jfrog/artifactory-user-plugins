@@ -1,0 +1,7 @@
+contributor(context()) {
+    property name: 'repositories', type: 'org.artifactory.repo.Repositories'
+    property name: 'security', type: 'org.artifactory.security.Security'
+    property name: 'log', type: 'org.slf4j.Logger'
+    property name: 'ctx', type: 'org.artifactory.spring.InternalArtifactoryContext'
+    property name: 'builds', type: 'org.artifactory.build.Builds'
+}
