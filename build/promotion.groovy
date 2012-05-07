@@ -72,14 +72,19 @@ promotions {
         def buildRun = buildsRun[0]
         if (buildRun == null) cancelPromotion("Build $buildName/$buildNumber was not found, canceling promotion", null, 409)
         DetailedBuildRun stageBuild = builds.getDetailedBuild(buildRun)
+        String releasedBuildNumber = "$stageBuild.number-r"
         Set<FileInfo> stageArtifactsList = builds.getArtifactFiles(buildRun)
+
+        if (!builds.getBuilds(buildName, "$stageBuild.number-r", null).empty) {
+            cancelPromotion("Build $buildName/$buildNumber was already promoted under build number$releasedBuildNumber", null, 400)
+        }
 
 
         //3. Prepare release DetailedBuildRun and release artifacts for deployment
-        releaseBuild = stageBuild.copy("$stageBuild.number-r")
-        releaseArtifactsSet = [] as Set
+        DetailedBuildRun releaseBuild = stageBuild.copy(releasedBuildNumber)
+        releaseArtifactsSet = [] as Set<RepoPath>
         List<Module> modules = releaseBuild.modules
-        //Modify this condition to feet your needs
+        //Modify this condition to fit your needs
         if (!(snapExp == 'd14' || snapExp == 'SNAPSHOT')) cancelPromotion('This plugin logic support only Unique/Non-Unique snapshot patterns', null, 400)
         //If there is mor then one Artifacts that have the same checksum but different name only the first one will be return in the search so they will have to have different care
         def missingArtifacts = []
@@ -127,7 +132,7 @@ promotions {
                     default:
                         status = repositories.copy(stageRepoPath, releaseRepoPath)
                 }
-                if (status.isError()) rollback(releaseArtifactsSet, status.exception)
+                if (status.isError()) rollback(releaseBuild, releaseArtifactsSet, status.exception)
                 setReleaseProperties(stageRepoPath, releaseRepoPath)
                 releasedArtifact = new Artifact(repositories.getFileInfo(releaseRepoPath), art.type)
                 artifactsList[index] = releasedArtifact
@@ -162,8 +167,8 @@ promotions {
         //Save new DetailedBuildRun (Build info)
         builds.saveBuild(releaseBuild)
         if (releaseArtifactsSet.size() != stageArtifactsList.size()) {
-            echo("The plugin implementaion don't feet your build, release artifact size is different from the stagin number")
-            rollback(releaseArtifactsSet, null)
+            echo("The plugin implementaion don't fit your build, release artifact size is different from the staging number")
+            rollback(releaseBuild, releaseArtifactsSet, null)
         }
 
         message = " Build $buildName/$buildNumber has been successfully promoted"
@@ -172,9 +177,25 @@ promotions {
     }
 }
 
-def rollback(def releaseArtifactsSet, Throwable cause) {
+def rollback(BuildRun releaseBuild, Set<RepoPath> releaseArtifactsSet, Throwable cause) {
     releaseArtifactsSet.each {item ->
-        repositories.delete(item)
+        StatusHolder status = repositories.delete(item)
+        //now let's delete empty folders
+        deletedItemParentDirRepoPath = item.parent
+        while (!deletedItemParentDirRepoPath.root && repositories.getChildren(deletedItemParentDirRepoPath).empty) {
+            repositories.delete(deletedItemParentDirRepoPath)
+            deletedItemParentDirRepoPath = deletedItemParentDirRepoPath.parent
+        }
+        if (status.error) {
+            log.error "Rollback failed! Failed to delete $item, error is $status.statusMsg", status.exception
+        } else {
+            log.info "$item deleted"
+        }
+    }
+
+    StatusHolder status = builds.deleteBuild(releaseBuild)
+    if (status.error) {
+        log.error "Rollback failed! Failed to delete $releaseBuild, error is $status.statusMsg", status.exception
     }
     cancelPromotion('Rolling back build promotion', cause, 500)
 }
