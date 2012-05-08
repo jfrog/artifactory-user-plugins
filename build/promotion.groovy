@@ -16,11 +16,6 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
-//import org.jfrog.build.api.release.Promotion
-
-
 import groovy.xml.StreamingMarkupBuilder
 import org.artifactory.build.Artifact
 import org.artifactory.build.BuildRun
@@ -32,10 +27,10 @@ import org.artifactory.common.StatusHolder
 import org.artifactory.exception.CancelException
 import org.artifactory.fs.FileInfo
 import org.artifactory.repo.RepoPath
-import org.artifactory.repo.RepoPathFactory
 import org.artifactory.util.StringInputStream
 
 import static groovy.xml.XmlUtil.serialize
+import static org.artifactory.repo.RepoPathFactory.create
 
 promotions {
     /**
@@ -58,7 +53,7 @@ promotions {
      * params (java.util.Map<java.lang.String, java.util.List<java.lang.String>>) - The parameters specified in the REST request.
      */
     snapshotToRelease(users: "jenkins", params: [snapExp: 'd14', targetRepository: 'gradle-release-local']) { buildName, buildNumber, params ->
-        echo('Promoting build: ' + buildName + '/' + buildNumber)
+        log.info 'Promoting build: ' + buildName + '/' + buildNumber
 
         //1. Extract properties
         buildStartTime = getStringProperty(params, 'buildStartTime', false)
@@ -72,14 +67,19 @@ promotions {
         def buildRun = buildsRun[0]
         if (buildRun == null) cancelPromotion("Build $buildName/$buildNumber was not found, canceling promotion", null, 409)
         DetailedBuildRun stageBuild = builds.getDetailedBuild(buildRun)
+        String releasedBuildNumber = "$stageBuild.number-r"
         Set<FileInfo> stageArtifactsList = builds.getArtifactFiles(buildRun)
+
+        if (!builds.getBuilds(buildName, "$stageBuild.number-r", null).empty) {
+            cancelPromotion("Build $buildName/$buildNumber was already promoted under build number$releasedBuildNumber", null, 400)
+        }
 
 
         //3. Prepare release DetailedBuildRun and release artifacts for deployment
-        releaseBuild = stageBuild.copy("$stageBuild.number-r")
-        releaseArtifactsSet = [] as Set
+        DetailedBuildRun releaseBuild = stageBuild.copy(releasedBuildNumber)
+        releaseArtifactsSet = [] as Set<RepoPath>
         List<Module> modules = releaseBuild.modules
-        //Modify this condition to feet your needs
+        //Modify this condition to fit your needs
         if (!(snapExp == 'd14' || snapExp == 'SNAPSHOT')) cancelPromotion('This plugin logic support only Unique/Non-Unique snapshot patterns', null, 400)
         //If there is mor then one Artifacts that have the same checksum but different name only the first one will be return in the search so they will have to have different care
         def missingArtifacts = []
@@ -106,54 +106,62 @@ promotions {
             //Save a copy of the RepoPath to roll back if needed
             List<Artifact> artifactsList = module.artifacts
             RepoPath releaseRepoPath = null
-            artifactsList.eachWithIndex {art, index ->
-                def stageRepoPath = getStageRepoPath(art, stageArtifactsList)
-                if (stageRepoPath != null) {
-                    releaseRepoPath = getReleaseRepoPath(targetRepository, stageRepoPath, stageVersion, snapExp)
-                } else {
-                    missingArtifacts << art
-                    return
-                }
+            try {
+                artifactsList.eachWithIndex {art, index ->
+                    def stageRepoPath = getStageRepoPath(art, stageArtifactsList)
+                    if (stageRepoPath != null) {
+                        releaseRepoPath = getReleaseRepoPath(targetRepository, stageRepoPath, stageVersion, snapExp)
+                    } else {
+                        missingArtifacts << art
+                        return
+                    }
 
-                //If ivy.xml or pom then create and deploy a new Artifact with the fix revision,status,publication inside the xml
-                StatusHolder status
-                switch (art.type) {
-                    case 'ivy':
-                        status = generateAndDeployReleaseIvyFile(stageRepoPath, releaseRepoPath, innerModuleDependencies, snapExp)
-                        break;
-                    case 'pom':
-                        status = generateAndDeployReleasePomFile(stageRepoPath, releaseRepoPath, innerModuleDependencies, stageArtifactsList, snapExp)
-                        break;
-                    default:
-                        status = repositories.copy(stageRepoPath, releaseRepoPath)
-                }
-                if (status.isError()) rollback(releaseArtifactsSet, status.exception)
-                setReleaseProperties(stageRepoPath, releaseRepoPath)
-                releasedArtifact = new Artifact(repositories.getFileInfo(releaseRepoPath), art.type)
-                artifactsList[index] = releasedArtifact
+                    //If ivy.xml or pom then create and deploy a new Artifact with the fix revision,status,publication inside the xml
+                    StatusHolder status
+                    switch (art.type) {
+                        case 'ivy':
+                            status = generateAndDeployReleaseIvyFile(stageRepoPath, releaseRepoPath, innerModuleDependencies, snapExp)
+                            break;
+                        case 'pom':
+                            status = generateAndDeployReleasePomFile(stageRepoPath, releaseRepoPath, innerModuleDependencies, stageArtifactsList, snapExp)
+                            break;
+                        default:
+                            status = repositories.copy(stageRepoPath, releaseRepoPath)
+                    }
+                    if (status.isError()) rollback(releaseBuild, releaseArtifactsSet, status.exception)
+                    setReleaseProperties(stageRepoPath, releaseRepoPath)
+                    releasedArtifact = new Artifact(repositories.getFileInfo(releaseRepoPath), art.type)
+                    artifactsList[index] = releasedArtifact
 
-                //Add the release RepoPath for roll back
-                releaseArtifactsSet << releaseRepoPath
+                    //Add the release RepoPath for roll back
+                    releaseArtifactsSet << releaseRepoPath
+                }
+            } catch (IllegalStateException e) {
+                rollback(releaseBuild, releaseArtifactsSet, e.message, e)
             }
 
         }
 
         //Fix dependencies of other modules with release version
-        modules.each {mod ->
-            def dependenciesList = mod.dependencies
-            dependenciesList.eachWithIndex {dep, i ->
-                def match = stageArtifactsList.asList().find {item ->
-                    item.checksumsInfo.sha1 == dep.sha1
-                }
-                if (match != null) {
-                    //Until GAP-129 is resolved this will have todo
-                    List<String> tokens = match.repoPath.path.split('/')
-                    String stageVersion = tokens[tokens.size() - 2]
-                    def releaseRepoPath = getReleaseRepoPath(targetRepository, match.repoPath, stageVersion, snapExp)
-                    def releaseFileInfo = repositories.getFileInfo(releaseRepoPath)
-                    dependenciesList[i] = new Dependency(dep.id, releaseFileInfo, dep.scopes, dep.type)
+        try {
+            modules.each {mod ->
+                def dependenciesList = mod.dependencies
+                dependenciesList.eachWithIndex {dep, i ->
+                    def match = stageArtifactsList.asList().find {item ->
+                        item.checksumsInfo.sha1 == dep.sha1
+                    }
+                    if (match != null) {
+                        //Until GAP-129 is resolved this will have todo
+                        List<String> tokens = match.repoPath.path.split('/')
+                        String stageVersion = tokens[tokens.size() - 2]
+                        def releaseRepoPath = getReleaseRepoPath(targetRepository, match.repoPath, stageVersion, snapExp)
+                        def releaseFileInfo = repositories.getFileInfo(releaseRepoPath)
+                        dependenciesList[i] = new Dependency(dep.id, releaseFileInfo, dep.scopes, dep.type)
+                    }
                 }
             }
+        } catch (IllegalStateException e) {
+            rollback(releaseBuild, releaseArtifactsSet, e.message, e)
         }
 
         //Add release status
@@ -162,39 +170,61 @@ promotions {
         //Save new DetailedBuildRun (Build info)
         builds.saveBuild(releaseBuild)
         if (releaseArtifactsSet.size() != stageArtifactsList.size()) {
-            echo("The plugin implementaion don't feet your build, release artifact size is different from the stagin number")
-            rollback(releaseArtifactsSet, null)
+            log.warn "The plugin implementaion don't fit your build, release artifact size is different from the staging number"
+            rollback(releaseBuild, releaseArtifactsSet, null)
         }
 
         message = " Build $buildName/$buildNumber has been successfully promoted"
-        echo(message)
+        log.info message
         status = 200
     }
 }
 
-def rollback(def releaseArtifactsSet, Throwable cause) {
+private void rollback(BuildRun releaseBuild, Set<RepoPath> releaseArtifactsSet, String message = 'Rolling back build promotion', Throwable cause, int statusCode = 500) {
     releaseArtifactsSet.each {item ->
-        repositories.delete(item)
+        StatusHolder status = repositories.delete(item)
+        //now let's delete empty folders
+        deletedItemParentDirRepoPath = item.parent
+        while (!deletedItemParentDirRepoPath.root && repositories.getChildren(deletedItemParentDirRepoPath).empty) {
+            repositories.delete(deletedItemParentDirRepoPath)
+            deletedItemParentDirRepoPath = deletedItemParentDirRepoPath.parent
+        }
+        if (status.error) {
+            log.error "Rollback failed! Failed to delete $item, error is $status.statusMsg", status.exception
+        } else {
+            log.info "$item deleted"
+        }
     }
-    cancelPromotion('Rolling back build promotion', cause, 500)
+    StatusHolder status = builds.deleteBuild(releaseBuild)
+    if (status.error) {
+        log.error "Rollback failed! Failed to delete $releaseBuild, error is $status.statusMsg", status.exception
+    }
+    cancelPromotion(message, cause, statusCode)
 }
 
 
-def getReleaseRepoPath(String targetRepository, RepoPath stageRepoPath, String stageVersion, String snapExp) {
-    releaseVersion = extractVersion(stageVersion, snapExp)
+private RepoPath getReleaseRepoPath(String targetRepository, RepoPath stageRepoPath, String stageVersion, String snapExp) {
     def layoutInfo = repositories.getLayoutInfo(stageRepoPath)
-    //this might not work
-    if (layoutInfo.valid) {
-        releasePath = stageRepoPath.path.replace("-$layoutInfo.folderIntegrationRevision", '') //removes -SNAPSHOT from folder name
-        releasePath = releasePath.replace("-$layoutInfo.fileIntegrationRevision", '') //removes -timestamp from file name
+    releaseVersion = extractVersion(stageVersion, snapExp)
+    String stagingPath = stageRepoPath.path
+    if (layoutInfo.integration || stageVersion =~ ".*" + snapExp + ".*") {
+        String releasePath
+        //this might not work
+        if (layoutInfo.valid) {
+            releasePath = stagingPath.replace("-$layoutInfo.folderIntegrationRevision", '') //removes -SNAPSHOT from folder name
+            releasePath = releasePath.replace("-$layoutInfo.fileIntegrationRevision", '') //removes -timestamp from file name
+        } else {
+            //let's hope the version is simple
+            releasePath = stagingPath.replace(stageVersion, releaseVersion)
+        }
+        if (releasePath == stagingPath) {
+            throw new IllegalStateException("Converting stage repository path$stagingPath to released repository path failed, please check your snapshot expression")
+        }
+        create(targetRepository, releasePath)
     } else {
-        //let's hope the version is simple
-        releasePath = stageRepoPath.path.replace(stageVersion, releaseVersion)
+        log.info "Your build contains release version of $stageRepoPath"
+        create(targetRepository, stagingPath)
     }
-    if (releasePath == stageRepoPath.path) {
-        cancelPromotion('Converting stage repository path to released repository path failed, please check your snapshot expression', null, 400)
-    }
-    RepoPathFactory.create(targetRepository, releasePath)
 }
 
 def getStageRepoPath(Artifact stageArtifact, Set<FileInfo> stageArtifactsList) {
@@ -208,7 +238,7 @@ def getStageRepoPath(Artifact stageArtifact, Set<FileInfo> stageArtifactsList) {
                 it.sha1 == stageArtifact.sha1
     }
     if (tmpArtifact == null) {
-        echo("No Artifact with the same name and sha1 was found, somthing is wrong with your build info, look for $stageArtifact.name $stageArtifact.sha1 there is probably mor then one artifact with the same sha1")
+        log.warn "No Artifact with the same name and sha1 was found, somthing is wrong with your build info, look for $stageArtifact.name $stageArtifact.sha1 there is probably mor then one artifact with the same sha1"
         return null
     }
     tmpArtifact.repoPath
@@ -299,11 +329,6 @@ private String getStringProperty(params, pName, mandatory) {
 }
 
 def cancelPromotion(String message, Throwable cause, int errorLevel) {
-    echo(message)
+    log.warn message
     throw new CancelException(message, cause, errorLevel)
-}
-
-
-def echo(str) {
-    log.warn("#####Promote Plugin: " + str);
 }
