@@ -18,9 +18,9 @@
 
 import groovy.transform.Field
 import org.artifactory.build.BuildRun
+import org.artifactory.build.promotion.PromotionConfig
 import org.artifactory.build.staging.ModuleVersion
 import org.artifactory.build.staging.VcsConfig
-import org.artifactory.build.promotion.PromotionConfig
 
 import static org.apache.commons.lang.StringUtils.removeEnd
 
@@ -47,29 +47,9 @@ staging {
 
         @Field String releaseVersion = '1.0.0'
 
-        //Finds the latest build
-        def latestBuildRun = {buildRuns ->
-            buildRuns.max {buildRun -> buildRun.startedDate }
-        }
-
-        //Finds the latest released build, if not found, return the latest build no matter what status
-        def latestReleaseOrLatestBuild = {List<BuildRun> buildRuns ->
-            def latestReleasedBuild = null;
-            def allReleasedBuilds = buildRuns.findAll {buildRun -> (buildRun.releaseStatus == 'released') }
-
-            if (allReleasedBuilds) {
-                latestReleasedBuild = latestBuildRun(allReleasedBuilds)
-            }
-
-            if (!latestReleasedBuild) {
-                latestReleasedBuild = latestBuildRun(buildRuns)
-            }
-
-            latestReleasedBuild
-        }
-
         //Get the global version of the latest build run
-        String latestReleaseVersion = getLatestReleaseVersion(builds.getBuilds(buildName, null), latestReleaseOrLatestBuild)
+        BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuild(builds.getBuilds(buildName, null, null))
+        String latestReleaseVersion = getLatestReleaseVersion(latestReleaseOrBuild)
 
         //If the version is found, increment
         if (latestReleaseVersion) {
@@ -78,7 +58,7 @@ staging {
 
         def nextDevVersion = transformReleaseVersion(releaseVersion, false) + '-SNAPSHOT'
 
-        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, nextDevVersion)]
+        defaultModuleVersion = new ModuleVersion('module', releaseVersion, nextDevVersion)
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -91,50 +71,6 @@ staging {
         promotionConfig.comment = "Staging Artifactory ${releaseVersion}"
     }
 
-    gradleAgile(users: "jenkins", params: [patch: 'false']) { String buildName, Map<String, List<String>> params ->
-
-        //Finds the latest build
-        def latestBuildRun = {buildRuns ->
-            buildRuns.max {buildRun -> buildRun.startedDate }
-        }
-
-        //Finds the latest released build, if not found, return the latest build no matter what status
-        def latestReleaseOrLatestBuild = {buildRuns ->
-            def latestReleasedBuild = null;
-            def allReleasedBuilds = buildRuns.findAll {buildRun -> buildRun.releaseStatus == "release" }
-
-            if (allReleasedBuilds) {
-                latestReleasedBuild = latestBuildRun(allReleasedBuilds)
-            }
-
-            if (!latestReleasedBuild) {
-                latestReleasedBuild = latestBuildRun(buildRuns)
-            }
-
-            latestReleasedBuild
-        }
-
-        //Get the global version of the latest build run
-        def latestReleaseVersion = getLatestReleaseVersion(builds.getBuilds(buildName, null), latestReleaseOrLatestBuild)
-
-        //If the version is found, increment
-        if (latestReleaseVersion) {
-            releaseVersion = transformReleaseVersion(latestReleaseVersion, params['patch'][0] as Boolean).plus('-SNAPSHOT')
-        }
-
-        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, releaseVersion)]
-
-        vcsConfig = new VcsConfig()
-        vcsConfig.useReleaseBranch = false
-        vcsConfig.createTag = false
-        vcsConfig.tagUrlOrName = "gradle-multi-example-${releaseVersion}"
-        vcsConfig.tagComment = "[gradle-multi-example] RC version ${releaseVersion}"
-        vcsConfig.nextDevelopmentVersionComment = "[gradle-multi-example] Next development version"
-
-        promotionConfig = new PromotionConfig("gradle-snapshot-local")
-        promotionConfig.comment = "Yet another snapshot of gradle-multi-example ${releaseVersion}"
-    }
-
     maven(users: "jenkins", params: [key1: 'value1', key2: 'value2']) { buildName, params ->
         moduleVersionsMap = [myModule: new ModuleVersion('myModule', releaseVersion, "1.1.x-SNAPSHOT")]
 
@@ -142,7 +78,7 @@ staging {
         vcsConfig.useReleaseBranch = false
         vcsConfig.releaseBranchName = null
         vcsConfig.createTag = true
-        vcsConfig.tagUrlOrName = "file:///Users/noam/Desktop/test/svnrepo/multi-modules/tags/artifactory-${releaseVersion}"
+        vcsConfig.tagUrlOrName = "multi-modules/tags/artifactory-${releaseVersion}"
         vcsConfig.tagComment = "[artifactory-release] Release version ${releaseVersion}"
         vcsConfig.nextDevelopmentVersionComment = "[artifactory-release] Next development version"
 
@@ -159,10 +95,9 @@ staging {
  * @param latestBuildMethod Latest build criterion closure
  * @return Version string if found, null if not
  */
-private String getLatestReleaseVersion(allBuilds, latestBuildMethod) {
+private String getLatestReleaseVersion(latestReleaseBuild) {
     def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
     if (allBuilds) {
-        def latestReleaseBuild = latestBuildMethod(allBuilds)
         if (latestReleaseBuild) {
             def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
             def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
@@ -173,6 +108,16 @@ private String getLatestReleaseVersion(allBuilds, latestBuildMethod) {
     }
     null
 }
+
+//Finds the latest released build, if not found, return the latest build no matter what status
+private BuildRun latestReleaseOrLatestBuild(List<BuildRun> buildRuns) {
+    BuildRun[] allReleasedBuilds = buildRuns.findAll {buildRun -> (buildRun.releaseStatus == 'released') }
+    if (allReleasedBuilds) {
+        buildRuns = allReleasedBuilds
+    }
+    buildRuns.max {buildRun -> buildRun.startedDate }
+}
+
 
 /**
  * Expects a version string like \{d}.\{d}.\{d} (with optional char at the end).
