@@ -91,19 +91,16 @@ staging {
 /**
  * Returns the global version of the given build
  *
- * @param allBuilds Builds to search within
  * @param latestBuildMethod Latest build criterion closure
  * @return Version string if found, null if not
  */
 private String getLatestReleaseVersion(latestReleaseBuild) {
     def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
-    if (allBuilds) {
-        if (latestReleaseBuild) {
-            def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
-            def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
-            if (moduleVersionMatcher.matches()) {
-                moduleVersionMatcher.group 1
-            }
+    if (latestReleaseBuild) {
+        def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
+        def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
+        if (moduleVersionMatcher.matches()) {
+            moduleVersionMatcher.group 1
         }
     }
     null
