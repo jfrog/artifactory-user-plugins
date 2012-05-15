@@ -16,6 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import groovy.transform.Field
 import groovy.xml.StreamingMarkupBuilder
 import org.artifactory.build.Artifact
 import org.artifactory.build.BuildRun
@@ -76,7 +77,9 @@ promotions {
 
 
         //3. Prepare release DetailedBuildRun and release artifacts for deployment
+        @Field String timestamp = System.currentTimeMillis().toString()
         DetailedBuildRun releaseBuild = stageBuild.copy(releasedBuildNumber)
+        releaseBuild.properties
         releaseArtifactsSet = [] as Set<RepoPath>
         List<Module> modules = releaseBuild.modules
         //Modify this condition to fit your needs
@@ -95,12 +98,8 @@ promotions {
 
             //Find and set module ID with release version
             def id = module.id
-            List idTokens = id.split(':')
-            String stageVersion = idTokens.pop()
-            //Implement version per module logic
-            idTokens << extractVersion(stageVersion, snapExp)
-            id = idTokens.join(':')
-            (module.id = id)
+            def moduleInfo = parseModuleId(id, snapExp)
+            module.id = moduleInfo.id
 
             //Iterate over the artifact list, create a release artifact deploy it and add it to the release DetailedBuildRun
             //Save a copy of the RepoPath to roll back if needed
@@ -110,7 +109,7 @@ promotions {
                 artifactsList.eachWithIndex {art, index ->
                     def stageRepoPath = getStageRepoPath(art, stageArtifactsList)
                     if (stageRepoPath != null) {
-                        releaseRepoPath = getReleaseRepoPath(targetRepository, stageRepoPath, stageVersion, snapExp)
+                        releaseRepoPath = getReleaseRepoPath(targetRepository, stageRepoPath, moduleInfo.stageVersion, snapExp)
                     } else {
                         missingArtifacts << art
                         return
@@ -145,20 +144,28 @@ promotions {
         //Fix dependencies of other modules with release version
         try {
             modules.each {mod ->
+                releaseDependencies = []
                 def dependenciesList = mod.dependencies
-                dependenciesList.eachWithIndex {dep, i ->
+                dependenciesList.each {dep ->
                     def match = stageArtifactsList.asList().find {item ->
                         item.checksumsInfo.sha1 == dep.sha1
                     }
                     if (match != null) {
+                        //interproject dependency, change it
                         //Until GAP-129 is resolved this will have todo
                         List<String> tokens = match.repoPath.path.split('/')
                         String stageVersion = tokens[tokens.size() - 2]
                         def releaseRepoPath = getReleaseRepoPath(targetRepository, match.repoPath, stageVersion, snapExp)
                         def releaseFileInfo = repositories.getFileInfo(releaseRepoPath)
-                        dependenciesList[i] = new Dependency(dep.id, releaseFileInfo, dep.scopes, dep.type)
+                        def moduleInfo = parseModuleId(dep.id, snapExp)
+                        releaseDependencies << new Dependency(moduleInfo.id, releaseFileInfo, dep.scopes, dep.type)
+                    } else {
+                        //external dependency, leave it
+                        releaseDependencies << dep
                     }
                 }
+                dependenciesList.clear()
+                dependenciesList.addAll(releaseDependencies)
             }
         } catch (IllegalStateException e) {
             rollback(releaseBuild, releaseArtifactsSet, e.message, e)
@@ -178,6 +185,15 @@ promotions {
         log.info message
         status = 200
     }
+}
+
+private Map<String, String> parseModuleId(String id, String snapExp) {
+    List idTokens = id.split(':')
+    String stageVersion = idTokens.pop()
+    //Implement version per module logic
+    idTokens << extractVersion(stageVersion, snapExp)
+    id = idTokens.join(':')
+    [id: id, stageVersion: stageVersion]
 }
 
 private void rollback(BuildRun releaseBuild, Set<RepoPath> releaseArtifactsSet, String message = 'Rolling back build promotion', Throwable cause, int statusCode = 500) {
@@ -286,7 +302,7 @@ private StatusHolder generateAndDeployReleaseIvyFile(RepoPath stageRepoPath, rel
     info.@revision = extractVersion(stageRev, snapExp)
     info.@status = 'release'
     //fix date and xml alignment and module dependency
-    info.@publication = System.currentTimeMillis().toString()
+    info.@publication = timestamp
     //Fix inner module dependencies
     innerModuleDependencies.each {art ->
         String[] tokens = art.repoPath.path.split('/')
@@ -304,7 +320,7 @@ private void setReleaseProperties(stageRepoPath, releaseRepoPath) {
     def properties = repositories.getProperties(stageRepoPath)
     properties.replaceValues('build.number', ["${properties.getFirst('build.number')}-r"])
     properties.replaceValues('build.status', ['release'])
-    properties.replaceValues('build.timestamp', [System.currentTimeMillis().toString()])
+    properties.replaceValues('build.timestamp', [timestamp])
     def keys = properties.keys()
     keys.each {item ->
         key = item
