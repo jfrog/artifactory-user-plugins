@@ -58,7 +58,7 @@ staging {
 
         def nextDevVersion = transformReleaseVersion(releaseVersion, false) + '-SNAPSHOT'
 
-        moduleVersionsMap = [myModule: new ModuleVersion('myModule', releaseVersion, nextDevVersion)]
+        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, nextDevVersion)]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -101,7 +101,7 @@ private String getLatestReleaseVersion(latestReleaseBuild) {
             def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
             def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
             if (moduleVersionMatcher.matches()) {
-                moduleVersionMatcher.group 1
+                return moduleVersionMatcher.group(1)
             }
         }
     null
