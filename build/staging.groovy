@@ -72,7 +72,7 @@ staging {
     }
 
     maven(users: "jenkins", params: [key1: 'value1', key2: 'value2']) { buildName, params ->
-        moduleVersionsMap = [myModule: new ModuleVersion('myModule', releaseVersion, "1.1.x-SNAPSHOT")]
+        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
