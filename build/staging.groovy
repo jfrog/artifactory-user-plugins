@@ -58,7 +58,7 @@ staging {
 
         def nextDevVersion = transformReleaseVersion(releaseVersion, false) + '-SNAPSHOT'
 
-        defaultModuleVersion = new ModuleVersion('module', releaseVersion, nextDevVersion)
+        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, nextDevVersion)]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -72,7 +72,7 @@ staging {
     }
 
     maven(users: "jenkins", params: [key1: 'value1', key2: 'value2']) { buildName, params ->
-        moduleVersionsMap = [myModule: new ModuleVersion('myModule', releaseVersion, "1.1.x-SNAPSHOT")]
+        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -97,15 +97,13 @@ staging {
  */
 private String getLatestReleaseVersion(latestReleaseBuild) {
     def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
-    if (allBuilds) {
         if (latestReleaseBuild) {
             def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
             def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
             if (moduleVersionMatcher.matches()) {
-                moduleVersionMatcher.group 1
+                return moduleVersionMatcher.group(1)
             }
         }
-    }
     null
 }
 
