@@ -109,7 +109,7 @@ private String getLatestReleaseVersion(latestReleaseBuild) {
 
 //Finds the latest released build, if not found, return the latest build no matter what status
 private BuildRun latestReleaseOrLatestBuild(List<BuildRun> buildRuns) {
-    BuildRun[] allReleasedBuilds = buildRuns.findAll {buildRun -> (buildRun.releaseStatus == 'released') }
+    BuildRun[] allReleasedBuilds = buildRuns.findAll {buildRun -> (buildRun.releaseStatus == 'Released') }
     if (allReleasedBuilds) {
         buildRuns = allReleasedBuilds
     }

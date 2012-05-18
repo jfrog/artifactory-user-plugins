@@ -173,7 +173,7 @@ promotions {
 
         //Add release status
         def statuses = releaseBuild.releaseStatuses
-        statuses << new ReleaseStatus("released", 'Releasing build gradle-multi-example', targetRepository, getStringProperty(params, 'ciUser', false), security.currentUsername)
+        statuses << new ReleaseStatus("Released", 'Releasing build gradle-multi-example', targetRepository, getStringProperty(params, 'ciUser', false), security.currentUsername)
         //Save new DetailedBuildRun (Build info)
         builds.saveBuild(releaseBuild)
         if (releaseArtifactsSet.size() != stageArtifactsList.size()) {
