@@ -53,7 +53,7 @@ promotions {
      * buildNumber (java.lang.String) - The build number specified in the REST request.
      * params (java.util.Map<java.lang.String, java.util.List<java.lang.String>>) - The parameters specified in the REST request.
      */
-    snapshotToRelease(users: "jenkins", params: [snapExp: 'd14', targetRepository: 'gradle-release-local']) { buildName, buildNumber, params ->
+    snapshotToRelease(users: "jenkins", params: [snapExp: 'd{14}', targetRepository: 'gradle-release-local']) { buildName, buildNumber, params ->
         log.info 'Promoting build: ' + buildName + '/' + buildNumber
 
         //1. Extract properties
@@ -173,7 +173,7 @@ promotions {
 
         //Add release status
         def statuses = releaseBuild.releaseStatuses
-        statuses << new ReleaseStatus("Released", 'Releasing build gradle-multi-example', targetRepository, getStringProperty(params, 'ciUser', false), security.currentUsername)
+        statuses << new ReleaseStatus("released", 'Releasing build gradle-multi-example', targetRepository, getStringProperty(params, 'ciUser', false), security.currentUsername)
         //Save new DetailedBuildRun (Build info)
         builds.saveBuild(releaseBuild)
         if (releaseArtifactsSet.size() != stageArtifactsList.size()) {
