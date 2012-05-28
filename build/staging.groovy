@@ -24,24 +24,28 @@ import org.artifactory.build.staging.VcsConfig
 
 import static org.apache.commons.lang.StringUtils.removeEnd
 
+/**
+ * Set of staging strategy definitions to be used by the build server during staging process.
+ * The strategy provides the build server with the following information:
+ *  1. How the artifacts in the staged build should be versioned;
+ *  2. How the artifacts in the next integration build should be versioned;
+ *  3. Should the build server create a release branch/tag/stream in VCS and how it should be called;
+ *  4. To which repository in Artifactory the built artifacts should be submitted.
+ *
+ *  This user plugin contains two strategies, 'gradle' and 'maven', see their comments for more details.
+ *
+ * This user plugin is called by the build server using REST call.
+ */
 staging {
 
     /**
-     * A build staging strategy definition.
+     * Staging strategy for Gradle builds.
+     * Depending on the 'patch' parameter, increments the latest version or adds 'a' to it.
+     * The latest version is the last released build, if not found - the latest build, if not found, defaults to 1.0.0
+     * Generates new integration version by attaching '-RELEASE' to latest release.
+     * Prefixes new tag name with the  build name ('gradle-multi-example-')
+     * Stages the build in 'gradle-staging-local' repo
      *
-     * Closure delegate:
-     * org.artifactory.build.staging.BuildStagingStrategy - The strategy that's to be returned.
-     *
-     * Plugin info annotation parameters:
-     * version (java.lang.String) - Closure version. Optional.
-     * description (java.lang.String - Closure description. Optional.
-     * params (java.util.Map<java.lang.String, java.lang.String>) - Closure parameters. Optional.
-     * users (java.util.Set<java.lang.String>) - Users permitted to query this plugin for information or invoke it.
-     * groups (java.util.Set<java.lang.String>) - Groups permitted to query this plugin for information or invoke it.
-     *
-     * Closure parameters:
-     * buildName (java.lang.String) - The build name specified in the REST request.
-     * params (java.util.Map<java.lang.String, java.util.List<java.lang.String>>) - The parameters specified in the REST request.
      */
     gradle(users: "jenkins", params: [patch: 'false']) {String buildName, Map<String, List<String>> params ->
 
@@ -71,7 +75,14 @@ staging {
         promotionConfig.comment = "Staging Artifactory ${releaseVersion}"
     }
 
-    maven(users: "jenkins", params: [key1: 'value1', key2: 'value2']) { buildName, params ->
+    /**
+     * Staging strategy for Maven builds.
+     * Versions are hard-coded in the plugin (1.0.0 for release and 1.1.x-SNAPSHOT for next integration)
+     * Adds new tag to the URL 'multi-modules/tags/artifactory-'
+     * Stages the build in 'libs-snapshot-local' repo
+     *
+     */
+    maven(users: "jenkins") { buildName, params ->
         moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
 
         vcsConfig = new VcsConfig()
@@ -87,7 +98,6 @@ staging {
     }
 }
 
-
 /**
  * Returns the global version of the given build
  *
@@ -97,13 +107,13 @@ staging {
  */
 private String getLatestReleaseVersion(latestReleaseBuild) {
     def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
-        if (latestReleaseBuild) {
-            def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
-            def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
-            if (moduleVersionMatcher.matches()) {
-                return moduleVersionMatcher.group(1)
-            }
+    if (latestReleaseBuild) {
+        def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseBuild
+        def moduleVersionMatcher = moduleIdPattern.matcher detailedLatestBuildRun.modules.first().id
+        if (moduleVersionMatcher.matches()) {
+            return moduleVersionMatcher.group(1)
         }
+    }
     null
 }
 
@@ -115,7 +125,6 @@ private BuildRun latestReleaseOrLatestBuild(List<BuildRun> buildRuns) {
     }
     buildRuns.max {buildRun -> buildRun.startedDate }
 }
-
 
 /**
  * Expects a version string like \{d}.\{d}.\{d} (with optional char at the end).
