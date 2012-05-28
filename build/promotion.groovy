@@ -45,13 +45,13 @@ promotions {
      *  3. The artifact descriptors (ivy.xml or pom.xml) are modified by replacing the versions from snapshot to release
      *      and deployed to the target release repository.
      *
-     * Plugin paramteres (passed via REST call):
+     * Plugin parameters (passed via REST call):
      *  * snapExp - snapshot version regular expression.
      *      It is used as fallback to determine how to transform a snapshot version string to release one in case when
      *      repository layout can't be used for this information (e.g. the layout doesn't match).
      *  * targetRepository - the name of repository to put the promoted build in.
      *
-     *  REST call example:
+     *  REST call example (should be executed by admin or by user mentioned in closure parameters):
      *  http://repo-demo:8080/artifactory/api/plugins/build/promote/snapshotToRelease/gradle-multi-example/1?params=snapExp=d%7B14%7D|targetRepository=gradle-release-local
      *      snapshotToRelease - plugin name
      *      gradle-multi-example - build to promote
