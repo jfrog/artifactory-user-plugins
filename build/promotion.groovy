@@ -35,23 +35,28 @@ import static org.artifactory.repo.RepoPathFactory.create
 
 promotions {
     /**
-     * A REST executable build promotion definition.
+     * A REST executable build promotion.
      *
-     * Context variables:
-     * status (int) - a response status code. Defaults to -1 (unset).
-     * message (java.lang.String) - a text message to return in the response body, replacing the response content. Defaults to null.
+     * This plugin promotes a snapshot build to release. It does the following:
      *
-     * Plugin info annotation parameters:
-     * version (java.lang.String) - Closure version. Optional.
-     * description (java.lang.String - Closure description. Optional.
-     * params (java.util.Map<java.lang.String, java.lang.String>) - Closure parameters. Optional.
-     * users (java.util.Set<java.lang.String>) - Users permitted to query this plugin for information or invoke it.
-     * groups (java.util.Set<java.lang.String>) - Groups permitted to query this plugin for information or invoke it.
+     *  1. The build is copied with "r" suffix  added to build number to indicate release.
+     *  2. The produced artifacts and the dependencies are copied to the target release repository
+     *      and renamed from snapshot to release version (by using repository layout or snapExp parameter).
+     *  3. The artifact descriptors (ivy.xml or pom.xml) are modified by replacing the versions from snapshot to release
+     *      and deployed to the target release repository.
      *
-     * Closure parameters:
-     * buildName (java.lang.String) - The build name specified in the REST request.
-     * buildNumber (java.lang.String) - The build number specified in the REST request.
-     * params (java.util.Map<java.lang.String, java.util.List<java.lang.String>>) - The parameters specified in the REST request.
+     * Plugin paramteres (passed via REST call):
+     *  * snapExp - snapshot version regular expression.
+     *      It is used as fallback to determine how to transform a snapshot version string to release one in case when
+     *      repository layout can't be used for this information (e.g. the layout doesn't match).
+     *  * targetRepository - the name of repository to put the promoted build in.
+     *
+     *  REST call example:
+     *  http://repo-demo:8080/artifactory/api/plugins/build/promote/snapshotToRelease/gradle-multi-example/1?params=snapExp=d%7B14%7D|targetRepository=gradle-release-local
+     *      snapshotToRelease - plugin name
+     *      gradle-multi-example - build to promote
+     *      1 - build number
+     *      params - as explained above
      */
     snapshotToRelease(users: "jenkins", params: [snapExp: 'd{14}', targetRepository: 'gradle-release-local']) { buildName, buildNumber, params ->
         log.info 'Promoting build: ' + buildName + '/' + buildNumber
