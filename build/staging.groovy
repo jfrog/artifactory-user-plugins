@@ -62,7 +62,7 @@ staging {
 
         def nextDevVersion = transformReleaseVersion(releaseVersion, false) + '-SNAPSHOT'
 
-        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, nextDevVersion)]
+        moduleVersionsMap = [modulex: new ModuleVersion('currentVersion', releaseVersion, nextDevVersion)]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -83,7 +83,7 @@ staging {
      *
      */
     maven(users: "jenkins") { buildName, params ->
-        moduleVersionsMap = [currentVersion: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
+        moduleVersionsMap = [modulex: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
