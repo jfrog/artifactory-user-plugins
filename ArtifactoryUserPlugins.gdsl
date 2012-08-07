@@ -1,6 +1,6 @@
 contributor(context(scriptScope())) {
     //global context
-    property name: 'log', type: 'org.slf4j.Logger', doc:  'Writes to Artifactory log; logger name is the name of the script file '
+    property name: 'log', type: 'org.slf4j.Logger', doc: 'Writes to Artifactory log; logger name is the name of the script file '
     property name: 'repositories', type: 'org.artifactory.repo.Repositories', doc: 'Allows queries and operations on repositories and artifacts '
     property name: 'security', type: 'org.artifactory.security.Security', doc: 'Provides information about current security context, (e.g. current user and her permissions) '
     property name: 'searches', type: 'org.artifactory.search.Searches', doc: 'API for searching for artifacts and builds'
@@ -8,23 +8,31 @@ contributor(context(scriptScope())) {
     property name: 'ctx', type: 'org.artifactory.spring.InternalArtifactoryContext', doc: 'NOT A PUBLIC API - FOR INTERNAL USE ONLY!'
 
     //plugin types
-    property name: 'download', type:'groovy.lang.Closure', doc: 'A section for handling and manipulating download events'
-    property name: 'storage', type:'groovy.lang.Closure', doc: 'A section for handling and manipulating storage events'
-    property name: 'jobs', type:'groovy.lang.Closure', doc: 'A section for defining scheduled jobs'
-    property name: 'executions', type:'groovy.lang.Closure', doc: 'A section for defining external executions'
-    property name: 'realms', type:'groovy.lang.Closure', doc: 'A section for management of security realms'
-    property name: 'build', type:'groovy.lang.Closure', doc: 'A section for handling build info events'
-    property name: 'promotions', type:'groovy.lang.Closure', doc: 'A section for defining REST executable build promotion operations'
-    property name: 'staging', type:'groovy.lang.Closure', doc: 'A section for defining REST retrievable build staging strategy construction'
+    method name: 'download', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for handling and manipulating download events'
+    method name: 'storage', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for handling and manipulating storage events'
+    method name: 'jobs', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for defining scheduled jobs'
+    method name: 'executions', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for defining external executions'
+    method name: 'realms', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for management of security realms'
+    method name: 'build', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for handling build info events'
+    method name: 'promotions', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for defining REST executable build promotion operations'
+    method name: 'staging', type: 'void', params: [closure :'groovy.lang.Closure'], doc: 'A section for defining REST retrievable build staging strategy construction'
 }
 
 contributor(context(scope: closureScope()), {
     //download plugin
-    if (enclosingCall('download')){
-        property name: 'altResponse', type: 'groovy.lang.Closure', doc: 'Provide an alternative response, by one of the following methods:\n' +
-                '(1) Setting a success/error status code value and an optional error message.\n' +
-                '(2) Provide an alternative download content, by setting new values for the inputStream and size context variables.'
-        property name: 'altRemotePath', type: 'groovy.lang.Closure', doc: 'Provides an alternative download path under the same remote repository, by setting a new value to the path variable.'
+    if (enclosingCall('download')) {
+        method name: 'altResponse', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: '''Provide an alternative response, by one of the following methods:
+                <ol><li>Setting a success/error status code value and an optional error message.</li>
+                <li>Provide an alternative download content, by setting new values for the inputStream and size context variables.</li></ol>
+                 <p>Closure attributes:
+                 <ul><li>name: request, type: org.artifactory.request.Request - A read-only parameter of the request.</li>
+                 <li>name: responseRepoPath, type: org.artifactory.repo.RepoPath - A read-only parameter of the response RepoPath (containing the physical repository the resource was found in).</li></ul>'''
+
+        method name: 'altRemotePath', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: '''Provides an alternative download path under the same remote repository, by setting a new value to the path variable.<p>
+                  Closure attributes:
+                  <ul><li>name: repoPath, type: org.artifactory.repo.RepoPath - A read-only parameter of the original request RepoPath.'
+                  </li></ul>'''
+
         property name: 'altRemoteContent', type: 'groovy.lang.Closure', doc: 'Provides an alternative download content, by setting new values for the inputStream and size context variables.'
         property name: 'afterDownloadError', type: 'groovy.lang.Closure', doc: 'In case of resolution error provides an alternative response, by setting a success/error status code value and an optional error message.'
         property name: 'beforeRemoteDownload', type: 'groovy.lang.Closure', doc: 'Handle before remote download events.'
@@ -33,19 +41,14 @@ contributor(context(scope: closureScope()), {
     }
     if (enclosingCall('altResponse')) {
         //Context variables
-        property name: 'status', type: 'java.lang.Integer', doc: 'a response status code. Defaults to -1 (unset).'
+        property name: 'status', type: 'int', doc: 'a response status code. Defaults to -1 (unset).'
         property name: 'message', type: 'java.lang.String', doc: 'a text message to return in the response body, replacing the response content. Defaults to null.'
         property name: 'inputStream', type: 'java.io.InputStream', doc: 'a new stream that provides the response content. Defaults to null.'
-        property name: 'size', type: 'java.lang.Long', doc: 'the size of the new content (helpful for clients processing the response). Defaults to -1.'
-        //Closure params
-        property name: 'request', type: 'org.artifactory.request.Request', doc: 'a read-only parameter of the request.'
-        property name: 'responseRepoPath', type: 'org.artifactory.repo.RepoPath', doc: 'a read-only parameter of the response RepoPath (containing the physical repository the resource was found in).'
+        property name: 'size', type: 'long', doc: 'the size of the new content (helpful for clients processing the response). Defaults to -1.'
     }
     if (enclosingCall('altRemotePath')) {
         //Context variables
         property name: 'path', type: 'java.lang.String', doc: 'the new path value. Defaults to the original RepoPath\'s path.'
-        //Closure params
-        property name: 'repoPath', type: 'org.artifactory.repo.RepoPath', doc: 'a read-only parameter of the original request RepoPath.'
     }
 
     if (enclosingCall('altRemoteContent')) {
@@ -81,4 +84,87 @@ contributor(context(scope: closureScope()), {
         property name: 'request', type: 'org.artifactory.request.Request', doc: 'a read-only parameter of the request.'
         property name: 'responseRepoPath', type: 'org.artifactory.repo.RepoPath', doc: 'a read-only parameter of the response RepoPath (containing the physical repository the resource was found in).'
     }
+    //storage plugin
+    if (enclosingCall('storage')) {
+        property name: 'beforeCreate', type: 'groovy.lang.Closure', doc: 'Handle before create events.'
+        property name: 'afterCreate', type: 'groovy.lang.Closure', doc: 'Handle after create events.'
+        property name: 'beforeDelete', type: 'groovy.lang.Closure', doc: 'Handle before delete events.'
+        property name: 'afterDelete', type: 'groovy.lang.Closure', doc: 'Handle after delete events.'
+        property name: 'beforeMove', type: 'groovy.lang.Closure', doc: 'Handle before move events.'
+        property name: 'afterMove', type: 'groovy.lang.Closure', doc: 'Handle after move events'
+        property name: 'beforeCopy', type: 'groovy.lang.Closure', doc: 'Handle before copy events.'
+        property name: 'afterCopy', type: 'groovy.lang.Closure', doc: 'Handle after copy events.'
+    }
+    def item = [name: 'item', type: 'org.artifactory.fs.ItemInfo', doc: 'the original item being manipulated.']
+    if (enclosingCall('beforeCreate')) {
+        //Closure params
+        property item
+    }
+    if (enclosingCall('aferCreate')) {
+        //Closure params
+        property item
+    }
+    if (enclosingCall('beforeDelete')) {
+        //Closure params
+        property item
+    }
+    if (enclosingCall('afterDelete')) {
+        //Closure params
+        property item
+    }
+
+    def targetRepoPath = [name: 'targetRepoPath', type: 'org.artifactory.repo.RepoPath', doc: 'the target repoPath']
+    def properties = [name: 'properties', type: 'org.artifactory.md.Properties', doc: 'user specified properties to add to the item']
+
+    if (enclosingCall('beforeMove')) {
+        //Closure params
+        property item
+        property targetRepoPath
+        property properties
+    }
+    if (enclosingCall('afterMove')) {
+        //Closure params
+        property item
+        property targetRepoPath
+        property properties
+    }
+    if (enclosingCall('beforeCopy')) {
+        //Closure params
+        property item
+        property targetRepoPath
+        property properties
+    }
+    if (enclosingCall('afterCopy')) {
+        //Closure params
+        property item
+        property targetRepoPath
+        property properties
+    }
+    //jobs plugin
+    if (enclosingCall('jobs')) {
+        //user-named inner closures params
+        property name: 'delay', type: 'java.lang.Long', doc: 'An initial delay in milliseconds before the job starts running (not applicable for a cron job).'
+        property name: 'interval', type: 'java.lang.Long', doc: 'An interval in milliseconds between job runs.'
+        property name: 'cron', type: 'java.lang.String', doc: 'A valid cron expression used to schedule job runs.'
+    }
+    //executions plugin
+    if (enclosingCall('executions')) {
+        //context parameters
+        property name: 'status', type: 'java.lang.Integer', doc: 'A response status code. Defaults to -1 (unset). Not applicable for an async execution.'
+        property name: 'message', type: 'java.lang.String', doc: 'A text message to return in the response body, replacing the response content. Defaults to null. Not applicable for an async execution.'
+
+        ////method call attributes
+        //property name: version (java.lang.String) - Closure version. Optional.
+        //   * description (java.lang.String - Closure description. Optional.
+        //   * params (java.util.Map<java.lang.String, java.lang.String>) - Closure parameters. Optional.
+        //   * users (java.util.Set<java.lang.String>) - Users permitted to query this plugin for information or invoke it.
+        //   * groups (java.util.Set<java.lang.String>) - Groups permitted to query this plugin for information or invoke it.
+        //
+        ////user-named inner closures params
+        //property name: 'delay', type: 'java.lang.Long', doc: 'An initial delay in milliseconds before the job starts running (not applicable for a cron job).'
+        //property name: 'interval', type: 'java.lang.Long', doc: 'An interval in milliseconds between job runs.'
+        //property name: 'cron', type: 'java.lang.String', doc: 'A valid cron expression used to schedule job runs.'
+    }
+
+
 })
