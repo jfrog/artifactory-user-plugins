@@ -1,3 +1,7 @@
+/**
+ * This is IntelliJ IDEA specific file, which adds code completion and analysis to properties and methods of <a href="http://wiki.jfrog.org/confluence/display/RTF/User+Plugins">Artifactory User Plugins</a>.
+ */
+
 contributor(context(scriptScope())) {
     //global context
     property name: 'log', type: 'org.slf4j.Logger', doc: 'Writes to Artifactory log; logger name is the name of the script file '
@@ -16,9 +20,14 @@ contributor(context(scriptScope())) {
                 <li>name: interval, type: long -  An interval in milliseconds between job runs.</li>
                 <li>name: cron, type: java.lang.String - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)</li></ul>'''
     method name: 'executions', type: 'void',
-            params: [version: 'java.lang.String', description: 'java.lang.String', params: 'java.util.Map<java.lang.String, java.lang.String>', users: 'java.util.Set<java.lang.String>',
-                    groups: 'java.util.Set<java.lang.String>', closure: 'groovy.lang.Closure'], doc: '''A section for defining external executions.<p>
-                    Add arbitrary named closures as executable code blocks. Each closure will have the following Closure parameters:
+            params: [closure: 'groovy.lang.Closure'], doc: '''A section for defining external executions.<p>
+                    Add arbitrary named closures as executable code blocks. Each closure will have a following plugin info annotation parameters:
+                    <ul><li>name: version, type: java.lang.String - Closure version. Optional</li>
+                    <li>name: description, type: java.lang.String - Closure description. Optional</li>
+                    <li>name: params, type: java.util.Map<java.lang.String, java.lang.String> - Closure parameters. Optional</li>
+                    <li>name: users, type: java.util.Set<java.lang.String> - Users permitted to query this plugin for information or invoke it</li>
+                    <li>name: groups, type: java.util.Set<java.lang.String> - Groups permitted to query this plugin for information or invoke it</li></ul>
+                    <p>Each closure will have the following Closure parameters:
                     <ul><li>name: params, type: java.util.Map - An execution takes a read-only key-value map that corresponds to the REST request parameter 'params'.
                     Each entry in the map contains an array of values.</li></ul>'''
     method name: 'realms', type: 'void', params: [autoCreateUsers: 'boolean', closure: 'groovy.lang.Closure'], doc: '''A section for management of security realms<p>
