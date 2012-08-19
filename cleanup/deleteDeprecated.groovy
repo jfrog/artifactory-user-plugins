@@ -27,11 +27,11 @@ import static com.google.common.collect.Multimaps.forMap
  */
 
 //this is REST-executed plugin
-//curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteDeprecated"
+//curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteDeprecatedPlugin"
 executions {
     //this execution is named 'deleteDeprecated' and it will be called by REST by this name
     //map parameters provide extra information about this execution, such as version, description, users that allowed to call this plugin, etc.
-    deleteDeprecated(version: '1.0', description: 'Deletes artifacts marked with \'analysis.deprecated=true\' property', users: ['admin'].toSet()) {
+    deleteDeprecatedPlugin(version: '1.0', description: 'Deletes artifacts marked with \'analysis.deprecated=true\' property', users: ['admin'].toSet()) {
 
         //we use the searched object to search for all items annotated with the desired property (hey, IntelliJ IDEA knows about the searches object and provides code completion and analysis!
         // It's thanks to this - https://github.com/JFrogDev/artifactory-user-plugins/blob/master/ArtifactoryUserPlugins.gdsl)

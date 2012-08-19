@@ -32,8 +32,8 @@ executions {
     //this execution is named 'deleteEmptyDirs' and it will be called by REST by this name
     //map parameters provide extra information about this execution, such as version, description, users that allowed to call this plugin, etc.
     //The expected (and mandatory) parameter is comma separated list of paths from which empty folders will be searched.
-    //curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirs?params=paths=repo,otherRepo/some/path"
-    deleteEmptyDirs(version: '1.0', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
+    //curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirsPlugin?params=paths=repo,otherRepo/some/path"
+    deleteEmptyDirsPlugin(version: '1.0', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
         if (!params || !params.paths) {
             def errorMessage = 'Paths parameter is mandatory, please supply it.'
             log.error errorMessage
