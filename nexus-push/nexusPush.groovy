@@ -375,5 +375,5 @@ def handleWarning(resp, message) {
 
 class NexusPushException extends Exception {
     def status
-    def message
+    String message
 }
