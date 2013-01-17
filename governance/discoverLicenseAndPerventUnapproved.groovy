@@ -5,21 +5,19 @@ import org.artifactory.request.Request
 import static java.lang.Class.forName
 
 /*
- * Artifactory is a binaries repository manager.
- * Copyright (C) 2013 JFrog Ltd.
- *
- * Artifactory is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Artifactory is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2013 JFrog Ltd.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
@@ -40,7 +38,7 @@ download {
     //poms should be allowed anyway: the licence might be in the parent poms and they are resolved on the client.
     altResponse { Request request, RepoPath responseRepoPath ->
         def artifactStatus = repositories.getProperties(responseRepoPath).getFirst(APPROVE_STATUS_NAME)
-        if (!responseRepoPath.name.endsWith('.pom') && artifactStatus && artifactStatus != APPROVE_STATUS_APPROVED) {
+        if (!responseRepoPath.name.endsWith('.pom') && (!artifactStatus || artifactStatus != APPROVE_STATUS_APPROVED)) {
             status = 403
             if (artifactStatus && artifactStatus == APPROVE_STATUS_REJECTED) {
                 message = 'This artifact wasn\'t approved yet.'
