@@ -22,6 +22,10 @@ import org.apache.http.HttpRequestInterceptor
 import org.artifactory.api.security.UserGroupService
 import org.artifactory.factory.InfoFactoryHolder
 import org.artifactory.repo.RepoPath
+import org.artifactory.request.Request
+import org.artifactory.webapp.servlet.HttpArtifactoryRequest
+
+import javax.servlet.http.HttpServletRequest
 
 
 /**
@@ -33,7 +37,12 @@ import org.artifactory.repo.RepoPath
 
 String syncAdminUser = 'admin'
 String syncAdminPassword = 'password'
-String otherHostRootURL = 'http://localhost:8080/artifactory'
+
+String getOtherHostRootUrl(HttpServletRequest request) {
+    def port = request.getServerPort()
+    if (port == 8080) 'http://localhost:8081/artifactory'
+    else 'http://localhost:8080/artifactory'
+}
 
 executions {
     setUserKeys() { params ->
@@ -52,7 +61,11 @@ executions {
             return
         }
 
-        // USe the find or create that is used for external LDAP users
+        // The 2 equal signs at the end of the public and private keys are removed by the params
+        publicKey += '=='
+        privateKey += '=='
+
+        // Use the find or create that is used for external LDAP users
         def userService = ctx.beanForType(UserGroupService.class)
         def foundUser = userService.findOrCreateExternalAuthUser(username, false)
         def newUser = InfoFactoryHolder.get().copyUser(foundUser);
@@ -73,7 +86,7 @@ download {
             def userService = ctx.beanForType(UserGroupService.class)
             def currentUser = userService.findUser(security.currentUsername)
             log.info "Downloading a settings.xml => Synchronizing keys for ${currentUser.username}"
-            def remoteUrl = "${otherHostRootURL}/api/plugins/execute/setUserKeys"
+            def remoteUrl = "${getOtherHostRootUrl(request.httpRequest)}/api/plugins/execute/setUserKeys"
             // Synchronize the user keys
             def http = new HTTPBuilder(remoteUrl)
             http.client.addRequestInterceptor({def httpRequest, def httpContext ->
