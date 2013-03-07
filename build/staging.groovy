@@ -21,6 +21,7 @@ import org.artifactory.build.BuildRun
 import org.artifactory.build.promotion.PromotionConfig
 import org.artifactory.build.staging.ModuleVersion
 import org.artifactory.build.staging.VcsConfig
+import org.artifactory.build.Module
 
 import static org.apache.commons.lang.StringUtils.removeEnd
 
@@ -82,8 +83,23 @@ staging {
      * Stages the build in 'libs-snapshot-local' repo
      *
      */
-    maven(users: "jenkins") { buildName, params ->
-        moduleVersionsMap = [modulex: new ModuleVersion('currentVersion', releaseVersion, "1.1.x-SNAPSHOT")]
+    maven(users: "admin") { buildName, params ->
+        //Get the global version of the latest build run
+        BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuild(builds.getBuilds(buildName, null, null))
+        def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseOrBuild
+		def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
+		moduleVersionsMap = [:]
+		int index = 0
+		detailedLatestBuildRun.modules.each { Module module ->
+			def moduleVersionMatcher = moduleIdPattern.matcher module.id
+			if (moduleVersionMatcher.matches()) {
+				def latestVersion = moduleVersionMatcher.group(1)
+				def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
+				releaseVersion = transformReleaseVersion(latestVersion, false)
+				moduleVersionsMap[moduleKey] = new ModuleVersion(moduleKey, "$releaseVersion-$index", "$releaseVersion-SNAPSHOT")
+				index++
+			}
+		}
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
