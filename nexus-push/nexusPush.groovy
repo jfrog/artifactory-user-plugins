@@ -252,7 +252,7 @@ def closeStagingRepoWith(lookupRepoPath) {
     def stage = findStageByRepoPath(stages, lookupRepoPath)
 
     if (!stage) {
-        handleWarning "Can't find stage repository matching ${lookupRepoPath} to close. Please close it manually."
+        handleWarning "Can't find stage repository in Nexus matching ${lookupRepoPath.path} to close. Please close it manually."
         return
     }
 
