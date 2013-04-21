@@ -262,18 +262,16 @@ def closeStagingRepoWith(lookupRepoPath) {
 
 def getOpenStages() {
     def stages = []
-    def http = new HTTPBuilder("${stagingProps.stagingUrl}/service/local/staging/profiles")
+    def http = new HTTPBuilder("${stagingProps.stagingUrl}/service/local/staging/profile_repositories")
     http.auth.basic stagingProps.stagingUsername, stagingProps.stagingPassword
     http.request(GET, XML) {
-        response.success = { resp, stagingProfiles ->
-            stagingProfiles.data.stagingProfile.each {profile ->
-                def profileId = profile.id.text()
+        response.success = { resp, stagingRepositories ->
+            stagingRepositories.data.stagingProfileRepository.each {stagingProfileRepository ->
+                def profileId = stagingProfileRepository.profileId.text()
+                def repoId = stagingProfileRepository.repositoryId.text()
                 log.debug "Found stage profile $profileId"
-                profile.stagingRepositoryIds.string.each { stagingRepositoryId ->
-                    def stageId = stagingRepositoryId.text()
-                    log.debug "\tFound open stage $stageId"
-                    stages << [profileId: profileId, stageId: stageId]
-                }
+                log.debug "\tFound open stage $repoId"
+                stages << [profileId: profileId, repoId: repoId]
             }
         }
 
@@ -289,7 +287,7 @@ def findStageByRepoPath(stages, repoPath) {
     assert repoPath
 
     stages.find {stage ->
-        String stageRepoUrl = "${stagingProps.stagingUrl}/service/local/repositories/${stage.stageId}/content/${repoPath.path}?isLocal"
+        String stageRepoUrl = "${stagingProps.stagingUrl}/service/local/repositories/${stage.repoId}/content/${repoPath.path}?isLocal"
         def http = new HTTPBuilder(stageRepoUrl)
         http.auth.basic stagingProps.stagingUsername, stagingProps.stagingPassword
         def found = false
@@ -316,7 +314,7 @@ def findStageByRepoPath(stages, repoPath) {
 
 def closeRepo(stage) {
     assert stage
-    assert stage.stageId
+    assert stage.repoId
     assert stage.profileId
 
     //Build stage repository closing XML
@@ -324,7 +322,7 @@ def closeRepo(stage) {
     def xml = new MarkupBuilder(writer)
     xml.promoteRequest {
         data {
-            stagedRepositoryId stage.stageId
+            stagedRepositoryId stage.repoId
             description 'Staging completed'
         }
     }
@@ -336,7 +334,7 @@ def closeRepo(stage) {
         body = writer.toString()
 
         response.success = { resp ->
-            log.debug 'Staging repo closed succussfully'
+            log.debug 'Staging repo closed successfully'
         }
 
         response.'400' = {resp, reader ->
