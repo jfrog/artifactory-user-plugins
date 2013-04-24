@@ -25,7 +25,7 @@ private def artifactCleanup(months, repos, log) {
         xml == null || Long.valueOf(new XmlSlurper().parseText(xml).lastDownloaded.text()) < toInMillis
     }.each {
         log.info "Deleting $it"
-        repositories.undeploy it
+        repositories.delete it
     }
     log.info "Finished cleanup, deleted $artifactsCleanedUp.size artifacts"
 }
