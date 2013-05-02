@@ -2,7 +2,8 @@ executions {
     cleanup() { params ->
         def months = params['months'] ? params['months'][0] as int: 6
         def repos = params['repos'] as String[]
-        artifactCleanup(months, repos, log)
+        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean: false
+        artifactCleanup(months, repos, log, dryRun)
     }
 }
 
@@ -13,19 +14,26 @@ jobs {
     }
 }
 
-private def artifactCleanup(months, repos, log) {
+private def artifactCleanup(int months, String[] repos, log, dryRun) {
     log.info "Starting artifact cleanup for repositories $repos, until $months months ago"
 
     def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
-    def toInMillis = monthsUntil.getTimeInMillis()
 
-    def artifactsCleanedUp = searches.artifactsCreatedOrModifiedInRange(null, monthsUntil, repos).findAll {
-        def xml = repositories.getXmlMetadata(it, 'artifactory.stats')
-        xml == null || Long.valueOf(new XmlSlurper().parseText(xml).lastDownloaded.text()) < toInMillis
-    }.each {
-        log.info "Deleting $it"
-        repositories.delete it
+    def artifactsCleanedUp =
+        searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos).
+        each {
+            if (dryRun) {
+                log.info "Found $it";
+            } else {
+                log.info "Deleting $it";
+                repositories.delete it
+            }
+        }
+
+    if (dryRun) {
+        log.info "Dry run - nothing deleted. found $artifactsCleanedUp.size artifacts"
+    } else {
+        log.info "Finished cleanup, deleted $artifactsCleanedUp.size artifacts"
     }
-    log.info "Finished cleanup, deleted $artifactsCleanedUp.size artifacts"
 }
