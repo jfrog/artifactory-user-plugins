@@ -1,7 +1,3 @@
-import org.artifactory.repo.RepoPathFactory
-import groovy.json.JsonBuilder
-
-
 /*
  * Artifactory is a binaries repository manager.
  * Copyright (C) 2013 JFrog Ltd.
@@ -19,28 +15,32 @@ import groovy.json.JsonBuilder
  * You should have received a copy of the GNU Lesser General Public License
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-/** 
- * This plugin do good.
- * 
- * Created with IntelliJ IDEA.
- * User: Itamar Berman-Eshel
- * Date: 7/14/13
- * Time: 2:39 PM
- * To change this template use File | Settings | File Templates.
+ 
+ import org.artifactory.repo.RepoPathFactory
+ 
+ import groovy.json.JsonBuilder
+ 
+ /**
+ *
+ * @author itamarb
+ * @since 21/07/13
  */
 
-/*
-* curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/stats?params=repo=REPOKEY"
-*/
+/** 
+ * This execution is named 'repoStats' and it will be called by REST by this name
+ * The expected (and mandatory) parameter is comma separated list of repos for which the stats will be be queried
+ * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=repo=repo,otherRepo"
+ */
 
 executions {
-    artifactCount() { params ->
+    repoStats() { params ->
         try {
             def json = new JsonBuilder()
             json {
+				//create a list of all repositories from the params
                 stats((params['repos'] as List).findResults { repo ->
                     repoPath = RepoPathFactory.create("$repo/")
+					//if the repository exists and was typed correctly, get it's artifact count and size and insert to the json
                     if (repositories.exists(repoPath)) {
                         [
                                 repoKey: repo,
@@ -67,74 +67,3 @@ executions {
         }
     }
 }
-
-
-
-
-//executions {
-//    artifactCount() { params ->
-//        try {
-//            def repos = params['repos'] as String[]
-//            def json = new JsonBuilder()
-//            json {
-//                stats repos.collect { repo ->
-//                    repoPath = RepoPathFactory.create(repo, '/')
-//                    if (repositories.exists(repoPath)) {
-//                        ["repoKey": repo,
-//                                "count": repositories.getArtifactsCount(repoPath),
-//                                "size": repositories.getArtifactsSize(repoPath)
-//                        ]
-//                    } else {
-//                        log.warn("Repository $repo does not exist")
-//                    }
-//                }
-//            }
-//
-//            message = json.toPrettyString()
-//
-//        } catch (e) {
-//            message = e.message
-//            status = 500
-//        }
-//    }
-//}
-
-
-
-
-//executions {
-//    artifactCount() { params ->
-//        try {
-//            def repos = params['repos'] as String[]
-//            def count = 0
-//            def size = 0
-//            def totalCount =0
-//            def totalSize =0
-//            def json = new JsonBuilder()
-//            repos.each {
-//             String repoKey = it
-//             def repoPath = RepoPathFactory.create(repoKey, '/')
-//             if (repositories.exists(repoPath)){
-//                    count = repositories.getArtifactsCount(repoPath)
-//                    size = repositories.getArtifactsSize(repoPath)
-//                    log.info "$repoPath has $count artifacts with a total size of $size"
-//                    totalCount += count
-//                    totalSize += size
-//                 json.Repository
-//                         {
-//                             "Name" repoKey
-//                             "Artifact Count" count
-//                             "Artifacts Size in kb" size
-//                         }
-//                }
-//                  else log.info "Repository $repoPath does not exist"
-//            }
-//            log.info "Found $totalCount artifacts with a total size of $totalSize"
-//            message = "Found $totalCount artifacts with a total size of $totalSize, Please see the log file for detailed information on each querried repository \n" +json.toPrettyString()
-//
-//        } catch (e) {
-//            message = "Error"
-//            status = 500
-//        }
-//    }
-//}
