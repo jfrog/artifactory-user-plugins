@@ -37,10 +37,10 @@ executions {
         try {
             def json = new JsonBuilder()
             json {
-				//create a list of all repositories from the params
+		//create a list of all repositories from the params
                 stats((params['repos'] as List).findResults { repo ->
                     repoPath = RepoPathFactory.create("$repo/")
-					//if the repository exists and was typed correctly, get its artifact count and size and insert to the json
+		    //if the repository exists and was typed correctly, get its artifact count and size and insert to the json
                     if (repositories.exists(repoPath)) {
                         [
                                 repoKey: repo,
