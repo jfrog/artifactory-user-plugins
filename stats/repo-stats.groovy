@@ -29,7 +29,7 @@
 /** 
  * This execution is named 'repoStats' and it will be called by REST by this name
  * The expected (and mandatory) parameter is comma separated list of repos for which the stats will be be queried
- * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=repo=repo,otherRepo"
+ * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=repos=repo,otherRepo"
  */
 
 executions {
