@@ -28,7 +28,7 @@ download {
      *                                                    physical repository the resource was found in).
      */
     beforeDownloadRequest { Request request, RepoPath repoPath ->
-        if (repoPath.path.endsWith(".jar") && isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
+        if (repoPath.path.endsWith(".json") && isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
             log.info 'Expiring json file: ${repoPath.name}'
             expired = true
         }
