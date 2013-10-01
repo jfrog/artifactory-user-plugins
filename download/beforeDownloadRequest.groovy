@@ -40,6 +40,10 @@ def isRemote(String repoKey) {
 }
 
 def shouldExpire(RepoPath repoPath) {
+    if(!repositories.exists(repoPath)) {
+	    return false
+	}
+	
     FileInfo fileInfo = repositories.getFileInfo(repoPath)
     long cacheAge = getCacheAge(fileInfo)
 
