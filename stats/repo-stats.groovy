@@ -17,6 +17,7 @@
  */
  
  import org.artifactory.repo.RepoPathFactory
+ import org.artifactory.repo.RepoPath
  
  import groovy.json.JsonBuilder
  
