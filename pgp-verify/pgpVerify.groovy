@@ -16,6 +16,8 @@
 * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+import com.sun.corba.se.spi.presentation.rmi.StubAdapter
 import groovyx.net.http.HTTPBuilder
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
@@ -41,7 +43,7 @@ download {
         if (verified == null) {
             def verifyResult
             try {
-                verifyResult = verify(responseRepoPath)
+                verifyResult = verify(responseRepoPath, request)
             } catch (Exception e) {
                 log.error("Verification error for artifact $responseRepoPath.", e)
                 return
@@ -74,8 +76,15 @@ download {
 @GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
 ])
 
-def verify(rp) {
+def verify(rp, request) {
     RepoPath ascRepoPath = RepoPathFactory.create(rp.repoKey, "${rp.path}.asc")
+    if (!repositories.exists(ascRepoPath)) {
+        //Try to fetch the asc in case of a remote by issuing a request to self
+        def type = repositories.getRepositoryConfiguration(ascRepoPath.repoKey).type
+        if (type == 'remote') {
+            fetchAsc(ascRepoPath, request)
+        }
+    }
     if (repositories.exists(ascRepoPath)) {
         //Get the public key id from the asc
         ResourceStreamHandle asc = repositories.getContent(ascRepoPath)
@@ -137,6 +146,19 @@ def verify(rp) {
             log.info "Artifact $rp successfully verified!"
         }
         verified
+    }
+}
+
+private void fetchAsc(RepoPath ascRepoPath, request) {
+    def key = ascRepoPath.repoKey.endsWith('-cache') ? ascRepoPath.repoKey[0..-7] : ascRepoPath.repoKey
+    def http = new HTTPBuilder("${request.servletContextUrl}/$key/$ascRepoPath.path")
+    http.request(GET, BINARY) { req ->
+        response.success = {
+            log.info("Downloaded $ascRepoPath")
+        }
+        response.failure = { resp ->
+            log.warn("Could not downloaded $ascRepoPath")
+        }
     }
 }
 
