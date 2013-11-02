@@ -17,8 +17,9 @@
 */
 
 
-import com.sun.corba.se.spi.presentation.rmi.StubAdapter
+import groovy.transform.Field
 import groovyx.net.http.HTTPBuilder
+import org.artifactory.exception.CancelException
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
@@ -27,15 +28,39 @@ import org.bouncycastle.openpgp.*
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.Method.GET
 
+/*@Field repos*/
+
 /**
  *
  * @author Yoav Landman
  */
 download {
+    /*repos = new ConfigSlurper().parse(
+            new File(ctx.artifactoryHome.pluginsDir, 'pgpVerify.properties').toURI().toURL()).repos as Set*/
 
-    altResponse { request, responseRepoPath ->
-        if (responseRepoPath.path.endsWith('.asc') || responseRepoPath.path.endsWith(".sha1")
-                || responseRepoPath.path.endsWith(".md5")) {
+    beforeDownloadRequest { request, repoPath ->
+        /*if (!repos.contains(repoPath.repoKey)) {
+            return
+        }*/
+        if (isSignatureFile(repoPath)) {
+            log.debug("Ignoring asc fetch for: ${repoPath}")
+            return
+        }
+        RepoPath ascRepoPath = RepoPathFactory.create(repoPath.repoKey, "${repoPath.path}.asc")
+        if (!repositories.exists(ascRepoPath)) {
+            //Try to fetch the asc in case of a remote by issuing a request to self
+            def type = repositories.getRepositoryConfiguration(ascRepoPath.repoKey).type
+            if (type == 'remote') {
+                fetchAsc(ascRepoPath, request)
+            }
+        }
+    }
+
+    beforeDownload { request, responseRepoPath ->
+        /*if (!repos.contains(responseRepoPath.repoKey)) {
+            return
+        }*/
+        if (isSignatureFile(responseRepoPath)) {
             log.debug("Ignoring download verification for: ${responseRepoPath}")
             return
         }
@@ -43,28 +68,25 @@ download {
         if (verified == null) {
             def verifyResult
             try {
-                verifyResult = verify(responseRepoPath, request)
+                verifyResult = verify(responseRepoPath)
             } catch (Exception e) {
                 log.error("Verification error for artifact $responseRepoPath.", e)
-                return
             }
 
             //Update the property
             repositories.setProperty(responseRepoPath, 'pgp-verified', verifyResult ? '1' : '0')
 
             if (!verifyResult) {
-                status = 403
-                message = 'Artifact has not been verified yet and cannot be downloaded.'
                 log.warn "Non-verified artifact request: $responseRepoPath"
+                throw new CancelException('Artifact has not been verified yet and cannot be downloaded.', 403)
             } else {
                 log.info "Successfully verified artifact: $responseRepoPath"
             }
-        } else if (verified == 1) {
+        } else if (verified == '1') {
             log.debug "Already verified artifact: $responseRepoPath"
-        } else if (verified == 0) {
+        } else if (verified == '0') {
             log.debug "Badly verified artifact: $responseRepoPath"
-            status = 403
-            message = 'Artifact failed verification and cannot be downloaded.'
+            throw new CancelException('Artifact failed verification and cannot be downloaded.', 403)
         }
     }
 }
@@ -76,15 +98,12 @@ download {
 @GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
 ])
 
-def verify(rp, request) {
+private boolean isSignatureFile(responseRepoPath) {
+    responseRepoPath.path.endsWith('.asc') || responseRepoPath.path.endsWith(".sha1") || responseRepoPath.path.endsWith(".md5")
+}
+
+def verify(rp) {
     RepoPath ascRepoPath = RepoPathFactory.create(rp.repoKey, "${rp.path}.asc")
-    if (!repositories.exists(ascRepoPath)) {
-        //Try to fetch the asc in case of a remote by issuing a request to self
-        def type = repositories.getRepositoryConfiguration(ascRepoPath.repoKey).type
-        if (type == 'remote') {
-            fetchAsc(ascRepoPath, request)
-        }
-    }
     if (repositories.exists(ascRepoPath)) {
         //Get the public key id from the asc
         ResourceStreamHandle asc = repositories.getContent(ascRepoPath)
@@ -119,6 +138,7 @@ def verify(rp, request) {
                                     signature.update(buffer, 0, n)
                                 }
                                 if (signature.verify()) {
+                                    inputStream.close()
                                     return true
                                 }
                             } catch (Exception e) {
@@ -133,7 +153,7 @@ def verify(rp, request) {
             }
 
             response.'404' = { resp ->
-                log.debug("No asc found for $rp")
+                log.debug("No public key found for $rp")
                 false
             }
 
