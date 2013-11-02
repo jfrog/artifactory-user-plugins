@@ -19,7 +19,6 @@
 
 import groovy.transform.Field
 import groovyx.net.http.HTTPBuilder
-import org.artifactory.exception.CancelException
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
@@ -28,20 +27,23 @@ import org.bouncycastle.openpgp.*
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.Method.GET
 
-/*@Field repos*/
+@Field repos
 
 /**
+ * Verifies downloaded files against their asc signature, by using the signature's public key from a public key server
+ * (currently using http://keys.gnupg.net). For remote repos, tries to fetch the .asc signature.
+ * Result is cached in the 'pgp-verified' property on artifacts, so that subsequent checks are cheap.
+ * Artifacts that have not been verified will cause a 403 forbidden response to be returned to downloaders.
  *
  * @author Yoav Landman
  */
 download {
-    /*repos = new ConfigSlurper().parse(
-            new File(ctx.artifactoryHome.pluginsDir, 'pgpVerify.properties').toURI().toURL()).repos as Set*/
+    repos = initRepos()
 
     beforeDownloadRequest { request, repoPath ->
-        /*if (!repos.contains(repoPath.repoKey)) {
+        if (!repos.contains(repoPath.repoKey)) {
             return
-        }*/
+        }
         if (isSignatureFile(repoPath)) {
             log.debug("Ignoring asc fetch for: ${repoPath}")
             return
@@ -57,9 +59,9 @@ download {
     }
 
     altResponse { request, responseRepoPath ->
-        /*if (!repos.contains(responseRepoPath.repoKey)) {
+        if (!repos.contains(request.repoPath.repoKey)) {
             return
-        }*/
+        }
         if (isSignatureFile(responseRepoPath)) {
             log.debug("Ignoring download verification for: ${responseRepoPath}")
             return
@@ -103,10 +105,6 @@ download {
 @GrabExclude('commons-codec:commons-codec'),
 @GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
 ])
-
-private boolean isSignatureFile(responseRepoPath) {
-    responseRepoPath.path.endsWith('.asc') || responseRepoPath.path.endsWith(".sha1") || responseRepoPath.path.endsWith(".md5")
-}
 
 def verify(rp) {
     RepoPath ascRepoPath = RepoPathFactory.create(rp.repoKey, "${rp.path}.asc")
@@ -196,4 +194,13 @@ private PGPSignature getSignature(ResourceStreamHandle asc) {
     } else {
         throw IllegalArgumentException("Bad signature")
     }
+}
+
+private boolean isSignatureFile(responseRepoPath) {
+    responseRepoPath.path.endsWith('.asc') || responseRepoPath.path.endsWith(".sha1") || responseRepoPath.path.endsWith(".md5")
+}
+
+private Set initRepos() {
+    def file = new File(ctx.artifactoryHome.pluginsDir, 'pgpVerify.properties')
+    file.exists() ? new ConfigSlurper().parse(file.toURI().toURL()).repos as Set : Collections.emptySet()
 }
