@@ -1,5 +1,5 @@
-Automatically validates the PGP .asc signature of downloadable files using the public key of the signature,
-by obtaining the key from a public key server.
+Automatically validates the PGP .asc signature of downloadable files using the public key of the signature, by obtaining the key from a public key server.
 Caches validation result using the 'pgp-verified' property on validated/non-validated files.
-Treats requests for non-validated files as forbidden and prevents their download.
+Will download missing .asc files.
+Treats download requests for non-validated files as forbidden and returns a 403 error.
 
