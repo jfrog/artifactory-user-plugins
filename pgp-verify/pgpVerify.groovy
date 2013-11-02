@@ -56,12 +56,16 @@ download {
         }
     }
 
-    beforeDownload { request, responseRepoPath ->
+    altResponse { request, responseRepoPath ->
         /*if (!repos.contains(responseRepoPath.repoKey)) {
             return
         }*/
         if (isSignatureFile(responseRepoPath)) {
             log.debug("Ignoring download verification for: ${responseRepoPath}")
+            return
+        }
+        if (!repositories.exists(responseRepoPath)) {
+            //Upon initial download into cache content is not seen yet
             return
         }
         def verified = repositories.getProperties(responseRepoPath).getFirst('pgp-verified')
@@ -78,7 +82,8 @@ download {
 
             if (!verifyResult) {
                 log.warn "Non-verified artifact request: $responseRepoPath"
-                throw new CancelException('Artifact has not been verified yet and cannot be downloaded.', 403)
+                status = 403
+                message = 'Artifact has not been verified yet and cannot be downloaded.'
             } else {
                 log.info "Successfully verified artifact: $responseRepoPath"
             }
@@ -86,7 +91,8 @@ download {
             log.debug "Already verified artifact: $responseRepoPath"
         } else if (verified == '0') {
             log.debug "Badly verified artifact: $responseRepoPath"
-            throw new CancelException('Artifact failed verification and cannot be downloaded.', 403)
+            status = 403
+            message = 'Artifact failed verification and cannot be downloaded.'
         }
     }
 }
