@@ -39,11 +39,12 @@ import static groovyx.net.http.Method.GET
  */
 download {
     repos = initRepos()
+    java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
 
     beforeDownloadRequest { request, repoPath ->
-        if (!repos.contains(repoPath.repoKey)) {
+        /*if (!repos.contains(repoPath.repoKey)) {
             return
-        }
+        }*/
         if (isSignatureFile(repoPath)) {
             log.debug("Ignoring asc fetch for: ${repoPath}")
             return
@@ -52,7 +53,7 @@ download {
         if (!repositories.exists(ascRepoPath)) {
             //Try to fetch the asc in case of a remote by issuing a request to self
             def type = repositories.getRepositoryConfiguration(ascRepoPath.repoKey).type
-            if (type == 'remote') {
+            if (type != 'local') {
                 fetchAsc(ascRepoPath, request)
             }
         }
@@ -122,8 +123,7 @@ def verify(rp) {
         }
 
         //Try to get the public key for the detached asc signature
-        def http = new HTTPBuilder("http://keys.gnupg.net/pks/lookup?op=get&search=0x$hexPublicKeyId")
-
+        def http = new HTTPBuilder("http://pgp.mit.edu:11371//pks/lookup?op=get&search=0x$hexPublicKeyId")
         def verified = http.request(GET, BINARY) { req ->
             response.success = { resp, inputStream ->
                 PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(inputStream))
@@ -157,12 +157,12 @@ def verify(rp) {
             }
 
             response.'404' = { resp ->
-                log.debug("No public key found for $rp")
+                log.warn("No public key found for $rp: ${resp.statusLine}")
                 false
             }
 
             response.failure = { resp ->
-                throw Exception("Could not verify $rp: $resp.status - $resp.statusLine")
+                throw Exception("Could not verify ${rp}: ${resp.statusLine}")
             }
         }
 
