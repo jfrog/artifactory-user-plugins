@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-import com.google.common.collect.HashMultimap
 @Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.1', root = 'http://repo.jfrog.org/artifactory/'),
-@Grab(group = 'org.ccil.cowan.tagsoup', module = 'tagsoup', version = '1.2.1', root = 'http://repo.jfrog.org/artifactory/')
-]) import groovy.xml.MarkupBuilder
+@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6'),
+@Grab(group = 'org.ccil.cowan.tagsoup', module = 'tagsoup', version = '1.2.1'),
+@GrabExclude('commons-codec:commons-codec'),
+@GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
+])
+
+import com.google.common.collect.HashMultimap
+import groovy.xml.MarkupBuilder
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpRequestInterceptor
 import org.apache.http.entity.InputStreamEntity
