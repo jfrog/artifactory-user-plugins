@@ -171,16 +171,20 @@ executions {
                 return
             }
             PullConfig pullConf = baseConf.pullConfigs[confKey]
-            doSync(
+            def res = doSync(
                     new RemoteBuildService(pullConf.source, log),
                     new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins),
                     pullConf.buildNames,
                     pullConf.delete
             )
-
-            status = 200
-            message = "Builds ${pullConf.buildNames} from ${pullConf.source.url} were successfully replicated\n"
-
+            if (!res) {
+                status = 404
+                message = "Nothing found to synchronize using Pull ${pullConf.key}"
+            } else {
+                status = 200
+                message = "Builds ${pullConf.buildNames} from ${pullConf.source.url}" +
+                        " successfully replicated:\n${res.join('\n')}\n"
+            }
         } catch (Exception e) {
             //aborts during execution
             log.error("Failed pull config", e)
@@ -206,18 +210,23 @@ executions {
             PushConfig pushConf = baseConf.pushConfigs[confKey]
             def localBuildService = new LocalBuildService(ctx, log, false, false)
 
+            List<String> res = []
             pushConf.destinations.each { destServer ->
-                doSync(
+                res.addAll(doSync(
                         localBuildService,
                         new RemoteBuildService(destServer, log),
                         pushConf.buildNames,
                         pushConf.delete
-                )
+                ))
             }
-
-            status = 200
-            message = "Builds ${pushConf.buildNames} were successfully replicated to ${pushConf.destinations.collect { it.url }}\n"
-
+            if (!res) {
+                status = 404
+                message = "Nothing found to synchronize using Push ${pushConf.key}"
+            } else {
+                status = 200
+                message = "Builds ${pushConf.buildNames} were successfully replicated" +
+                        " to ${pushConf.destinations.collect { it.url }}\n${res.join('\n')}\n"
+            }
         } catch (Exception e) {
             //aborts during execution
             log.error("Failed pull config", e)
@@ -233,6 +242,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
     buildNamesToSync.each { BuildRun srcBuild ->
         if (srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
             log.debug "Build ${srcBuild} is already sync!"
+            res << "${srcBuild.name}:already-synched"
         } else {
             String buildName = srcBuild.name
             def srcBuilds = src.getBuildNumbers(buildName)
@@ -252,6 +262,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                     dest.deleteBuild(b)
                 }
             }
+            res << "${srcBuild.name}:${common.size()}:${srcBuilds.size()}:${destBuilds.size()}"
         }
     }
     res
