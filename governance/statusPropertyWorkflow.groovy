@@ -1,4 +1,3 @@
-import com.google.common.collect.SetMultimap
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.blackduck.generic.model.ExternalComponentInfo
 import org.artifactory.addon.blackduck.service.BlackDuckService
