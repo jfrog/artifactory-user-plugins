@@ -144,19 +144,26 @@ import org.artifactory.storage.build.service.BuildStoreService
 import org.artifactory.storage.db.DbService
 import org.artifactory.util.HttpUtils
 import org.jfrog.build.api.Build
+import org.slf4j.Logger
 
 import java.util.concurrent.Callable
 
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.ContentType.JSON
-import static groovyx.net.http.Method.PUT
 import static groovyx.net.http.Method.DELETE
+import static groovyx.net.http.Method.PUT
 
-def baseConf = new BaseConfiguration(ctx, log)
+def baseConfHolder = new BaseConfigurationHolder(ctx, log)
 
 executions {
-    buildSyncPullConfig() { params ->
+    buildSyncPullConfig(groups: ['synchronizer']) { params ->
         try {
+            def baseConf = baseConfHolder.getCurrent()
+            if (baseConfHolder.errors) {
+                status = 500
+                message = "Configuration file is incorrect: ${baseConfHolder.errors.join("\n")}"
+                return
+            }
             String confKey = params?.get('key')?.get(0) as String
             if (!confKey || !baseConf.pullConfigs.containsKey(confKey)) {
                 status = 400
@@ -182,8 +189,14 @@ executions {
         }
     }
 
-    buildSyncPushConfig() { params ->
+    buildSyncPushConfig(groups: ['synchronizer']) { params ->
         try {
+            def baseConf = baseConfHolder.getCurrent()
+            if (baseConfHolder.errors) {
+                status = 500
+                message = "Configuration file is incorrect: ${baseConfHolder.errors.join("\n")}"
+                return
+            }
             String confKey = params?.get('key')?.get(0) as String
             if (!confKey || !baseConf.pushConfigs.containsKey(confKey)) {
                 status = 400
@@ -280,8 +293,11 @@ abstract class BuildListBase {
     }
 
     abstract Set<BuildRun> getBuildNumbers(String buildName);
+
     abstract Build getBuildInfo(BuildRun b);
+
     abstract def addBuild(Build buildInfo);
+
     abstract def deleteBuild(BuildRun buildRun);
 }
 
@@ -515,18 +531,68 @@ class LocalBuildService extends BuildListBase {
     }
 }
 
+class BaseConfigurationHolder {
+    File confFile
+    Logger log
+    BaseConfiguration current = null
+    long confFileLastChecked = 0L
+    long confFileLastModified = 0L
+    List<String> errors
+
+    BaseConfigurationHolder(ctx, log) {
+        this.log = log
+        this.confFile = new File("$ctx.artifactoryHome.etcDir/plugins", "buildSync.json")
+    }
+
+    BaseConfiguration getCurrent() {
+        log.debug "Retrieving current conf $confFileLastChecked $confFileLastModified $current"
+        if (current == null || needReload()) {
+            log.info "Current conf reloading"
+            if (!confFile || !confFile.exists()) {
+                errors = [ "The conf file ${confFile.getAbsolutePath()} does not exists!" ]
+            } else {
+                try {
+                    current = new BaseConfiguration(confFile,log)
+                    errors = current.findErrors()
+                    if (errors.isEmpty()) {
+                        confFileLastChecked = System.currentTimeMillis()
+                        confFileLastModified = confFile.lastModified()
+                    }
+                } catch (Exception e) {
+                    def msg = "Something not good happen during parsing: ${e.getMessage()}"
+                    log.error(msg, e)
+                    errors = [msg]
+                }
+            }
+            if (errors) {
+                log.error(
+                        "Some validation errors appeared while parsing ${confFile.absolutePath}\n" +
+                                "${errors.join("\n")}")
+            }
+        }
+        current
+    }
+
+    boolean needReload() {
+        // Every 10secs check
+        if ((System.currentTimeMillis() - confFileLastChecked) > 10000L) {
+            !confFile.exists() || confFile.lastModified() != confFileLastModified
+        } else {
+            false
+        }
+    }
+}
+
 class BaseConfiguration {
-    def slurper
     Map<String, Server> servers = [:]
     Map<String, PullConfig> pullConfigs = [:]
     Map<String, PushConfig> pushConfigs = [:]
 
-    BaseConfiguration(ctx, log) {
-        def confFile = new File("$ctx.artifactoryHome.etcDir/plugins", "buildSync.json")
+    BaseConfiguration(File confFile, log) {
         def reader
         try {
             reader = new FileReader(confFile)
-            slurper = new JsonSlurper().parse(reader)
+            def slurper = new JsonSlurper().parse(reader)
             slurper.servers.each {
                 def s = new Server(it)
                 log.info "Adding Server ${s.key} : ${s.url}"
@@ -534,21 +600,31 @@ class BaseConfiguration {
             }
             slurper.pullConfigs.each {
                 def p = new PullConfig(it, servers)
-                log.info "Adding Pull Config ${p.key} reading from ${p.source.key}"
+                log.info "Adding Pull Config ${p.key} reading from ${p.source?.key}"
                 pullConfigs.put(p.key, p)
             }
             slurper.pushConfigs.each {
                 def p = new PushConfig(it, servers)
-                log.info "Adding Push Config ${p.key} pushing to [${p.destinations.collect { it.key }.join(',')}]"
+                log.info "Adding Push Config ${p.key} pushing to [${p.destinations.collect { it?.key }.join(',')}]"
                 pushConfigs.put(p.key, p)
             }
-        } catch (Exception e) {
-            log.error("Something not good parsing ${confFile.absolutePath}", e)
         } finally {
             if (reader) {
                 reader.close()
             }
         }
+    }
+
+    def findErrors() {
+        if (!servers) {
+            return ["No servers found or declared in build sync JSON configuration"]
+        }
+        List<String> errors = []
+        BaseConfiguration conf = this
+        errors.addAll(servers.values().collect { v -> v?.isInvalid() }.grep { it })
+        errors.addAll(pullConfigs.values().collect { v -> v?.isInvalid(conf) }.grep { it })
+        errors.addAll(pushConfigs.values().collect { v -> v?.isInvalid(conf) }.grep { it })
+        errors
     }
 }
 
@@ -558,16 +634,29 @@ class Server {
     Server(slurp) {
         key = slurp.key
         url = slurp.url
-        if (!url.endsWith('/')) {
+        if (url && !url.endsWith('/')) {
             url += '/'
         }
         user = slurp.user
         password = slurp.password
     }
+
+    def isInvalid() {
+        if (!key) {
+            "Server configuration ${url} has no key!"
+        } else if (!url) {
+            "Server configuration ${key} has no URL!"
+        } else if (!user || !password) {
+            "Server configuration ${key} has no user or password!"
+        } else {
+            ""
+        }
+    }
 }
 
 class PullConfig {
     String key
+    String sourceKey
     Server source
     List<String> buildNames
     boolean delete
@@ -576,11 +665,26 @@ class PullConfig {
 
     PullConfig(def slurp, Map<String, Server> servers) {
         key = slurp.key
-        source = servers.get(slurp.source)
+        sourceKey = slurp.source
+        source = servers.get(sourceKey)
         buildNames = slurp.buildNames as List
         delete = slurp.delete as boolean
         reinsert = slurp.reinsert as boolean
         activatePlugins = slurp.activatePlugins as boolean
+    }
+
+    def isInvalid(BaseConfiguration conf) {
+        if (!key) {
+            "Pull configuration ${source} has no key!"
+        } else if (!sourceKey) {
+            "Pull configuration ${key} has no source key defined!"
+        } else if (!source) {
+            "Pull configuration ${key} has source key ${sourceKey} which is not part of the servers ${conf.servers.keySet()}!"
+        } else if (!buildNames || buildNames.any { !it }) {
+            "Pull configuration ${key} has no build names or one empty build name in ${buildNames}!"
+        } else {
+            ""
+        }
     }
 }
 
@@ -594,11 +698,26 @@ class PushConfig {
     PushConfig(def slurp, Map<String, Server> servers) {
         key = slurp.key
         slurp.destinations.each {
-            destinations << servers.get(it)
+            def server = servers.get(it)
+            if (server) {
+                destinations << server
+            }
         }
         buildNames = slurp.buildNames as List
         delete = slurp.delete as boolean
         activateOnSave = slurp.activateOnSave as boolean
+    }
+
+    def isInvalid(BaseConfiguration conf) {
+        if (!key) {
+            "Push configuration ${destinations} has no key!"
+        } else if (!destinations) {
+            "Push configuration ${key} has no destinations found in the servers ${conf.servers.keySet()}!"
+        } else if (!buildNames || buildNames.any { !it }) {
+            "Push configuration ${key} has no build names or one empty build name in ${buildNames}!"
+        } else {
+            ""
+        }
     }
 }
 
