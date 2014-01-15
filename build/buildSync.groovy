@@ -451,11 +451,11 @@ class RemoteBuildService extends BuildListBase {
             uri.path = "api/build/${buildRun.name}"
             uri.query = [buildNumbers: buildRun.number, artifacts: 0, deleteAll: 0]
             response.success = {
-                log.info "Successfully deleted builds ${buildInfo.name}/${buildInfo.number}"
+                log.info "Successfully deleted build ${buildRun.name}/${buildRun.number}"
             }
         }
         if (lastFailure != null) {
-            def msg = "Could not delete build ${buildInfo.name}/${buildInfo.number} in ${server.url} got: ${lastFailure.reasonPhrase}"
+            def msg = "Could not delete build ${buildRun.name}/${buildRun.number} in ${server.url} got: ${lastFailure.reasonPhrase}"
             log.warn msg
         }
     }
@@ -558,7 +558,7 @@ class BaseConfigurationHolder {
     BaseConfiguration getCurrent() {
         log.debug "Retrieving current conf $confFileLastChecked $confFileLastModified $current"
         if (current == null || needReload()) {
-            log.info "Current conf reloading"
+            log.info "Reloading configuration from ${confFile.getAbsolutePath()}"
             if (!confFile || !confFile.exists()) {
                 errors = [ "The conf file ${confFile.getAbsolutePath()} does not exists!" ]
             } else {
