@@ -83,39 +83,13 @@
  *   1.5. Verify in the ${ARTIFACTORY_HOME}/logs/artifactory.log that the plugin loaded the configuration correctly.
  * 2. Executing Pull Replication:
  *  2.1. The plugin may run a pull configured key from buildSync.json
- *  2.2. [WIP] The plugin can receive a full JSON content for pull, like:
- *       {
- *          "sourceUrl": "http://us-east.acme.com/artifactory",
- *          "sourceUser": "buildSynchronizer",
- *          "sourcePassword": "XXXXXXX",
- *          "buildNames": ["productA :: nightly-release", "productB :: nightly-release"],
- *          "delete": false,
- *          "activatePlugins": false,
- *          "reinsert": false
- *      },
- *
- *   2.3. Call the predefined pull config through the plugin execution by running:
+ *  2.2. Call the predefined pull config through the plugin execution by running:
  *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=ABRelease"
- *
- *   2.4. [WIP] You can pass the full JSON for the plugin in the REST call:
- *    curl -X POST -v -u admin:password -H "Content-Type: application/json" -T pullEast.json "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullJson"
  *
  * 3. Executing Push Replication:
  *  3.1. The plugin may run a push configured key from buildSync.json
- *  3.2. [WIP] The plugin can receive a full JSON content for push, like:
- *       {
- *          "destinationUrl": "http://us-west.acme.com/artifactory",
- *          "destinationUser": "buildSynchronizer",
- *          "destinationPassword": "XXXXXXX",
- *          "buildNames": ["*nightly-release"],
- *          "delete": true
- *      },
- *
- *   3.3. Call the predefined push config through the plugin execution by running:
+ *  3.3. Call the predefined push config through the plugin execution by running:
  *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPushConfig?params=key=ABPush"
- *
- *   3.4. [WIP] You can pass the full JSON for the plugin in the REST call:
- *    curl -X POST -v -u admin:password -H "Content-Type: application/json" -T pushWest.json "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPushJson"
  *
  */
 
@@ -232,6 +206,44 @@ executions {
             log.error("Failed pull config", e)
             status = 500
             message = e.message
+        }
+    }
+}
+
+build {
+    afterSave { buildRun ->
+        log.debug "Checking if ${buildRun.name} should be pushed!"
+        def baseConf = baseConfHolder.getCurrent()
+        if (!baseConfHolder.errors) {
+            baseConf.eventPushConfigs.each { PushConfig pushConf ->
+                pushConf.buildNames.each { String buildNameFilter ->
+                    pushIfMatch(buildRun as DetailedBuildRunImpl, pushConf, buildNameFilter)
+                }
+            }
+        }
+    }
+}
+
+def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String buildNameFilter) {
+    String buildName = buildRun.name
+    log.debug "Checking if ${buildRun.name} match $buildNameFilter"
+    boolean match
+    if (buildNameFilter.contains('*')) {
+        match = buildName.matches(buildNameFilter);
+    } else {
+        match = buildNameFilter.equals(buildName)
+    }
+    if (match) {
+        pushConf.destinations.each { Server server ->
+            try {
+                log.debug "Pushing ${buildRun.name}:${buildRun.number} to ${server.url}"
+                def rbs = new RemoteBuildService(server, log)
+                rbs.addBuild(buildRun.build)
+            } catch (Exception e) {
+                log.error(
+                        "Sending ${buildRun.name}:${buildRun.number} to ${server.url} failed with: ${e.getMessage()}",
+                        e)
+            }
         }
     }
 }
@@ -560,10 +572,10 @@ class BaseConfigurationHolder {
         if (current == null || needReload()) {
             log.info "Reloading configuration from ${confFile.getAbsolutePath()}"
             if (!confFile || !confFile.exists()) {
-                errors = [ "The conf file ${confFile.getAbsolutePath()} does not exists!" ]
+                errors = ["The conf file ${confFile.getAbsolutePath()} does not exists!"]
             } else {
                 try {
-                    current = new BaseConfiguration(confFile,log)
+                    current = new BaseConfiguration(confFile, log)
                     errors = current.findErrors()
                     if (errors.isEmpty()) {
                         confFileLastChecked = System.currentTimeMillis()
@@ -598,6 +610,7 @@ class BaseConfiguration {
     Map<String, Server> servers = [:]
     Map<String, PullConfig> pullConfigs = [:]
     Map<String, PushConfig> pushConfigs = [:]
+    List<PushConfig> eventPushConfigs = []
 
     BaseConfiguration(File confFile, log) {
         def reader
@@ -618,6 +631,10 @@ class BaseConfiguration {
                 def p = new PushConfig(it, servers)
                 log.info "Adding Push Config ${p.key} pushing to [${p.destinations.collect { it?.key }.join(',')}]"
                 pushConfigs.put(p.key, p)
+                if (p.activateOnSave) {
+                    eventPushConfigs.add(p)
+                    log.info "Push Config ${p.key} activated for push on save"
+                }
             }
         } finally {
             if (reader) {
