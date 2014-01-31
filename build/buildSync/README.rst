@@ -101,7 +101,7 @@ Each server should have a unique key identifying it, and url/user/pass used to a
 - Each pull configuration should have a unique key identifying it. (mandatory)
 - The source is pointing to one server key and should exists in the above list of servers. (mandatory)
 - The buildNames are a list of string to filter build names to synchronized. (mandatory)
-- If the string contains a ``'*'`` star character it is considered as a regular expression. If not the build name should be exactly equal (with case sensitivity).
+- If the string contains a ``*`` star character it is considered as a regular expression. If not the build name should be exactly equal (with case sensitivity).
 - The delete flag tells the synchronization to delete all the local build numbers that do not exists in the remote server. (Optional, false by default)
 - The reinsert flag tells the synchronization to fully reinsert the build info locally. (Optional, false by default). This will activate all the plugins associated with build deployment, including:
 
