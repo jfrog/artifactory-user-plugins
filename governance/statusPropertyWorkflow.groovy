@@ -135,7 +135,7 @@ storage {
 jobs {
     // Create the pending CC requests for all NEW artifacts
     createCodeCenterRequests(interval: 300000, delay: 300000) {
-        AddonsManager addonsManager = ctx.getBean(AddonsManager.class)
+        AddonsManager addonsManager = ctx.beanForType(AddonsManager.class)
         BlackDuckWebAddon blackDuckWebAddon = addonsManager.addonByType(BlackDuckWebAddon.class)
         if (!blackDuckWebAddon.isEnableIntegration()) {
             log.error "Blackduck integration configuration not done!"
@@ -143,9 +143,9 @@ jobs {
         }
         log.debug "Finding NEW artifacts that needs BlackDuck approval"
         // Here in how to get the CC connection API object
-        BlackDuckApplicationService bdAppService = ctx.getBean(BlackDuckApplicationService.class)
-        BlackDuckService bdService = ctx.getBean(BlackDuckService.class)
-        RepositoryService repoService = ctx.getBean(RepositoryService.class)
+        BlackDuckApplicationService bdAppService = ctx.beanForType(BlackDuckApplicationService.class)
+        BlackDuckService bdService = ctx.beanForType(BlackDuckService.class)
+        RepositoryService repoService = ctx.beanForType(RepositoryService.class)
         //CodeCenterServerProxyV6_4_0_Integration ccConn = bdService.blackDuckWSProvider.blackDuckConnectionProvider.getCodeCenterConnection()
         def filter = [:]
         filter.put(STATUS_PROP_NAME, GeneralStatuses.NEW.name())
