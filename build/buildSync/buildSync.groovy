@@ -277,7 +277,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                 if (buildInfo) {
                     dest.addBuild(buildInfo)
                     added++
-                    if (added >= max) break
+                    if (max != 0 && added >= max) break
                 }
             }
             if (delete) {
