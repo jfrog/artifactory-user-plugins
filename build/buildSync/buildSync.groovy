@@ -84,7 +84,9 @@
  * 2. Executing Pull Replication:
  *  2.1. The plugin may run a pull configured key from buildSync.json
  *  2.2. Call the predefined pull config through the plugin execution by running:
- *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=ABRelease"
+ *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=ABRelease|max=N|force=0"
+ *       max params defined a reversing order sync max number
+ *       force params will not stop sync if latest build match
  *
  * 3. Executing Push Replication:
  *  3.1. The plugin may run a push configured key from buildSync.json
@@ -144,12 +146,16 @@ executions {
                 message = "buildSyncPullConfig needs a key params part of ${baseConf.pullConfigs.keySet()}"
                 return
             }
+            def maxS = params?.get('max')?.get(0) as String
+            int max = maxS ? Integer.valueOf(maxS) : 0
+            def forceS = params?.get('force')?.get(0) as String
+            boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PullConfig pullConf = baseConf.pullConfigs[confKey]
             def res = doSync(
                     new RemoteBuildService(pullConf.source, log),
                     new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins),
                     pullConf.buildNames,
-                    pullConf.delete
+                    pullConf.delete, max, force
             )
             if (!res) {
                 status = 404
@@ -190,7 +196,7 @@ executions {
                         localBuildService,
                         new RemoteBuildService(destServer, log),
                         pushConf.buildNames,
-                        pushConf.delete
+                        pushConf.delete, 0, false
                 ))
             }
             if (!res) {
@@ -248,11 +254,12 @@ def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String build
     }
 }
 
-def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boolean delete) {
+def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boolean delete, int max, boolean force) {
     List res = []
-    Set<BuildRun> buildNamesToSync = src.filterBuildNames(buildNames)
-    buildNamesToSync.each { BuildRun srcBuild ->
-        if (srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
+    NavigableSet<BuildRun> buildNamesToSync = src.filterBuildNames(buildNames)
+    def set = max == 0 ? buildNamesToSync : buildNamesToSync.descendingSet()
+    set.each { BuildRun srcBuild ->
+        if (!force && srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
             log.debug "Build ${srcBuild} is already sync!"
             res << "${srcBuild.name}:already-synched"
         } else {
@@ -263,10 +270,14 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
             log.info "Found ${common.size()} identical builds"
             destBuilds.removeAll(common)
             srcBuilds.removeAll(common)
-            srcBuilds.each { BuildRun b ->
+            int added = 0
+            def iter = max == 0 ? srcBuilds.iterator() : srcBuilds.descendingIterator()
+            for (BuildRun b : iter) {
                 Build buildInfo = src.getBuildInfo(b)
                 if (buildInfo) {
                     dest.addBuild(buildInfo)
+                    added++
+                    if (added >= max) break
                 }
             }
             if (delete) {
@@ -274,29 +285,43 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                     dest.deleteBuild(b)
                 }
             }
-            res << "${srcBuild.name}:${common.size()}:${srcBuilds.size()}:${destBuilds.size()}"
+            res << "${srcBuild.name}:${common.size()}:$added:${srcBuilds.size()}:${destBuilds.size()}"
         }
     }
     res
 }
 
 abstract class BuildListBase {
+    def comparator = new Comparator<BuildRun>() {
+        @Override
+        int compare(BuildRun o1, BuildRun o2) {
+            int i = o1.getStartedDate().compareTo(o2.getStartedDate())
+            if (i != 0) {
+                return i
+            }
+            i = o1.getName().compareTo(o2.getName())
+            if (i != 0) {
+                return i
+            }
+            return o1.getNumber().compareTo(o2.getNumber())
+        }
+    }
     def log
-    private Set<BuildRun> _allLatestBuilds = null
+    private NavigableSet<BuildRun> _allLatestBuilds = null
 
     BuildListBase(log) { this.log = log }
 
-    Set<BuildRun> getAllLatestBuilds() {
+    NavigableSet<BuildRun> getAllLatestBuilds() {
         if (_allLatestBuilds == null) {
             _allLatestBuilds = loadAllBuilds()
         }
         return _allLatestBuilds
     }
 
-    abstract Set<BuildRun> loadAllBuilds();
+    abstract NavigableSet<BuildRun> loadAllBuilds();
 
-    Set<BuildRun> filterBuildNames(List<String> buildNames) {
-        Set<BuildRun> result = new HashSet<>()
+    NavigableSet<BuildRun> filterBuildNames(List<String> buildNames) {
+        NavigableSet<BuildRun> result = new TreeSet<>(comparator)
         buildNames.each { String buildName ->
             if (buildName.contains('*')) {
                 result.addAll(getAllLatestBuilds().findAll { it.name.matches(buildName) })
@@ -315,7 +340,7 @@ abstract class BuildListBase {
         getAllLatestBuilds().find { it.name == buildName }?.started
     }
 
-    abstract Set<BuildRun> getBuildNumbers(String buildName);
+    abstract NavigableSet<BuildRun> getBuildNumbers(String buildName);
 
     abstract Build getBuildInfo(BuildRun b);
 
@@ -365,9 +390,9 @@ class RemoteBuildService extends BuildListBase {
      * @return
      */
     @Override
-    Set<BuildRun> loadAllBuilds() {
+    NavigableSet<BuildRun> loadAllBuilds() {
         lastFailure = null
-        Set<BuildRun> result = new HashSet<>()
+        Set<BuildRun> result = new TreeSet<>(comparator)
         log.info "Getting all builds from ${server.url}api/build"
         http.get(contentType: JSON, path: 'api/build') { resp, json ->
             json.builds.each { b ->
@@ -391,9 +416,9 @@ class RemoteBuildService extends BuildListBase {
     }
 
     @Override
-    Set<BuildRun> getBuildNumbers(String buildName) {
+    NavigableSet<BuildRun> getBuildNumbers(String buildName) {
         lastFailure = null
-        Set<BuildRun> result = new HashSet<>()
+        Set<BuildRun> result = new TreeSet<>(comparator)
         log.info "Getting all build numbers from ${server.url}api/build/$buildName"
         http.get(contentType: JSON, path: "api/build/$buildName") { resp, json ->
             json.buildsNumbers.each { b ->
@@ -494,17 +519,19 @@ class LocalBuildService extends BuildListBase {
     }
 
     @Override
-    Set<BuildRun> loadAllBuilds() {
-        def res = buildStoreService.getLatestBuildsByName().collect {
+    NavigableSet<BuildRun> loadAllBuilds() {
+        def res = new TreeSet<BuildRun>(comparator);
+        res.addAll(buildStoreService.getLatestBuildsByName().collect {
             new BuildRunImpl(it.name, "LATEST", it.started)
-        }
+        })
         log.info "Found ${res.size()} builds locally"
         res
     }
 
     @Override
-    Set<BuildRun> getBuildNumbers(String buildName) {
-        def res = buildStoreService.findBuildsByName(buildName).collect { new BuildRunImpl(it) }
+    NavigableSet<BuildRun> getBuildNumbers(String buildName) {
+        def res = new TreeSet<BuildRun>(comparator);
+        res.addAll(buildStoreService.findBuildsByName(buildName).collect { new BuildRunImpl(it) })
         log.info "Found ${res.size()} local builds named $buildName"
         res
     }
