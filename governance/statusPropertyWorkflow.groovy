@@ -4,8 +4,7 @@ import org.artifactory.addon.blackduck.service.BlackDuckApplicationService
 import org.artifactory.addon.blackduck.service.BlackDuckService
 import org.artifactory.addon.blackduck.service.impl.BlackDuckRequestInfo
 import org.artifactory.addon.blackduck.service.impl.BlackDuckUpdateResult
-import org.artifactory.addon.blackduck.service.impl.CodeCenterServerProxyV6_4_0_Integration
-import org.artifactory.addon.blackduck.service.impl.Utils
+import org.artifactory.addon.blackduck.service.impl.BlackDuckUtils
 import org.artifactory.addon.wicket.BlackDuckWebAddon
 import org.artifactory.api.license.LicenseInfo
 import org.artifactory.api.module.ModuleInfo
@@ -62,10 +61,10 @@ executions {
             httpMethod: 'POST', users: ['blackduck'].toSet(),
             params: [id:'', externalid: '', status: 'APPROVED']) { params ->
         String id = params?.get('id')?.get(0)
-        String externalid = params?.get('externalid')?.get(0)
+        String externalId = params?.get('externalId')?.get(0)
         String ccStatus = params?.get('status')?.get(0)
-        log.debug "trying to change cc status of id=$id or externalid=$externalid with status=$ccStatus"
-        if (!id && !externalid) {
+        log.debug "trying to change cc status of id=$id or externalid=$externalId with status=$ccStatus"
+        if (!id && !externalId) {
             status = 400
             message = "A blackduck ID or externalID is needed to set the new status!"
             return
@@ -87,12 +86,12 @@ executions {
         if (id) {
             filter.put(ID_PROP_NAME, id)
         } else {
-            filter.put(EXTERNALID_PROP_NAME, externalid)
+            filter.put(EXTERNALID_PROP_NAME, externalId)
         }
         List<RepoPath> found = searches.itemsByProperties(forMap(filter))
         if (!found) {
             status = 404
-            message = "No artifacts found with id=$id or externalid=$externalid"
+            message = "No artifacts found with id=$id or externalid=$externalId"
             return
         }
         List<String> results = ['Converted BEGIN']
@@ -146,7 +145,6 @@ jobs {
         BlackDuckApplicationService bdAppService = ctx.beanForType(BlackDuckApplicationService.class)
         BlackDuckService bdService = ctx.beanForType(BlackDuckService.class)
         RepositoryService repoService = ctx.beanForType(RepositoryService.class)
-        //CodeCenterServerProxyV6_4_0_Integration ccConn = bdService.blackDuckWSProvider.blackDuckConnectionProvider.getCodeCenterConnection()
         def filter = [:]
         filter.put(STATUS_PROP_NAME, GeneralStatuses.NEW.name())
         List<RepoPath> paths = searches.itemsByProperties(forMap(filter))
@@ -155,7 +153,7 @@ jobs {
             // Be careful that all POM and JARS for the same GAV are retrieved here
             log.debug "Found new artifact ${newArtifact.getId()} that needs approval!"
             ModuleInfo moduleInfo = repoService.getItemModuleInfo(newArtifact);
-            String gav = Utils.getGav(moduleInfo);
+            String gav = BlackDuckUtils.getGav(moduleInfo);
             if (!requestsByGav.containsKey(gav)) {
                 ExternalComponentInfo eci = bdService.getExternalComponentInfo(newArtifact)
                 def req = new BlackDuckRequestInfo();
