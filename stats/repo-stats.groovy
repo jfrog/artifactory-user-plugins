@@ -28,8 +28,8 @@
 
 /** 
  * This execution is named 'repoStats' and it will be called by REST by this name
- * The expected (and mandatory) parameter is comma separated list of repos for which the stats will be be queried
- * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=repos=repo,otherRepo"
+ * The expected (and mandatory) parameter is comma separated list of repoPaths for which the stats will be be queried
+ * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=paths=repoPath,otherRepoPath"
  */
 
 executions {
@@ -38,17 +38,17 @@ executions {
             def json = new JsonBuilder()
             json {
 		//create a list of all repositories from the params 
-                stats((params['repos'] as List).findResults { repo ->
-                    repoPath = RepoPathFactory.create("$repo/")
-		    //if the repository exists and was typed correctly, get its artifact count and size and insert to the json
+                stats((params['paths'] as List).findResults { path ->
+                    repoPath = RepoPathFactory.create("$path/")
+		    //if the path exists and was typed correctly, get its artifact count and size and insert to the json
                     if (repositories.exists(repoPath)) {
                         [
-                                repoKey: repo,
+                                repoPath: path,
                                 count: repositories.getArtifactsCount(repoPath),
                                 size: repositories.getArtifactsSize(repoPath)
                         ]
                     } else {
-                        log.warn("Repository $repo does not exist")
+                        log.warn("The path $path does not exist")
                     }
                 })
             }
@@ -56,7 +56,7 @@ executions {
                 message = json.toPrettyString()
                 status = 200
             } else {
-                message = 'no valid repositories found'
+                message = 'no valid paths found'
                 status = 400
             }
 
