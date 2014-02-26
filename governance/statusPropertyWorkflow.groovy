@@ -86,6 +86,9 @@ executions {
         if (id) {
             filter.put(ID_PROP_NAME, id)
         } else {
+            if (externalId.contains("%")) {
+                externalId = org.artifactory.util.HttpUtils.decodeUri(externalId)
+            }
             filter.put(EXTERNALID_PROP_NAME, externalId)
         }
         List<RepoPath> found = searches.itemsByProperties(forMap(filter))
