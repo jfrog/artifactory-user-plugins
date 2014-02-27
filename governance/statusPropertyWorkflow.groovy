@@ -57,16 +57,16 @@ enum GeneralStatuses {
 executions {
     // The BD CC calls the REST API /api/plugins/execute/setStatusProperty?params=id=459201|externalId=:Newtonsoft.Json:5.0.6|status=APPROVED
     setStatusProperty(version: '1.0',
-            description:'set a new status value on all files with cc.id or cc.externalid provided',
+            description:'set a new status value on all files with CodeCenter id or externalId provided',
             httpMethod: 'POST', users: ['blackduck'].toSet(),
             params: [id:'', externalid: '', status: 'APPROVED']) { params ->
         String id = params?.get('id')?.get(0)
         String externalId = params?.get('externalId')?.get(0)
         String ccStatus = params?.get('status')?.get(0)
-        log.debug "trying to change cc status of id=$id or externalid=$externalId with status=$ccStatus"
+        log.debug "trying to change cc status of id=$id or externalId=$externalId with status=$ccStatus"
         if (!id && !externalId) {
             status = 400
-            message = "A blackduck ID or externalID is needed to set the new status!"
+            message = "A BlackDuck CodeCenter id or externalId is needed to set the new status!"
             return
         }
         if (!ccStatus) {
@@ -94,7 +94,7 @@ executions {
         List<RepoPath> found = searches.itemsByProperties(forMap(filter))
         if (!found) {
             status = 404
-            message = "No artifacts found with id=$id or externalid=$externalId"
+            message = "No artifacts found with id=$id or externalId=$externalId"
             return
         }
         List<String> results = ['Converted BEGIN']
