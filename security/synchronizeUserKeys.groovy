@@ -15,7 +15,7 @@
  */
 
 @Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6', root = 'http://repo.jfrog.org/artifactory/')
+@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
 ])
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpRequestInterceptor
