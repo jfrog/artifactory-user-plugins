@@ -11,7 +11,7 @@ executions {
 }
 
 jobs {
-    buildCleanup(cron: "0 0 5 ? * 1") {
+    buildCleanup(cron: "0/10 * * * * ?") {
         def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
         buildCleanup(config.days, config.dryRun);
     }
