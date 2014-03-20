@@ -14,13 +14,19 @@ import org.codehaus.mojo.versions.ordering.VersionComparators
 ])
 import org.semver.Comparer
 import org.semver.Delta
-import org.semver.Version
 
-import java.nio.file.Files
 import java.nio.file.Path
 
-@Field final String BINARY_COMPATIBILITY_PROPERTY_NAME = 'approve.binaryCompatible'
+import static java.nio.file.Files.*
+import static org.semver.Delta.CompatibilityType.BACKWARD_COMPATIBLE_USER
 
+@Field final String COMPATIBLE_PROPERTY_NAME = 'approve.binaryCompatibleWith'
+@Field final String INCOMPATIBLE_PROPERTY_NAME = 'approve.binaryIncompatibleWith'
+
+/**
+ * This plugin performs binary compatibility checks when artifact is created in Artifactory.
+ * Property binaryCompatibleWith or binaryIncompatibleWith will be added with the version of artifact the check was performed against as a value.
+ */
 storage {
     /**
      * Handle after create events.
@@ -30,46 +36,54 @@ storage {
      */
     afterCreate { ItemInfo item ->
         FileLayoutInfo currentLayout = repositories.getLayoutInfo(item.repoPath)
-        if (currentLayout.organization && currentLayout.ext == 'jar') {
-            List<RepoPath> allVersions = searches.artifactsByGavc(currentLayout.getOrganization(),
-                    currentLayout.getModule(), null, null).findAll { it.path.endsWith('.jar') }
-            if (allVersions.size() > 1) {
-                VersionComparator mavenComparator = VersionComparators.getVersionComparator('mercury')
-                allVersions.sort(true, mavenComparator)
-                if (allVersions.pop().equals(item.repoPath)) {
-                    RepoPath previousVersion = allVersions.pop()
-                    Path currentTempPath = Files.createTempFile("${currentLayout.module}-current", '.jar')
+        if (currentLayout.organization) {
+            if (currentLayout.ext == 'jar') {
+                List<RepoPath> allVersions = searches.artifactsByGavc(currentLayout.getOrganization(),
+                        currentLayout.getModule(), null, null).findAll { it.path.endsWith('.jar') }
+                if (allVersions.size() > 1) {
+                    VersionComparator mavenComparator = VersionComparators.getVersionComparator('mercury')
+                    allVersions.sort(true, mavenComparator)
+                    if (allVersions.pop().equals(item.repoPath)) {
+                        RepoPath previousVersion = allVersions.pop()
+                        FileLayoutInfo previousLayout = repositories.getLayoutInfo(previousVersion)
+                        Path currentTempFile = createTempFile("${currentLayout.module}-current", '.jar')
+                        Path previousTempFile = createTempFile("${previousLayout.module}-previous", '.jar')
+                        try {
+                            newOutputStream(currentTempFile) << repositories.getContent(item.repoPath).inputStream
+                            newOutputStream(previousTempFile) << repositories.getContent(previousVersion).inputStream
 
-                    File currentTempFile = currentTempPath.toFile()
-                    currentTempFile << repositories.getContent(item.repoPath).inputStream
+                            Delta delta = new Comparer(previousTempFile.toFile(), currentTempFile.toFile(), [] as Set,
+                                    [] as Set).diff()
+                            boolean compatible = delta.computeCompatibilityType().compareTo(
+                                    BACKWARD_COMPATIBLE_USER) > 0
+                            repositories.setProperty(item.repoPath,
+                                    compatible ? COMPATIBLE_PROPERTY_NAME : INCOMPATIBLE_PROPERTY_NAME,
+                                    previousLayout.baseRevision)
+                        } finally {
+                            try {
+                                delete(currentTempFile)
+                            } catch (deleteFailed) {
+                                log.warn('Failed to delete temp files', deleteFailed)
+                            }
+                            try {
+                                delete(previousTempFile)
+                            } catch (deleteFailed) {
+                                log.warn('Failed to delete temp files', deleteFailed)
+                            }
+                        }
 
-
-                    FileLayoutInfo previousLayout = repositories.getLayoutInfo(previousVersion)
-                    Path previousTempPath = Files.createTempFile("${previousLayout.module}-previous", '.jar')
-                    File previousTempFile = previousTempPath.toFile()
-                    previousTempFile << repositories.getContent(previousVersion).inputStream
-
-                    Comparer comparer = new Comparer(previousTempFile, currentTempFile, [] as Set, [] as Set)
-                    Delta delta = comparer.diff()
-
-                    //Provide version number for previous and current Jar files.
-                    final Version previous = Version.parse(previousLayout.baseRevision)
-                    final Version current = Version.parse(currentLayout.baseRevision)
-
-                    //Validates that current version number is valid based on semantic versioning principles.
-                    final boolean compatible = delta.validate(previous, current)
-                    repositories.setProperty(item.repoPath, BINARY_COMPATIBILITY_PROPERTY_NAME, compatible.toString())
-
+                    } else {
+                        //TODO you might want to check versus previous or next version?
+                        log.warn("Skipping compatibility analysis for $item.repoPath - newer versions already exist")
+                    }
                 } else {
-                    //TODO you might want to check versus previous or next version?
-                    log.warn("Skipping compatibility analysis for $item - newer versions already exist")
+                    log.debug("Skipping compatibility analysis for $item.repoPath - first version")
                 }
             } else {
-                repositories.setProperty(item.repoPath, BINARY_COMPATIBILITY_PROPERTY_NAME, true.toString())
+                log.debug("Skipping compatibility analysis for $item.repoPath - not jar")
             }
         } else {
-            log.warn("Skipping compatibility analysis for $item - not jar or not in Maven layout")
+            log.warn("Skipping compatibility analysis for $item - not in Maven layout")
         }
-
     }
 }
