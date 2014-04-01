@@ -24,9 +24,11 @@ private def buildCleanup(int days, dryRun) {
     WARNING: UNSUPPORTED INTERNAL API USAGE!
      */
     //TODO: Remove this and replace with the following line once the new build.buildNames API is available
-    List<String> buildNames = ctx.beanForType(
-            org.artifactory.storage.build.service.BuildStoreService).getAllBuildNames()
-    //List<String> buildNames = builds.buildNames
+    /*List<String> buildNames = ctx.beanForType(
+            org.artifactory.storage.build.service.BuildStoreService).getAllBuildNames()*/
+    
+    // Below is available only from Artifactory 3.2.0, see: https://www.jfrog.com/jira/browse/RTFACT-5942
+    List<String> buildNames = builds.buildNames
 
     def n = 0
     buildNames.each { buildName ->
