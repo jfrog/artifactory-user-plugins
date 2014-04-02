@@ -10,7 +10,7 @@ executions {
 jobs {
     scheduledCleanup(cron: "0 0 5 ? * 1") {
         def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/artifactCleanup.properties").toURL())
-        artifactCleanup(config.monthsUntil, config.repos as String[], log);
+        artifactCleanup(config.monthsUntil, config.repos as String[], log, false);
     }
 }
 
