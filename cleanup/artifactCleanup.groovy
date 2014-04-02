@@ -12,11 +12,11 @@ executions {
 jobs {
     scheduledCleanup(cron: "0 0 5 ? * 1") {
         def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/artifactCleanup.properties").toURL())
-        artifactCleanup(config.monthsUntil, config.repos as String[], log, false);
+        artifactCleanup(config.monthsUntil, config.repos as String[], log);
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, dryRun) {
+private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
     log.info "Starting artifact cleanup for repositories $repos, until $months months ago"
 
     def monthsUntil = Calendar.getInstance()
