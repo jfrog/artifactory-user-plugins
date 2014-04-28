@@ -43,11 +43,15 @@ import org.artifactory.exception.CancelException
  * 1. Archive any artifact over 30 days old:
  *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=ageDays=30"
  * 2. Archive any artifact that is 30 days old and has the following properties set:
- *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=ageDays=30|includedPropertySet=deleteme:true;junk:true"
+ *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=ageDays=30|includePropertySet=deleteme:true;junk:true"
  * 3. Archive any artifact that has not been downloaded in 60 days, excluding those with a certain property set:
- *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=lastDownloadedDays=60|excludedPropertySet=keeper:true"
+ *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=lastDownloadedDays=60|excludePropertySet=keeper:true"
  * 4. Archive only *.tgz files that are 30 days old and have not been downloaded in 15 days:
  *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|lastDownloadedDays=15"
+ * 5. Archive any *.tgz artifact that is 30 days old and is tagged with artifact.delete:
+ *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete"
+ * 6. Archive any *.tgz artifact that is 15 days old and is tagged with artifact.delete=true:
+ *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true" 
  * 
  * Available 'time period' archive policies:
  * 1. lastModified      the last time the artifact was modified 
@@ -60,7 +64,9 @@ import org.artifactory.exception.CancelException
  * Available 'property' archive policies:
  * 1. includePropertySet   the artifact will be archived if it possesses all of the passed in properties
  * 2. excludePropertySet   the artifact will not be archived if it possesses all of the passed in properties
- * (NOTE: property set format ==> prop1:value1;prop2:value2;......propN:valueN)
+ * (NOTE: property set format ==> prop[:value1[;prop2[:value2]......[;propN[:valueN]]])
+ *        A property key must be provided, but a corresponding value is not necessary.
+ *        If a property is set without a value, then a check is made for just the key.
  * 
  * One can set any number of 'time period' archive policies as well as any number of include and exclude
  * attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy 
@@ -149,7 +155,7 @@ private archiveOldArtifacts(
     log.info('Exclude property set: {}', excludePropertySet)
     log.info('Include property set: {}', includePropertySet)
     log.info('Archive property: {}', archiveProperty)
-    
+
     // Abort if no selection criteria was sent in (we don't want to archive everything blindly)
     if (lastModifiedDays == 0 &&
         lastUpdatedDays == 0 &&
@@ -158,7 +164,7 @@ private archiveOldArtifacts(
         ageDays == 0 &&
         excludePropertySet == '' &&
         includePropertySet == '') {
-        
+
         log.error('No selection criteria specified, exiting now!')
         throw new CancelException('No selection criteria specified!', 400)
     }
@@ -398,7 +404,7 @@ boolean checkTimingPolicy(compareDays, days, artifact, String policyName) {
         log.debug('{} passed the {} policy check ({} days)', artifact, policyName, days)
         return true
     }
-    
+
     log.debug('{} did not pass the {} policy check ({} days)', artifact, policyName, days)
     false
 }
@@ -412,14 +418,14 @@ int getCompareDays(todayTime, policyTime) {
 // Function to take in a string representation of properties and return the map of it
 Map<String, String> translatePropertiesString(String properties) {
     // Verify the properties string
-    if (properties ==~ "(\\w+):(\\w+)(;(\\w+):(\\w+))*") {
-        log.debug('Properties are of the proper format!, {}', properties)
+    if (properties ==~ /(\w.+)(:\w.)*(;(\w.+)(:\w.)*)*/) {
+        log.debug('Properties are of the proper format! Properties: {}', properties)
     } else {
-        log.error('Properties are not of the proper format, {}. Exiting now!', properties)
+        log.error('Properties are not of the proper format: {}. Exiting now!', properties)
         // Throw an exception due to the wrong input
         throw new CancelException('Incorrect format for properties!', 400)
     }
-    
+
     // The map to be filled in
     Map<String, String> map = new HashMap()
 
@@ -455,13 +461,21 @@ boolean verifyProperties(artifact, Map<String, String> propertyMap, boolean incl
         if (repositories.hasProperty(artifact, key)) {
             // Get the value we need to check for
             value = propertyMap.get(key)
+            log.debug('value we are attempting to match: {}, for key: {}', value, key)
 
-            // Check if the artifact contains the value for the key
-            if (repositories.getPropertyValues(artifact, key).contains(value)) {
-                log.debug('Both have key: {}, value: {}', key, value)
+            // Check if we were even given a value to match on the key
+            if (value != null) {
+                // Check if the artifact contains the value for the key
+                valueSet = repositories.getPropertyValues(artifact, key)
+                log.debug('value set: {}, size: {}', valueSet, valueSet.size())
+                if (valueSet.contains(value)) {
+                    log.debug('Both have key: {}, value: {}', key, value)
+                } else {
+                    log.debug('Both have key: {}, but values differ. Value checked: {}', key, value)
+                    return !inclusive
+                }
             } else {
-                log.debug('Both have key: {}, but values differ', key)
-                return !inclusive
+                log.debug('We were not given a value for the provided key: {}, this is a match since the key matches.', key)
             }
         } else {
             log.debug('The artifact did not contain the key: {}, failure to match properties', key)

@@ -50,7 +50,9 @@ NOTE: the time period archive policies are all specified in number of days
 - includePropertySet - the artifact will be archived if it possesses all of the passed in properties
 - excludePropertySet - the artifact will not be archived if it possesses all of the passed in properties
 
-NOTE: property set format ==> prop1:value1;prop2:value2;......propN:valueN
+NOTE: property set format ==> prop[:value1[;prop2[:value2]......[;propN[:valueN]]])
+A property key must be provided, but a corresponding value is not necessary.
+If a property is set without a value, then a check is made for just the key.
   
 One can set any number of 'time period' archive policies as well as any number of include and exclude attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact. 
 
@@ -74,6 +76,12 @@ Sample REST Calls
 - Archive only *.tgz files that are 30 days old and have not been downloaded in 15 days:
 
     curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=filePattern=*.tgz|ageDays=30|lastDownloadedDays=15"
+- Archive any *.tgz artifact that is 30 days old and is tagged with artifact.delete:
+
+    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete"
+- Archive any *.tgz artifact that is 15 days old and is tagged with artifact.delete=true:
+
+    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true"
 
 Archive Process
 ---------------
