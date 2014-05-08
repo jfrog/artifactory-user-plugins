@@ -68,6 +68,12 @@ import org.artifactory.exception.CancelException
  *        A property key must be provided, but a corresponding value is not necessary.
  *        If a property is set without a value, then a check is made for just the key.
  * 
+ * Available artifact keep policy:
+ * 1. numKeepArtifacts      the number of artifacts to keep per directory
+ * (NOTE: This allows one to keep X number of artifacts (based on natural directory sort
+ *        per directory. So, if your artifacts are lain out in a flat directory structure,
+ *        you can keep the last X artifacts in each directory with this setting.))
+ * 
  * One can set any number of 'time period' archive policies as well as any number of include and exclude
  * attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy 
  * parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact.
@@ -94,6 +100,7 @@ executions {
         def excludePropertySet = params['excludePropertySet'] ? params['excludePropertySet'][0] as String: ''
         def includePropertySet = params['includePropertySet'] ? params['includePropertySet'][0] as String: ''
         def archiveProperty = params['archiveProperty'] ? params['archiveProperty'][0] as String: 'archived.timestamp'
+        def numKeepArtifacts = params['numKeepArtifacts'] ? params['numKeepArtifacts'][0] as int: 0
 
         archiveOldArtifacts(
             log,
@@ -107,7 +114,8 @@ executions {
             ageDays,
             excludePropertySet,
             includePropertySet,
-            archiveProperty)
+            archiveProperty,
+            numKeepArtifacts)
     }
 }
 
@@ -141,7 +149,8 @@ private archiveOldArtifacts(
         ageDays,
         excludePropertySet,
         includePropertySet,
-        archiveProperty) {
+        archiveProperty,
+        numKeepArtifacts) {
 
     log.warn('Starting archive process for old artifacts ...')
     log.info('File match pattern: {}', filePattern)
@@ -155,6 +164,7 @@ private archiveOldArtifacts(
     log.info('Exclude property set: {}', excludePropertySet)
     log.info('Include property set: {}', includePropertySet)
     log.info('Archive property: {}', archiveProperty)
+    log.info('Number of artifacts to keep per directory: {}', numKeepArtifacts)
 
     // Abort if no selection criteria was sent in (we don't want to archive everything blindly)
     if (lastModifiedDays == 0 &&
@@ -243,30 +253,52 @@ private archiveOldArtifacts(
             // TODO: Are we worried about hitting exclusion properties as well as inclusion properties
             //       on the same artifact? Does this need to be handled?
             if (archiveTiming && archiveExcludeProperties && archiveIncludeProperties) {
-                log.warn('About to archive artifact: {}', artifact)
+                def boolean keepArtifact = false
 
-                // Get the properties from the existing artifact
-                Properties properties = repositories.getProperties(artifact)
+                // Check if we are supposed to leave any number of artifacts per directory
+                if (numKeepArtifacts > 0)
+                {
+                    // Get the parent path 
+                    // NOTE: assuming one directory per unique type of artifact
+                    def parentPath = artifact.getParent()
+                    // Get the number of artifacts per the parent directory
+                    def artifactsCount = repositories.getArtifactsCount(parentPath)
+                    log.info('artifact parent path: {}, artifacts count in path: {}', parentPath, artifactsCount)
 
-                // Deploy over the existing artifact with a 1-byte file
-                byte[] buf = new byte[1]
-                def status = repositories.deploy(artifact, new ByteArrayInputStream(buf))
-                log.debug('Status of deploy: {}', status)
-                if (status.statusCode != Constants.HTTP_OK) {
-                    log.error('Call to deploy artifact {} failed!', artifact)
+                    // Check if we need to skip aging the artifact
+                    if (artifactsCount <= numKeepArtifacts) {
+                        log.info('Skipping age process for artifact {} since due to the number of artifacts keep policy', artifact)
+                        keepArtifact = true
+                    }
                 }
 
-                // Add all of the properties back to the artifact
-                properties.keys().each { key ->
-                    Set<String> values = properties.get(key)
-                    log.debug('Adding key: {}, values: {} to re-deployed artifact', key, values)
-                    repositories.setProperty(artifact, key, * (values as List))
+                // One last check to make sure we actually want to archive the artifact
+                if (!keepArtifact) {
+                    log.warn('About to archive artifact: {}', artifact)
+
+                    // Get the properties from the existing artifact
+                    Properties properties = repositories.getProperties(artifact)
+
+                    // Deploy over the existing artifact with a 1-byte file
+                    byte[] buf = new byte[1]
+                    def status = repositories.deploy(artifact, new ByteArrayInputStream(buf))
+                    log.debug('Status of deploy: {}', status)
+                    if (status.statusCode != Constants.HTTP_OK) {
+                        log.error('Call to deploy artifact {} failed!', artifact)
+                    }
+
+                    // Add all of the properties back to the artifact
+                    properties.keys().each { key ->
+                        Set<String> values = properties.get(key)
+                        log.debug('Adding key: {}, values: {} to re-deployed artifact', key, values)
+                        repositories.setProperty(artifact, key, * (values as List))
+                    }
+
+                    // Call the function to move the artifact
+                    moveBuildArtifact(archiveRepo, artifact, archiveProperty, todayTime)
+
+                    artifactsArchived++
                 }
-
-                // Call the function to move the artifact
-                moveBuildArtifact(archiveRepo, artifact, archiveProperty, todayTime)
-
-                artifactsArchived++
             }
             else {
                 log.info('Not archiving artifact: {}', artifact)
