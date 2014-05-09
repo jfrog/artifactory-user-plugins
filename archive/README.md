@@ -53,6 +53,11 @@ NOTE: the time period archive policies are all specified in number of days
 NOTE: property set format ==> prop[:value1[;prop2[:value2]......[;propN[:valueN]]])
 A property key must be provided, but a corresponding value is not necessary.
 If a property is set without a value, then a check is made for just the key.
+
+### Available artifact keep policy:
+- numKeepArtifacts - the number of artifacts to keep per directory
+
+NOTE: This allows one to keep X number of artifacts (based on natural directory sort per directory). So, if your artifacts are lain out in a flat directory structure, you can keep the last X artifacts in each directory with this setting.
   
 One can set any number of 'time period' archive policies as well as any number of include and exclude attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact. 
 
