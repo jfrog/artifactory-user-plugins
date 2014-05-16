@@ -25,7 +25,7 @@ build {
             m.artifacts.each { a ->
                 def type = a.getType()
                 if (type.contains(';')) {
-                    a.setType(type.substring(type.indexOf(';')))
+                    a.setType(type.substring(0,type.indexOf(';')))
                 }
             }
         }
