@@ -1,0 +1,6 @@
+{
+    "srcRepo": "gems-local",
+    "srcDir": "",
+    "destLocalDir": "/work/test/plugin",
+    "params": "-type f"
+}
