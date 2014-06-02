@@ -81,23 +81,23 @@ staging {
      * Stages the build in 'libs-snapshot-local' repo
      *
      */
-    maven(users: "admin") { buildName, params ->
+    detailedMaven(users: "jenkins") { buildName, params ->
         //Get the global version of the latest build run
         BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuild(builds.getBuilds(buildName, null, null))
         def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseOrBuild
-		def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
-		moduleVersionsMap = [:]
-		int index = 0
-		detailedLatestBuildRun.modules.each { Module module ->
-			def moduleVersionMatcher = moduleIdPattern.matcher module.id
-			if (moduleVersionMatcher.matches()) {
-				def latestVersion = moduleVersionMatcher.group(1)
-				def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
-				releaseVersion = transformReleaseVersion(latestVersion, false)
-				moduleVersionsMap[moduleKey] = new ModuleVersion(moduleKey, "$releaseVersion-$index", "$releaseVersion-SNAPSHOT")
-				index++
-			}
-		}
+        def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
+        moduleVersionsMap = [:]
+        int index = 0
+        detailedLatestBuildRun.modules.each { Module module ->
+            def moduleVersionMatcher = moduleIdPattern.matcher module.id
+            if (moduleVersionMatcher.matches()) {
+                def latestVersion = moduleVersionMatcher.group(1)
+                def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
+                releaseVersion = transformReleaseVersion(latestVersion, false)
+                moduleVersionsMap[moduleKey] = new ModuleVersion(moduleKey, "$releaseVersion-$index", "$releaseVersion-SNAPSHOT")
+                index++
+            }
+        }
 
         vcsConfig = new VcsConfig()
         vcsConfig.useReleaseBranch = false
@@ -110,6 +110,36 @@ staging {
         promotionConfig = new PromotionConfig("libs-snapshot-local")
         promotionConfig.comment = "Staging Artifactory ${releaseVersion}"
     }
+
+    simpleMaven(users: "jenkins") { buildName, params ->
+        //Get the global version of the latest build run
+
+        BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuildSimple(builds.getBuilds(buildName, null, null))
+        def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseOrBuild
+        def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
+
+        Module module = detailedLatestBuildRun.modules[0]
+        def moduleVersionMatcher = moduleIdPattern.matcher module.id
+        if (moduleVersionMatcher.matches()) {
+            def latestVersion = moduleVersionMatcher.group(1)
+            def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
+            releaseVersion = transformReleaseVersion(latestVersion, false)
+            defaultModuleVersion = new ModuleVersion(moduleKey, "$releaseVersion", "$releaseVersion-SNAPSHOT")
+        }
+
+
+        vcsConfig = new VcsConfig()
+        vcsConfig.useReleaseBranch = false
+        vcsConfig.releaseBranchName = null
+        vcsConfig.createTag = true
+        vcsConfig.tagUrlOrName = "rel-${releaseVersion}"
+        vcsConfig.tagComment = "[artifactory-release] Release version ${releaseVersion}"
+        vcsConfig.nextDevelopmentVersionComment = "[artifactory-release] Next development version"
+
+        promotionConfig = new PromotionConfig("staging-local")
+        promotionConfig.comment = "Staging Artifactory ${releaseVersion}"
+    }
+
 }
 
 /**
@@ -129,6 +159,19 @@ private String getLatestReleaseVersion(latestReleaseBuild) {
         }
     }
     null
+}
+/**
+ * Finds the latest released build, if not found, return the latest build no matter what status
+ * @param buildRuns
+ * @return
+ */
+
+private BuildRun latestReleaseOrLatestBuildSimple(List<BuildRun> buildRuns) {
+    BuildRun[] allReleasedBuilds = buildRuns.findAll()// {buildRun -> (buildRun.releaseStatus == 'Released') }
+    if (allReleasedBuilds) {
+        buildRuns = allReleasedBuilds
+    }
+    buildRuns.max {buildRun -> buildRun.startedDate }
 }
 
 //Finds the latest released build, if not found, return the latest build no matter what status
