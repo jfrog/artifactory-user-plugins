@@ -40,6 +40,11 @@ import static com.google.common.collect.Multimaps.forMap
  * @since 14/01/14
  */
 
+ /**
+  ************************************************************************************
+  * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
+  ************************************************************************************
+  */
 final CC_PROP_NAME_PREFIX = 'blackduck.cc'
 final GLOBAL_CC_APP_NAME = 'GlobalApp'
 final GLOBAL_CC_APP_VERSION = '1.0'
