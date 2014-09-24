@@ -2,6 +2,8 @@ import org.artifactory.repo.RepoPath
 
 //curl -f -XPOST -u admin:password http://repo-demo:9090/artifactory/api/plugins/execute/clean-builds?params=days=50
 
+def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
+
 executions {
     "clean-builds"() { params ->
         def days = params['days'] ? params['days'][0] as int : 2
@@ -12,7 +14,6 @@ executions {
 
 jobs {
     buildCleanup(cron: "0/10 * * * * ?") {
-        def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
         buildCleanup(config.days, config.dryRun);
     }
 }
@@ -36,9 +37,8 @@ private def buildCleanup(int days, dryRun) {
             def before = new Date() - days
             //log.warn "Found build $buildName#$it.number: $it.startedDate"
             if (it.startedDate.before(before)) {
-                if (dryRun) {
-                    echo "Deleting build: $buildName#$it.number ($it.startedDate)"
-                } else {
+                echo "Deleting build: $buildName#$it.number ($it.startedDate)"
+                if (!dryRun) {
                     //builds.deleteBuild it
                 }
                 n++;
