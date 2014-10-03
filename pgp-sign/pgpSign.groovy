@@ -40,9 +40,9 @@ import org.artifactory.common.StatusHolder
 storage {
     Properties props = new Properties()
     props.load(new FileReader(
-        new File(ctx.artifactoryHome.etcDir, "pgp/signing.properties")))
+        new File(ctx.artifactoryHome.haAwareEtcDir, "pgp/signing.properties")))
     File secretKeyFile =
-        new File(ctx.artifactoryHome.etcDir, props.secretKeyFile)
+        new File(ctx.artifactoryHome.haAwareEtcDir, props.secretKeyFile)
     char[] passphrase = props.passphrase.toCharArray()
 
     afterCreate { item ->
