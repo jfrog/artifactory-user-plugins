@@ -20,6 +20,7 @@ import org.artifactory.build.promotion.PromotionConfig
 import org.artifactory.build.staging.ModuleVersion
 import org.artifactory.build.staging.VcsConfig
 import org.artifactory.build.Module
+import michal.test.Michal1
 
 import static org.apache.commons.lang.StringUtils.removeEnd
 
@@ -114,6 +115,7 @@ staging {
     simpleMaven(users: "jenkins") { buildName, params ->
         //Get the global version of the latest build run
 
+        Michal1.main(null)
         BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuildSimple(builds.getBuilds(buildName, null, null))
         def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseOrBuild
         def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/

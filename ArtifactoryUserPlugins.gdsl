@@ -9,6 +9,7 @@ contributor(context(scriptScope())) {
     property name: 'security', type: 'org.artifactory.security.Security', doc: 'Provides information about current security context, (e.g. current user and her permissions) '
     property name: 'searches', type: 'org.artifactory.search.Searches', doc: 'API for searching for artifacts and builds'
     property name: 'builds', type: 'org.artifactory.build.Builds', doc: 'Allows CRUD operations on builds'
+    property name: 'ctx', type: 'org.artifactory.spring.InternalArtifactoryContext', doc: 'Internal Artifactory context'
 
     //plugin types
     method name: 'download', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating download events'

@@ -95,15 +95,18 @@
  *
  */
 
-@Grapes([
+
+/*@Grapes([
 @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
 ])
 @GrabExclude('commons-codec:commons-codec')
+*/
 
 import groovy.json.JsonSlurper
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpRequestInterceptor
 import org.apache.http.StatusLine
+
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.plugin.PluginsAddon
 import org.artifactory.addon.plugin.build.AfterBuildSaveAction
@@ -112,6 +115,7 @@ import org.artifactory.api.jackson.JacksonReader
 import org.artifactory.api.rest.build.BuildInfo
 import org.artifactory.build.BuildRun
 import org.artifactory.build.Builds
+
 import org.artifactory.build.DetailedBuildRun
 import org.artifactory.build.DetailedBuildRunImpl
 import org.artifactory.exception.CancelException
@@ -128,6 +132,11 @@ import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.DELETE
 import static groovyx.net.http.Method.PUT
+
+
+
+
+
 
 def baseConfHolder = new BaseConfigurationHolder(ctx, log)
 

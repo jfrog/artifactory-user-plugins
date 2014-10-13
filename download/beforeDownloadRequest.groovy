@@ -2,12 +2,12 @@ import org.artifactory.fs.FileInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 
-import static Constants.JSON_CACHE_MILLIS
-
-class Constants {
+class CacheConstants {
     // Cache *.json files for 1 hour
     static final long JSON_CACHE_MILLIS = 3600 * 1000L
 }
+
+import static CacheConstants.JSON_CACHE_MILLIS
 
 download {
     /**

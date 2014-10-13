@@ -199,7 +199,7 @@ jobs {
             log.debug "Updating ${requestsByGav.size()} requests of $GLOBAL_CC_APP_NAME:$GLOBAL_CC_APP_VERSION"
             def res = bdAppService.updateRequests(build, requestsByGav.values() as List)
 
-            // After creating the requests set the status to PENDING or ERROR
+            // After creating the requests set the status to PENDING or FAILED_EXECUTION
             res.each { BlackDuckUpdateResult result ->
                 def repoPath = result.requestInfo.repoPath
                 if (result.updateStatus == BlackDuckUpdateResult.UpdateStatus.create) {
@@ -207,7 +207,7 @@ jobs {
                     repositories.setProperty(repoPath, STATUS_PROP_NAME, GeneralStatuses.PENDING.name())
                     repositories.setProperty(repoPath, REQUEST_ID_PROP_NAME, result.message)
                 } else {
-                    log.error "Setting status=ERROR error=${result.message} on ${repoPath.getId()}"
+                    log.error "Setting status=FAILED_EXECUTION error=${result.message} on ${repoPath.getId()}"
                     repositories.setProperty(repoPath, STATUS_PROP_NAME, GeneralStatuses.ERROR.name())
                     repositories.setProperty(repoPath, ERROR_PROP_NAME, result.message)
                 }

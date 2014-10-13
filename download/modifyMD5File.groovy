@@ -20,8 +20,9 @@ import org.artifactory.request.Request
 
 /**
  * An example on how to use internal rewrite plugin.
- * Here all files under md5-test-remote that ends with '.md5' will be modified to
- * '.md5.txt'
+ * Here requests to dist-local/latest/XXX will be redirected (without sending a 302 to the client) to
+ * dist-local/[folder]/XXX where folder is the value of the 'latest.folderName' property on the root
+ * folder dist-local.
  *
  * Date: 3/13/14 3:43 PM
  * @author freds
@@ -29,14 +30,9 @@ import org.artifactory.request.Request
 
 download {
     beforeDownloadRequest { Request request, RepoPath path ->
-        if (path.repoKey == "dist-local" && path.path.startsWith('latest/')) {
-            // Find the folder that is latest based on property
-            String folderName = repositories.getProperty(RepoPathFactory.create(path.repoKey, ''), 'latest.folderName')
-            if (folderName) {
-                modifiedRepoPath = RepoPathFactory.create(path.repoKey, folderName + path.path.substring('latest'.length()))
-            }
+        if (path.repoKey == "md5-test-remote" && path.path.endsWith('.md5')) {
+            // modify the extension of the file and add '.txt' to it
+            modifiedRepoPath = RepoPathFactory.create(path.repoKey, path.path + '.txt')
         }
     }
 }
-
-
