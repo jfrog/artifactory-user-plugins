@@ -23,12 +23,10 @@ import org.artifactory.addon.ha.message.HaMessageTopic
  * Created by Michal on 10/20/2014.
  */
 executions {
-    syncNotification(description: 'send notification once the permission target was changed') {
+    syncNotification(description: 'send HA notifications for permission target and configuration change') {
         AddonsManager addonsManager = ctx.beanForType(AddonsManager.class)
 
         addonsManager.addonByType(HaAddon.class).notify(HaMessageTopic.CONFIG_CHANGE_TOPIC, null)
         addonsManager.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null)
     }
-
-
 }
