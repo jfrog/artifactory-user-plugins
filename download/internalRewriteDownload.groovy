@@ -19,9 +19,10 @@ import org.artifactory.request.Request
  */
 
 /**
- * An example on how to use internal rewrite plugin.
- * Here all files under md5-test-remote that ends with '.md5' will be modified to
- * '.md5.txt'
+ * Create a virtual symlink called "latest" redirecting (internally no 302) to the folderName
+ * provided from the value of the 'latest.folderName' property set on the root folder
+ * of the repository.
+ * In this example only dist-local repo name is working.
  *
  * Date: 3/13/14 3:43 PM
  * @author freds
