@@ -92,7 +92,7 @@ staging {
             def moduleVersionMatcher = moduleIdPattern.matcher module.id
             if (moduleVersionMatcher.matches()) {
                 def latestVersion = moduleVersionMatcher.group(1)
-                def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
+        /michal        def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
                 releaseVersion = transformReleaseVersion(latestVersion, false)
                 moduleVersionsMap[moduleKey] = new ModuleVersion(moduleKey, "$releaseVersion-$index", "$releaseVersion-SNAPSHOT")
                 index++
@@ -114,7 +114,6 @@ staging {
     simpleMaven(users: "jenkins") { buildName, params ->
         //Get the global version of the latest build run
 
-        Michal1.main(null)
         BuildRun latestReleaseOrBuild = latestReleaseOrLatestBuildSimple(builds.getBuilds(buildName, null, null))
         def detailedLatestBuildRun = builds.getDetailedBuild latestReleaseOrBuild
         def moduleIdPattern = ~/(?:.+)\:(?:.+)\:(.+)/
