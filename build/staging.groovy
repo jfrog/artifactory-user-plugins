@@ -92,7 +92,7 @@ staging {
             def moduleVersionMatcher = moduleIdPattern.matcher module.id
             if (moduleVersionMatcher.matches()) {
                 def latestVersion = moduleVersionMatcher.group(1)
-        /michal        def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
+                def moduleKey = module.id.substring(0, module.id.length() - latestVersion.length() - 1)
                 releaseVersion = transformReleaseVersion(latestVersion, false)
                 moduleVersionsMap[moduleKey] = new ModuleVersion(moduleKey, "$releaseVersion-$index", "$releaseVersion-SNAPSHOT")
                 index++
