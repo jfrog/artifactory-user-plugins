@@ -7,6 +7,8 @@ import org.artifactory.request.Request
 
 download {
     beforeRemoteDownload {  Request request, RepoPath path ->
-        if(request.getHeader())
+        if(request.getHeader()==""){
+
+        }
     }
 }

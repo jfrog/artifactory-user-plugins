@@ -5,7 +5,7 @@ import org.artifactory.repo.RepoPath
 def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
 
 executions {
-    "clean-builds"() { params ->
+    cleanBuilds() { params ->
         def days = params['days'] ? params['days'][0] as int : 2
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : true
         buildCleanup(days, dryRun)
@@ -27,7 +27,7 @@ private def buildCleanup(int days, dryRun) {
     //TODO: Remove this and replace with the following line once the new build.buildNames API is available
     /*List<String> buildNames = ctx.beanForType(
             org.artifactory.storage.build.service.BuildStoreService).getAllBuildNames()*/
-    
+
     // Below is available only from Artifactory 3.2.0, see: https://www.jfrog.com/jira/browse/RTFACT-5942
     List<String> buildNames = builds.buildNames
 
