@@ -56,7 +56,6 @@ public File getCompressed(List list) throws IOException {
     byte[] data = new byte[2048];
     File archive=new File(System.getProperty("java.io.tmpdir")+"/tmp-downloadDir"+System.nanoTime())
     FileOutputStream fos = new FileOutputStream(archive);
-    //FileOutputStream fos = new FileOutputStream(System.getProperty("java.io.tmpdir") + "/file.zip");
     ZipOutputStream zos = new ZipOutputStream(fos);
     list.each { item ->
         ZipEntry ze = new ZipEntry(item.getPath());
