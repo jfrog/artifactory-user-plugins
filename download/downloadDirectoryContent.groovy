@@ -1,12 +1,27 @@
 /**
- * This plugin allow a user to download a directory with it's content as a zip file. The plugin archiving the content in the java.io.tmpdir, return it to the client and delete it from the java.io.tmpdir right after.
+ * Copyright 2014 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * This plugin allow a user to download a directory with it's content as a zip file. The plugin archives the content of a directory and temporary save it in the java.io.tmpdir, return it to the client and delete it from the java.io.tmpdir right after.
  * In order to be able to download an existing directory, you will need to follow the below instructions:
  * 1. Deploy the user plugin under the $ARTIFACTORY_HOME/etc/plugins directory
  * 2. If your Artifactory server is configured to automatically reload the plugin, go to step 3, otherwise, you will need to restart your server so Artifactory will reload the plugin.
  * 3. Once the plugin is loaded, perform an HTTP GET request with mandatory matrix parameter named 'downloadDirectory' and value ='true'. For example:
+ *
  * curl -X GET -uadmin:password "http://localhost:8081/artifactory/libs-release-local/myDirectory;downloadDirectory+=true" > result.zip
  *
- * @author Shay Bagants
+ * Created by Shay Bagants on 19/01/2014.
  */
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
