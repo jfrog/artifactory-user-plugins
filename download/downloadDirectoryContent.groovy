@@ -93,8 +93,6 @@ public File getCompressed(List list) throws IOException {
         zos.close();
         fos.close();
     }
-
-
     return archive;
 }
 
