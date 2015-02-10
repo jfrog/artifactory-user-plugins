@@ -61,9 +61,11 @@ executions {
             return
         }
 
-        // The 2 equal signs at the end of the public and private keys are removed by the params
-        publicKey += '=='
-        privateKey += '=='
+        if (!publicKey.startsWith('AM')) {
+            // The 2 equal signs at the end of the public and private keys are removed by the params
+            publicKey += '=='
+            privateKey += '=='
+        }
 
         // Use the find or create that is used for external LDAP users
         def userService = ctx.beanForType(UserGroupService.class)
