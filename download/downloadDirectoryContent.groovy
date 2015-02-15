@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * This plugin allow a user to download a directory with it's content as a zip file. The plugin archives the content of a directory and temporary save it in the java.io.tmpdir, return it to the client and delete it from the java.io.tmpdir right after.
  * In order to be able to download an existing directory, you will need to follow the below instructions:
  * 1. Deploy the user plugin under the $ARTIFACTORY_HOME/etc/plugins directory
@@ -26,7 +26,6 @@
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
-
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -70,20 +69,30 @@ private List getAllChildren(RepoPath repoPath, List list) {
 public File getCompressed(List list) throws IOException {
     byte[] data = new byte[2048];
     File archive=new File(System.getProperty("java.io.tmpdir")+"/tmp-downloadDir"+System.nanoTime())
-    FileOutputStream fos = new FileOutputStream(archive);
-    ZipOutputStream zos = new ZipOutputStream(fos);
-    list.each { item ->
-        ZipEntry ze = new ZipEntry(item.getPath());
-        zos.putNextEntry(ze)
-        InputStream is = repositories.getContent(item).getInputStream();
-        int len;
-        while ((len = is.read(data)) > 0) {
-            zos.write(data, 0, len);
+    FileOutputStream fos
+    ZipOutputStream zos
+    try {
+        fos = new FileOutputStream(archive);
+        zos = new ZipOutputStream(fos);
+        list.each { item ->
+            ZipEntry ze = new ZipEntry(item.getPath());
+            zos.putNextEntry(ze)
+            InputStream is;
+            try {
+                is = repositories.getContent(item).getInputStream();
+                int len;
+                while ((len = is.read(data)) > 0) {
+                    zos.write(data, 0, len);
+                }
+            }finally{
+                is.close()
+                zos.closeEntry();
+            }
         }
-        is.close();
+    } finally {
+        zos.close();
+        fos.close();
     }
-    zos.closeEntry();
-    zos.close();
     return archive;
 }
 
@@ -98,5 +107,3 @@ class DeleteFISOnClose extends FileInputStream {
         file.delete();
     }
 }
-
-

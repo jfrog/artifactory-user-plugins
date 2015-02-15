@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-
-
-import org.artifactory.request.Request
-import org.artifactory.repo.RepoPath
+import groovy.json.JsonBuilder
 
 /**
- * This plugin will send the right header to the remote symbol server
  *
- * @author Michal Reuven
+ * Date: 2/4/15
+ * @author Michal
  */
 
-download {
-    beforeRemoteDownload { Request request, RepoPath repoPath ->
-	try {
-			log.debug "symbol server download plugin was called for ${repoPath.repoKey}"
-			if (repoPath.repoKey == "microsoft-symbols") {
-				def map = ["User-Agent": "Microsoft-Symbol-Server/6.3.9600.17095"]
-				headers = map
-				log.debug 'plugin beforeRemoteDownload called. header was added'
-			}
-	}catch (Error e){log.error(e.getMessage(),e)}
+executions {
+    getCurrentUserDetails(httpMethod: 'GET', groups:['readers']) {
+        log.info "Requesting user details for ${security.currentUsername()}"
+        JsonBuilder builder = new JsonBuilder(security.currentUser())
+        message = builder.toPrettyString()
+        log.debug "Returning User Details: ${message}"
+        status = 200
     }
 }
+
+
