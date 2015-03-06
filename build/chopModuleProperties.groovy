@@ -20,6 +20,9 @@ import org.jfrog.build.api.Build
  *
  * Date: 2/23/15
  * @author Michal Reuven
+ *
+ * This plugin is responsible to check whether the module properties are longer than 900 charaters, which cause the DB
+ * to fale. If true, chop the property to 900 characters.
  */
 
 build {
@@ -28,14 +31,16 @@ build {
         Build build = buildRun.build
         build.modules.each { m ->
             log.debug "m.properties: ${m.properties}"
-            m.properties.each { p ->
-                log.debug "propertiy value: ${p.properties.toString()}"
-                log.debug "p.properties length: ${p.properties.toString().length()}"
-                if (p.properties.toString().length() > 899) {
-                    p.properties = p.properties.toString().substring(0, 899)
-                    log.debug "property value after change: ${p.properties.toString()}"
+            Map<String,String> changed = [:]
+            m.properties.each { String k, String v ->
+                log.debug "property: $k $v"
+                log.debug "p.property length: ${v.length()}"
+                if (v.length() > 899) {
+                    log.debug "property is too long. chopping"
+                    changed[k] = v.substring(0,899)
                 }
             }
+            m.properties.putAll(changed)
         }
     }
 }
