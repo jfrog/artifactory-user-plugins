@@ -21,6 +21,9 @@ import org.artifactory.repo.RepoPath
 @Field final String PROPERTY_PREFIX = 'layout.'
 
 /**
+ * This is a simple plug-in that takes every token in a layout, both built-in and custom, and creates properties
+ * from them.  We use the PROPERTY_PREFIX for each property so by default the properties will be layout.baseRevision
+ * or layout.customTokenHere with the values as strings.
  */
 storage {
     /**
@@ -30,13 +33,14 @@ storage {
      * item (org.artifactory.fs.ItemInfo) - the original item being created.
      */
     afterCreate { ItemInfo item ->
-        RepoPath repoPath = item.repoPath
-        FileLayoutInfo currentLayout = repositories.getLayoutInfo(repoPath)
+        RepoPath repoPath = item.repoPath //Gets the full path of the artifact, including the repo
+        FileLayoutInfo currentLayout = repositories.getLayoutInfo(repoPath) //Gets the actual layout of the repository the artifact is deployed to
         if (currentLayout.isValid()) {
             try {
-                ['organization', 'module', 'baseRevision'].each { String propName ->
-                    repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout."$propName" as String)
-                }
+                ['organization', 'module', 'baseRevision', 'folderIntegrationRevision', 'fileIntegrationRevision', 'classifier', 'ext', 'type'].each { String propName ->
+                    repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout."$propName" as String) } //This pulls all the default tokens
+                Set<String> customProps = currentLayout.getCustomFields().keySet()
+                customProps.each { String propName -> repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout.getCustomField("$propName"))} //pulls the custom tokens
             } catch (Exception ex) {
                 log.error("Could not set properties on ${repoPath}", ex)
             }
