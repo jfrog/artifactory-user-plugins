@@ -45,4 +45,4 @@ url - The remote file URL <br>
 username - Username for basic authentication for the remote endpoint (Optional) <br>
 password - Password for basic authentication for the remote endpoint (Optional) 
 
-The above example deploys the remote file into "libs-releaes-local:my/new/path.docker.png"
+The above example deploys the remote file into "libs-releaes-local:my/new/path/docker.png"
