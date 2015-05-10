@@ -37,8 +37,8 @@ The content of conf.json should include the below paramters:
 }
 ```
 
-repo - The repository to which the file will be deployed
-path - The deployment path within the repository
-url - The remote file URL
-username - Username for basic authentication for the remote endpoint (Optinal)
+repo - The repository to which the file will be deployed <br>
+path - The deployment path within the repository <br>
+url - The remote file URL <br>
+username - Username for basic authentication for the remote endpoint (Optinal) <br>
 password - Password for basic authentication for the remote endpoint (Optinal) 
