@@ -15,7 +15,26 @@ To install the dependencies, create the $ARTIFACTORY_HOME/etc/plugins/lib direct
 
 To enable logging for the plugin, add the below logger to your $ARTIFACTORY_HOME/logback.xml:
 
-`<logger name="remoteDownload">
-    <level value="info"/>
-  </logger>`
+`<logger name="remoteDownload">`
+    `<level value="info"/>`
+  `</logger>`
   
+<h2> Executing & Parameters </h2>
+
+The plugin can be executed with the below command - 
+`curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/remoteDownload" --data-binary @conf.json`
+
+The content of conf.json should include the below paramters:
+{
+"repo": "libs-release-local",
+"path": "docker.png",
+"url": "https://d3oypxn00j2a10.cloudfront.net/0.18.0/img/nav/docker-logo-loggedout.png",
+"username": "admin",
+"password": "password"
+}
+
+repo - The repository to which the file will be deployed
+path - The deployment path within the repository
+url - The remote file URL
+username - Username for basic authentication for the remote endpoint (Optinal)
+password - Password for basic authentication for the remote endpoint (Optinal) 
