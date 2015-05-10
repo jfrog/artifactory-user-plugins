@@ -32,7 +32,7 @@ The content of conf.json should include the below paramters:
 ```JSON
 {
 "repo": "libs-release-local",
-"path": "docker.png",
+"path": "my/new/path/docker.png",
 "url": "https://d3oypxn00j2a10.cloudfront.net/0.18.0/img/nav/docker-logo-loggedout.png",
 "username": "admin",
 "password": "password"
@@ -44,3 +44,5 @@ path - The deployment path within the repository <br>
 url - The remote file URL <br>
 username - Username for basic authentication for the remote endpoint (Optional) <br>
 password - Password for basic authentication for the remote endpoint (Optional) 
+
+The above example deploys the remote file into "libs-releaes-local:my/new/path.docker.png"
