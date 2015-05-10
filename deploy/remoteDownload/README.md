@@ -6,8 +6,9 @@ This plugin recieves a remote file URL and deploys the file into Artifactory.
 
 The plugin requires two third-party libraries in order to run:
 
-http-builder
-json-lib
+[http-builder](http://repo.spring.io/libs-release-remote/org/codehaus/groovy/modules/http-builder/http-builder/0.7.2/http-builder-0.7.2.jar)
+
+[json-lib](https://bintray.com/artifact/download/bintray/jcenter/net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15.jar)
 
 To install the dependencies, create the $ARTIFACTORY_HOME/etc/plugins/lib directory, and put the above two jars in it.
 
@@ -40,5 +41,5 @@ The content of conf.json should include the below paramters:
 repo - The repository to which the file will be deployed <br>
 path - The deployment path within the repository <br>
 url - The remote file URL <br>
-username - Username for basic authentication for the remote endpoint (Optinal) <br>
-password - Password for basic authentication for the remote endpoint (Optinal) 
+username - Username for basic authentication for the remote endpoint (Optional) <br>
+password - Password for basic authentication for the remote endpoint (Optional) 
