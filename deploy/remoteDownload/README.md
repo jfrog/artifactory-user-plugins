@@ -10,7 +10,7 @@ The plugin requires two third-party dependencies in order to run:
 
 [json-lib](https://bintray.com/artifact/download/bintray/jcenter/net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15.jar)
 
-To install the dependencies, create the $ARTIFACTORY_HOME/etc/plugins/lib directory, and put the above two jars in it.
+To install the dependencies, create the $ARTIFACTORY_HOME/etc/plugins/lib directory, and place the above two jars in it.
 
 <h2> Logging </h2>
 
