@@ -4,7 +4,7 @@ This plugin recieves a remote file URL and deploys the file into Artifactory.
 
 <h2> Dependencies </h2>
 
-The plugin requires two third-party libraries in order to run:
+The plugin requires two third-party dependencies in order to run:
 
 [http-builder](http://repo.spring.io/libs-release-remote/org/codehaus/groovy/modules/http-builder/http-builder/0.7.2/http-builder-0.7.2.jar)
 
