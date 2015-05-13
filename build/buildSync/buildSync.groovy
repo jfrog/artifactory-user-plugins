@@ -111,7 +111,7 @@
  */
 
 
-/*@@Grapes([
+/*@Grapes([
 @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
 ])
 @GrabExclude('commons-codec:commons-codec')
