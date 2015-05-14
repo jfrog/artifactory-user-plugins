@@ -568,7 +568,7 @@ class LocalBuildService extends BuildListBase {
             if (reinsert) {
                 builds.saveBuild(detailedBuildRun)
             } else {
-                dbService.invokeInTransaction(new Callable<Object>() {
+                dbService.invokeInTransaction("addBuild",new Callable<Object>() {
                     @Override
                     public Object call() throws Exception {
                         if (activatePlugins) {
