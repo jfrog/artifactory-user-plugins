@@ -39,8 +39,12 @@ storage {
             try {
                 ['organization', 'module', 'baseRevision', 'folderIntegrationRevision', 'fileIntegrationRevision', 'classifier', 'ext', 'type'].each { String propName ->
                     repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout."$propName" as String) } //This pulls all the default tokens
-                Set<String> customProps = currentLayout.getCustomFields().keySet()
-                customProps.each { String propName -> repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout.getCustomField("$propName"))} //pulls the custom tokens
+                def customFields = currentLayout.getCustomFields()
+                if (customFields) {
+                    Set<String> customProps = customFields.keySet()
+                    customProps.each { String propName -> repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout.getCustomField("$propName")) }
+                    //pulls the custom tokens
+                }
             } catch (Exception ex) {
                 log.error("Could not set properties on ${repoPath}", ex)
             }

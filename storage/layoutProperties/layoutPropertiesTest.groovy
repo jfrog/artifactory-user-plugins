@@ -1,11 +1,11 @@
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import spock.lang.Specification
 
-/**
- * Created by freds on 8/4/14.
- */
-class TestSetupHelper {
-    static def startArtifactory() {
+class LayoutPropertiesTest extends Specification {
+    def 'maven layout properties plugin test'() {
+        setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
-        // TODO: Fill out the tests
+        expect:
+        artifactory.repository('libs-release-local').upload('org/test/modname/1.0/modname-1.0.txt', new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
     }
 }
