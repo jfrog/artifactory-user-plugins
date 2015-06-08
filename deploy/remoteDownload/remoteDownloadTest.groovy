@@ -1,11 +1,15 @@
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import spock.lang.Specification
 
-/**
- * Created by freds on 8/4/14.
- */
-class remoteDownloadTest {
-    static def startArtifactory() {
+class RemoteDownloadTest extends Specification {
+    def 'test name'() {
+        setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
 
+        //when:
+
+        //then:
+
+        //cleanup:
     }
 }

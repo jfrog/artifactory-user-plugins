@@ -1,11 +1,15 @@
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import spock.lang.Specification
 
-/**
- * Created by freds on 8/4/14.
- */
-class modifyMD5FileTest {
-    static def startArtifactory() {
+class ModifyMD5FileTest extends Specification {
+    def 'test name'() {
+        setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
-        // TODO: Fill out the tests
+
+        //when:
+
+        //then:
+
+        //cleanup:
     }
 }
