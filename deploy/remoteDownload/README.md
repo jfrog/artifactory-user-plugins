@@ -26,7 +26,7 @@ To enable logging for the plugin, add the below logger to your $ARTIFACTORY_HOME
 
 The plugin can be executed with the below command:
 
-`curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/remoteDownload" --data-binary @conf.json`
+`curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/remoteDownload" -T conf.json`
 
 The content of conf.json should include the below paramters:
 ```JSON
