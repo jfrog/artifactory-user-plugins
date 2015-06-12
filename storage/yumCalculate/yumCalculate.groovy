@@ -36,7 +36,7 @@ def calculateYumMetadata(RepoPath repoPath) {
 }
 
 executions {
-    yumCalculate() { params ->
+    yumCalculate(groups: ['indexers']) { params ->
         String repPath = params?.get('path')?.get(0) as String
         if (!repPath) {
             status = 400
@@ -49,7 +49,10 @@ executions {
             message = "Folder $repoPath.id to index YUM does not exists"
             return
         }
-        def err = calculateYumMetadata(repoPath)
+        def err
+        asSystem {
+            err = calculateYumMetadata(repoPath)
+        }
         if (err) {
             status = 403
             message = err
