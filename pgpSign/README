@@ -1,3 +1,0 @@
-Automatically sign and add the {repoPath}.asc file for all local repository.
-The configuration and secret PGP key are configured using a signing.properties file placed under the etc folder of Artifactory.
-
