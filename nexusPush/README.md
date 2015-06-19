@@ -6,7 +6,7 @@ example, oss.sonatype.org).
 
 1. Setup:
    - Place this script under `${ARTIFACTORY_HOME}/etc/plugins`.
-   - Place profile file under `${ARTIFACTORY_HOME}/etc/stage`.
+   - Place profile file under `${ARTIFACTORY_HOME}/etc/plugins`.
 
      Profile file is a Java properties file and contains 3 mandatory parameters:
      `stagingUrl`, `stagingUsername`, and `stagingPassword`. The only optional
@@ -26,8 +26,8 @@ example, oss.sonatype.org).
    following parameters separated by pipes (`|`):
    - `stagingProfile`: The name of the profile file (without the 'properties'
      extension). E.g. for a profile saved in
-     `${ARTIFACTORY_HOME}/etc/stage/sample.properties`, the parameter will be
-     `profile=sample`.
+     `${ARTIFACTORY_HOME}/etc/plugins/nexusPush.properties`, the parameter will
+     be `profile=nexusPush`.
    - Query parameters can be one of the following:
      * By directory: defined by parameter `dir`. The format of the parameter is
        `repo-key/relative-path`. This is the desired directory URL, without the
@@ -43,6 +43,6 @@ example, oss.sonatype.org).
 
 3. Examples of the request using CURL:
    - Query by directory, upload only (without closing):
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"`
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"`
    - Query by properties:
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|build.name=spaceship-new-rel|build.number=143"`
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"`

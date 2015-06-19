@@ -40,7 +40,7 @@ executions {
      * Artifactory plugin for pushing artifacts to A Nexus Staging Repository (for example, oss.sonatype.org).
      * 1. Setup:
      *   1.1. Place this script under ${ARTIFACTORY_HOME}/etc/plugins.
-     *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/stage.
+     *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/plugins.
      *          Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername,
      *          stagingPassword. The only optional parameter currently supported is comma separated list of exclusions
      * 		 in form of ant fileset patterns; files, matched by those patterns won't be staged.         Example for local Nexus install with default credentials:
@@ -52,7 +52,8 @@ executions {
      *
      * 2. Execute POST request authenticated with Artifactory admin user with the following parameters separated by pipe (|):
      *  2.1. 'stagingProfile': name of the profile file (without the 'properties' extension).
-     *      E.g. for profile saved in ${ARTIFACTORY_HOME}/etc/stage/sample.properties the parameter will be profile=sample
+     *      E.g. for profile saved in
+     *      ${ARTIFACTORY_HOME}/etc/plugins/nexusPush.properties the parameter will be profile=nexusPush
      *  2.2. Query parameters can be one of the two:
      *      2.2.1. By directory: defined by parameter 'dir'. The format of the parameter is repo-key/relative-path.
      *          It's the desired directory URL just without the base Artifactory URL.
@@ -66,9 +67,9 @@ executions {
      *
      * 3. Examples of the request using CURL:
      *  3.1. Query by directory, upload only (without closing):
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
+     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
      *  3.2. Query by properties:
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=sample|build.name=spaceship-new-rel|build.number=143"
+     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"
      * */
     nexusPush { params ->
         try {
@@ -113,7 +114,7 @@ def validate(params) throws NexusPushException {
     if (!params) handleError 400, 'Profile and query parameters are mandatory. Please supply them.'
     if (!params.stagingProfile) handleError 400, 'Profile name is mandatory. Please supply it.'
     //noinspection GroovyAssignabilityCheck
-    File propertiesFile = new File(ctx.artifactoryHome.etcDir, "stage/${params.stagingProfile[0]}.properties")
+    File propertiesFile = new File(ctx.artifactoryHome.etcDir, "plugins/${params.stagingProfile[0]}.properties")
     if (!propertiesFile.isFile()) handleError 400, "No profile properties file was found at ${propertiesFile.absolutePath}"
     Properties stagingProps = new Properties()
     stagingProps.load(new FileReader(propertiesFile))
