@@ -25,7 +25,7 @@ import org.artifactory.common.StatusHolder
 
 /**
  * Artifactory user plugin that signs all incoming artifacts using the key
- * and passphrase specified in $ARTIFACTORY_HOME/etc/pgp/signing.properties
+ * and passphrase specified in $ARTIFACTORY_HOME/etc/plugins/pgpSign.properties
  * and deploys the resulting signature in typical fashion as an .asc file
  * parallel to the original artifact.
  * The plugin will be activated only on repository keys ending with "-local".
@@ -40,7 +40,7 @@ import org.artifactory.common.StatusHolder
 storage {
     Properties props = new Properties()
     props.load(new FileReader(
-        new File(ctx.artifactoryHome.haAwareEtcDir, "pgp/signing.properties")))
+        new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/pgpSign.properties")))
     File secretKeyFile =
         new File(ctx.artifactoryHome.haAwareEtcDir, props.secretKeyFile)
     char[] passphrase = props.passphrase.toCharArray()
