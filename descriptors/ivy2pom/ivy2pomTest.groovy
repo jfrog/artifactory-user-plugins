@@ -1,15 +1,36 @@
+import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import groovy.xml.MarkupBuilder
 import spock.lang.Specification
 
 class Ivy2pomTest extends Specification {
-    def 'test name'() {
+    def 'simple ivy to pom plugin test'() {
         setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def builder = RepositoryBuildersImpl.create()
+        def repo1 = builder.localRepositoryBuilder().key('repo1').build()
+        def ivy = builder.localRepositoryBuilder().key('ivy').repoLayoutRef('ivy-default').build()
+        artifactory.repositories().create(0, repo1)
+        artifactory.repositories().create(0, ivy)
+        def ivypath = 'myorg/mymodule/2.0/ivy.xml'
+        def pompath = 'myorg/mymodule/2.0/mymodule-2.0.pom'
+        def xml = new StringWriter()
+        new MarkupBuilder(xml).'ivy-module'(version: 2.0) {
+            info(organisation: "myorg", module: "mymodule", revision: 2.0)
+        }
+        artifactory.repository('ivy').upload(ivypath, new ByteArrayInputStream(xml.toString().bytes)).doUpload()
 
-        //when:
+        when:
+        def pomfile = new XmlParser().parse(artifactory.repository('ext-release-local').download(pompath).doDownload())
 
-        //then:
+        then:
+        pomfile.groupId.text()== 'myorg'
+        pomfile.artifactId.text()== 'mymodule'
+        pomfile.version.text() == '2.0'
 
-        //cleanup:
+        cleanup:
+        artifactory.repository('ext-release-local').delete('myorg')
+        artifactory.repository('ivy').delete()
+        artifactory.repository('repo1').delete()
     }
 }
