@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-// usage: curl http://localhost:8081/artifactory/api/plugins/execute/dummyPlugin
+// usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/dummyPlugin
 
 executions {
-    dummyPlugin(httpMethod: 'GET', users:['anonymous']) {
+    dummyPlugin(users:['anonymous']) {
         message = '{"status":"okay"}'
         status = 200
     }
