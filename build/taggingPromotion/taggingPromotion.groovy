@@ -111,4 +111,3 @@ def cancelPromotion(message, Throwable cause, int errorLevel) {
     log.warn message
     throw new CancelException(message, cause, errorLevel)
 }
-

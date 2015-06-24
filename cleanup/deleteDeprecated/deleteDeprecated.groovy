@@ -53,5 +53,3 @@ def deleteEmptyDirs(RepoPath path) {
         deleteEmptyDirs parent
     }
 }
-
-
