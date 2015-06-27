@@ -14,89 +14,61 @@
  * limitations under the License.
  */
 
-
-
-
-
+import groovy.util.AntBuilder
 import groovy.xml.NamespaceBuilder
-@groovy.lang.Grapes([
-@GrabResolver(name = 'rjo', root = 'http://repo.jfrog.org/artifactory/libs-releases', m2compatible = 'true'),
-@Grab(group = 'org.jwaresoftware.antxtras', module = 'jw-log4ant', version = '3.0.0'),
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.2'),
-@Grab(group = 'org.apache.ant', module = 'ant', version = '1.8.3'),
-@Grab(group = 'org.apache.ant', module = 'ant-launcher', version = '1.8.3'),
-@GrabExclude('org.slf4j:slf4j'),
-@GrabExclude('org.codehaus.groovy:groovy'),
-]) import groovyx.net.http.HTTPBuilder
-import org.artifactory.common.StatusHolder
-
+import org.artifactory.fs.FileLayoutInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 import org.jwaresoftware.log4ant.listener.AntToSlf4jConduit
 
-import static groovyx.net.http.ContentType.TEXT
-import static groovyx.net.http.Method.GET
 import static java.io.File.createTempFile
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.artifactory.repo.RepoPathFactory.create
 
 final String TARGET_RELEASES_REPOSITORY = 'ext-release-local'
 final String TARGET_SNAPSHOTS_REPOSITORY = 'ext-snapshot-local'
-final String IVY_DESCRIPTORS_REPOSITORY= 'ivy'
+final String IVY_DESCRIPTORS_REPOSITORY = 'ivy'
 
 download {
-
     afterDownloadError { Request request ->
         RepoPath repoPath = request.repoPath
+        FileLayoutInfo fileLayoutInfo = repositories.getLayoutInfo(repoPath)
         if (repoPath.path.endsWith('.pom')) {
-            def pomPath = repoPath.path
             //it was pom lookup, let's rock
-
-            //to get layout info we have to use some repo with maven layout. The requested repo is probably not in maven layout (since it contains ivy descriptors).
-            //I'll use the repo1 repo, but your repositories set may be different
-            def mavenLayoutInfo = repositories.getLayoutInfo(create("repo1", pomPath))
-
+            def srcPath = repoPath.path
+            //[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml
             //ivy is flexible, so the repo layout may differ from the one I construct here. Change at will.
-            def ivyFilePath = mavenLayoutInfo.with {
-                "${organization}/$module/$baseRevision${integration ? '-' + folderIntegrationRevision : ''}/ivy.xml"
-                        }
-
-            //[org]/[module]/[baseRev](-[folderItegRev])/ivy.xml
-
-            def url = "$request.servletContextUrl/$IVY_DESCRIPTORS_REPOSITORY/$ivyFilePath"
-            def http = new HTTPBuilder(url)
-            //Credentials options:
-            //1. non-anonymous user: Since maven is not preemptive the original repo shouldn't be accessible by anonymous user.
-            //   That will ensure credentials handshake on the request and we will have our user by now.
-            //2. local elevation: use admin credentials hard-coded in plugin (replace the currentUsername and encrypted password here.
-            //3. anonymous read and deploy: enable anonymous read of ivy descriptors and anonymous deploy of pom files.
-            http.auth.basic(security.currentUsername, security.encryptedPassword == null ? '' : security.encryptedPassword)
-            http.request(GET, TEXT) { req ->
-                owner.log.info("Sending request to ${url}")
-
-                response.success = { resp, Reader reader ->
-                    owner.log.info("Successfully retireved ivy decriptor for ${pomPath}")
-                    //we got ivy, let's transform to pom
-                    File pomFile = ivy2Pom(reader)
-                    //let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
-                    def pomDescriptorLayout = mavenLayoutInfo
-                    RepoPath deployRepoPath = create(pomDescriptorLayout.isIntegration() ? TARGET_SNAPSHOTS_REPOSITORY : TARGET_RELEASES_REPOSITORY, pomPath)
-                    StatusHolder statusHolder = pomFile.withInputStream {
-                        repositories.deploy(deployRepoPath, it)
-                    } as StatusHolder
-                    deleteQuietly(pomFile)
-                    if ((200..<300).contains(statusHolder.statusCode)) {
-                        //and now let's return it to the user:
-                        inputStream = repositories.getContent(deployRepoPath).inputStream
-                    }
-                    status = statusHolder.statusCode
-                    message = statusHolder.statusMsg
-                }
-                response.failure = { resp ->
-                    message = resp.statusLine
-                    status = resp.status
-                    owner.log.warn("Failed to retireve ivy descriptor for ${pomPath}: $status, $message")
-                }
+            def dstPath = fileLayoutInfo.with {
+                "${organization}/$module/$baseRevision${integration ? '-' + folderIntegrationRevision : ''}/${type}s/ivy-${baseRevision}${integration ? '-' + fileIntegrationRevision : ''}.xml"
+            }
+            def stream = repositories.getContent(create(IVY_DESCRIPTORS_REPOSITORY, dstPath)).inputStream
+            if (!stream) {
+                err = "Ivy descriptor $dstPath does not exist"
+                log.error(err)
+                message = err
+                status = 404
+                return
+            }
+            def reader = new InputStreamReader(stream)
+            log.info("Successfully retrieved ivy decriptor for $srcPath")
+            //we got ivy, let's transform to pom
+            File newFile = ivy2Pom(reader)
+            //let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
+            String targetRepoKey = fileLayoutInfo.isIntegration() ? TARGET_SNAPSHOTS_REPOSITORY : TARGET_RELEASES_REPOSITORY
+            String targetPath = repositories.translateFilePath(repoPath, targetRepoKey)
+            RepoPath deployRepoPath = create(targetRepoKey, targetPath)
+            newFile.withInputStream { repositories.deploy(deployRepoPath, it) }
+            deleteQuietly(newFile)
+            //and now let's return it to the user:
+            def retStream = repositories.getContent(deployRepoPath).inputStream
+            if (retStream != null) {
+                inputStream = retStream
+                status = 200
+            } else {
+                err = "Could not deploy ivy file to $deployRepoPath.path"
+                log.error(err)
+                message = err
+                status = 500
             }
         }
     }
@@ -104,15 +76,15 @@ download {
 
 private File ivy2Pom(Reader reader) {
     //we'll reuse Ivy Ant task. It works with files
-    File ivyFile = createTempFile('ivy', '.xml')
-    ivyFile << reader
-    File pomFile = createTempFile('pom', '.xml')
+    File srcFile = createTempFile('ivy', '.xml')
+    srcFile << reader
+    File dstFile = createTempFile('pom', '.xml')
     def ant = new AntBuilder()
     //noinspection GroovyAssignabilityCheck
     ant.project.removeBuildListener ant.project.buildListeners[0] //remove the default logger (clear() on getBuildListeners() won't work - protective copy)
     ant.project.addBuildListener new AntToSlf4jConduit()
     def ivy = NamespaceBuilder.newInstance(ant, 'antlib:fr.jayasoft.ivy.ant')
-    ivy.makepom pomFile: pomFile.absolutePath, ivyFile: ivyFile.absolutePath
-    deleteQuietly(ivyFile)
-    pomFile
+    ivy.makepom pomFile: dstFile.absolutePath, ivyFile: srcFile.absolutePath
+    deleteQuietly(srcFile)
+    dstFile
 }

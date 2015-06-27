@@ -12,9 +12,7 @@ There are a few points in the source code that may require modification:
 - The `TARGET_RELEASES_REPOSITORY` and `TARGET_SNAPSHOTS_REPOSITORY` variables
   contain the names of the release and snapshot repositories (respectively) to
   deploy the converted pom file to.
-- The `IVY_DESCRIPTORS_REPOSITORY` variable contains the name of the repository
-  to look for the ivy descriptor in.
-- A string with the default value "repo1" is the name of a repository configured
-  to have a maven layout.
-- A string representing the ivy repository layout may need to be changed,
+- The `IVY_DESCRIPTORS_REPOSITORY` variable contains the name of the
+  repository to look for the ivy descriptor in.
+- The string representing the ivy repository layout may need to be changed,
   depending on the layout your repository uses.

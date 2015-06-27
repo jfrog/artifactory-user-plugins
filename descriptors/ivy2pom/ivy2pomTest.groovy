@@ -8,11 +8,9 @@ class Ivy2pomTest extends Specification {
         setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
         def builder = RepositoryBuildersImpl.create()
-        def repo1 = builder.localRepositoryBuilder().key('repo1').build()
         def ivy = builder.localRepositoryBuilder().key('ivy').repoLayoutRef('ivy-default').build()
-        artifactory.repositories().create(0, repo1)
         artifactory.repositories().create(0, ivy)
-        def ivypath = 'myorg/mymodule/2.0/ivy.xml'
+        def ivypath = 'myorg/mymodule/2.0/nulls/ivy-2.0.xml'
         def pompath = 'myorg/mymodule/2.0/mymodule-2.0.pom'
         def xml = new StringWriter()
         new MarkupBuilder(xml).'ivy-module'(version: 2.0) {
@@ -24,13 +22,12 @@ class Ivy2pomTest extends Specification {
         def pomfile = new XmlParser().parse(artifactory.repository('ext-release-local').download(pompath).doDownload())
 
         then:
-        pomfile.groupId.text()== 'myorg'
-        pomfile.artifactId.text()== 'mymodule'
+        pomfile.groupId.text() == 'myorg'
+        pomfile.artifactId.text() == 'mymodule'
         pomfile.version.text() == '2.0'
 
         cleanup:
         artifactory.repository('ext-release-local').delete('myorg')
         artifactory.repository('ivy').delete()
-        artifactory.repository('repo1').delete()
     }
 }
