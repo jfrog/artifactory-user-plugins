@@ -117,7 +117,7 @@ executions {
     }
 }
 
-class Constants {
+class ArchiveConstants {
     // Variable to translate days to milliseconds (24 * 60 * 60 * 1000)
     final static DAYS_TO_MILLIS = 86400000
     // HTTP status code response for OK
@@ -281,7 +281,7 @@ private archiveOldArtifacts(
                     byte[] buf = new byte[1]
                     def status = repositories.deploy(artifact, new ByteArrayInputStream(buf))
                     log.debug('Status of deploy: {}', status)
-                    if (status.statusCode != Constants.HTTP_OK) {
+                    if (status.statusCode != ArchiveConstants.HTTP_OK) {
                         log.error('Call to deploy artifact {} failed!', artifact)
                     }
 
@@ -323,7 +323,7 @@ def moveBuildArtifact (archiveRepo, RepoPath artifact, String property, time) {
     // Move the actual artifact and check that it worked
     def status = repositories.move(artifact, archiveRepoPath)
     log.debug('status of move: {}', status)
-    if (status.statusCode != Constants.HTTP_OK) {
+    if (status.statusCode != ArchiveConstants.HTTP_OK) {
         log.error('Call to move artifact {} failed!', artifact)
     }
 
@@ -413,7 +413,7 @@ boolean checkArchiveTimingPolicies(
         log.debug('{} file info: {}', artifact, fileInfo)
         def compareTime = fileInfo.getAge()
         log.debug('{} age: {}', artifact, compareTime)
-        compareDays = compareTime / Constants.DAYS_TO_MILLIS
+        compareDays = compareTime / ArchiveConstants.DAYS_TO_MILLIS
         log.debug('{} is {} days old', artifact, compareDays)
 
         // Check if the number of days meets the days specified to archive
@@ -442,7 +442,7 @@ boolean checkTimingPolicy(compareDays, days, artifact, String policyName) {
 // Function to take in last policy time and get the number of days it correlates to
 // so we can compare this to the number of days for our aging policy
 int getCompareDays(todayTime, policyTime) {
-    (todayTime - policyTime) / Constants.DAYS_TO_MILLIS
+    (todayTime - policyTime) / ArchiveConstants.DAYS_TO_MILLIS
 }
 
 // Function to take in a string representation of properties and return the map of it

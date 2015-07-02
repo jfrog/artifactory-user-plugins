@@ -51,7 +51,7 @@ import java.nio.file.Files
  * }
  */
 
-class Constants {
+class ExecuteConstants {
     static String copyCommand = 'cp -pu'
     static String baseExecute = 'find {destLocalDir} {params}'
     static String[] excludeExtensions = ['.txt', '.log']
@@ -104,7 +104,7 @@ executions {
         long totFiles = copyRecursive(localLog, repositories, srcItemInfo, dest, filestoreDir)
         localLog.info("Copied $totFiles binary files, in ${System.currentTimeMillis()-start}ms")
 
-        def execCommand = Constants.baseExecute.replace('{destLocalDir}', dest.getAbsolutePath())
+        def execCommand = ExecuteConstants.baseExecute.replace('{destLocalDir}', dest.getAbsolutePath())
         if (params) {
             execCommand = execCommand.replace('{params}', params)
         }
@@ -195,11 +195,11 @@ long copyRecursive(LocalLog localLog, Repositories repositories, ItemInfo item, 
         }
         return tot
     } else {
-        for (String excl : Constants.excludeExtensions) {
+        for (String excl : ExecuteConstants.excludeExtensions) {
             if (name.endsWith(excl)) return 0L
         }
         def sha1 = item.sha1
-        def cpCommand = """${Constants.copyCommand} ${filestoreDir}/${sha1.substring(0,2)}/$sha1 ${destFolder.getAbsolutePath()}/${name}"""
+        def cpCommand = """${ExecuteConstants.copyCommand} ${filestoreDir}/${sha1.substring(0,2)}/$sha1 ${destFolder.getAbsolutePath()}/${name}"""
         localLog.debug("Executing: $cpCommand")
         def execLn = cpCommand.execute()
         if (execLn.waitFor() != 0) {
