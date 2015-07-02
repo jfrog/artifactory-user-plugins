@@ -1,7 +1,7 @@
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
 
-class DiscoverLicenseAndPerventUnapprovedTest extends Specification {
+class DiscoverLicenseAndPreventUnapprovedTest extends Specification {
     def 'test name'() {
         setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
