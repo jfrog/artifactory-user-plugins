@@ -15,7 +15,7 @@
  */
 import org.artifactory.repo.RepoPath
 
-//curl -f -XPOST -u admin:password http://repo-demo:9090/artifactory/api/plugins/execute/cleanBuilds?params=days=50
+//curl -f -XPOST -u admin:password http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50
 
 
 
