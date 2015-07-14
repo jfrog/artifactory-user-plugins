@@ -7,7 +7,7 @@ class RemoteDownloadTest extends Specification {
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
 
         when:
-        "curl -X POST -uadmin:password -T ./src/test/groovy/test/conf.json http://localhost:8088/artifactory/api/plugins/execute/remoteDownload".execute().waitFor()
+        "curl -X POST -uadmin:password -T ./src/test/groovy/remoteDownloadTest/conf.json http://localhost:8088/artifactory/api/plugins/execute/remoteDownload".execute().waitFor()
 
         then:
         artifactory.repository('libs-release-local').file('my/new/path/docker.png').info()
