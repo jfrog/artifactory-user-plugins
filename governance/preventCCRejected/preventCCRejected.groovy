@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package governance
-
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 import org.jfrog.build.api.BlackDuckPropertiesFields
