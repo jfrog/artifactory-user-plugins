@@ -1,6 +1,7 @@
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
+import org.artifactory.addon.license.LicensesAddon
 
 import static java.lang.Class.forName
 
@@ -54,10 +55,10 @@ storage {
     afterCreate { ItemInfo item ->
         def licensesService = ctx.beanForType(forName('org.artifactory.addon.license.service.InternalLicensesService'))
         RepoPath repoPath = item.repoPath
-        def licenses = licensesService.getLicensesForRepoPath(repoPath)
+        def licenses = licensesService.getLicensesForRepoPath(repoPath, true, true, null, null)*.getLicense()
 
         //set the regular licenses properties
-        repositories.setProperty(repoPath, licensesService.LICENSES_PROP_FULL_NAME, *licenses*.name)
+        repositories.setProperty(repoPath, LicensesAddon.LICENSES_PROP_FULL_NAME, *licenses*.name)
 
         //if one of the licenses is in the forbidden list - end of story, ban it forever
         if (licenses.any { FORBIDDEN_LICENSES.contains(it.name) }) {
