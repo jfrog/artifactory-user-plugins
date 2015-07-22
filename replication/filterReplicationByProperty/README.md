@@ -1,0 +1,1 @@
+This plugin filters items replicated by properties. Setting properties in the "props" HashMultimap will make sure artifacts that have any of those properties will be replicated, all others will be skipped.
