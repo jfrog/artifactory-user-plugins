@@ -1,6 +1,7 @@
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
+import com.google.common.collect.HashMultimap
 
 import static java.lang.Class.forName
 
@@ -54,7 +55,15 @@ storage {
     afterCreate { ItemInfo item ->
         def licensesService = ctx.beanForType(forName('org.artifactory.addon.license.service.InternalLicensesService'))
         RepoPath repoPath = item.repoPath
-        def licenses = licensesService.getLicensesForRepoPath(repoPath, true, true, null, null)*.getLicense()
+        def props = new HashMultimap()
+        def properties = repositories.getProperties(repoPath)
+        for (def key : properties.keySet()) {
+            for (def v : properties.get(key)) {
+                if (key == 'artifactory.licenses' && v == null) props.put(key, '')
+                else props.put(key, v)
+            }
+        }
+        def licenses = licensesService.getLicensesForRepoPath(repoPath, true, true, null, props)*.getLicense()
 
         //set the regular licenses properties
         repositories.setProperty(repoPath, licensesService.LICENSES_PROP_FULL_NAME, *licenses*.name)
