@@ -22,7 +22,7 @@ import org.artifactory.repo.RepoPath
 executions {
     cleanBuilds() { params ->
         def days = params['days'] ? params['days'][0] as int : 2
-        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : true
+        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
         buildCleanup(days, dryRun)
     }
 }
