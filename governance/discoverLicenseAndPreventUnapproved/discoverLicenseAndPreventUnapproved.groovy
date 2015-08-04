@@ -53,6 +53,8 @@ download {
 
 storage {
     afterCreate { ItemInfo item ->
+    if (!repositories.getRepositoryConfiguration(item.getRepoKey()).getType().equals("virtual")){
+
         def licensesService = ctx.beanForType(forName('org.artifactory.addon.license.service.InternalLicensesService'))
         RepoPath repoPath = item.repoPath
         def props = new HashMultimap()
@@ -80,5 +82,6 @@ storage {
         else {
             repositories.setProperty(repoPath, APPROVE_STATUS_NAME, APPROVE_STATUS_PENDING)
         }
+    }
     }
 }
