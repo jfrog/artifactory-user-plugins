@@ -40,7 +40,7 @@ executions {
             message = errorMessage
         } else {
             def pypiPath = new RepoPathImpl(params.repoKey.get(0), params.repoPath.get(0));
-        	  def pipService = ctx.beanForType(InternalPypiService.class)
+            def pipService = ctx.beanForType(InternalPypiService.class)
             def pypiMetadata = pipService.getPypiMetadata(pypiPath)
             message=pypiMetadata.toString()
         }
