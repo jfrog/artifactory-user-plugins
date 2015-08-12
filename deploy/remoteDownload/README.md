@@ -21,7 +21,7 @@ To enable logging for the plugin, add the below logger to your $ARTIFACTORY_HOME
     <level value="info"/>
   </logger>
   ```
-  
+
 <h2> Executing & Parameters </h2>
 
 The plugin can be executed with the below command:
@@ -43,6 +43,6 @@ repo - The repository to which the file will be deployed <br>
 path - The deployment path within the repository <br>
 url - The remote file URL <br>
 username - Username for basic authentication for the remote endpoint (Optional) <br>
-password - Password for basic authentication for the remote endpoint (Optional) 
+password - Password for basic authentication for the remote endpoint (Optional)
 
 The above example deploys the remote file into "libs-releaes-local:my/new/path/docker.png"

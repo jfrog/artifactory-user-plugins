@@ -68,9 +68,9 @@ realms {
                     }
                     response.failure = { resp ->
                         if (resp.status == 401) {
-                        	log.info "User ${username} provided wrong credentials got: ${resp.statusLine}"
+                            log.info "User ${username} provided wrong credentials got: ${resp.statusLine}"
                         } else {
-                        	log.error "Unexpected error while synchronizing ${username} ${resp.statusLine}"
+                            log.error "Unexpected error while synchronizing ${username} ${resp.statusLine}"
                         }
                     }
                 }

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 import org.artifactory.repo.*
 import org.artifactory.exception.CancelException
 
-storage { 
+storage {
 
-	beforePropertyCreate {item, name, values -> checkPropChangeAuthorization(item,name,values) }
+    beforePropertyCreate {item, name, values -> checkPropChangeAuthorization(item,name,values) }
 
-	beforePropertyDelete {item, name -> checkPropChangeAuthorization(item,name,"") }
+    beforePropertyDelete {item, name -> checkPropChangeAuthorization(item,name,"") }
 }
 
 def checkPropChangeAuthorization(item,name,values) {

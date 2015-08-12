@@ -27,13 +27,13 @@ import org.artifactory.repo.RepoPath
 
 download {
     beforeRemoteDownload { Request request, RepoPath repoPath ->
-	try {
-			log.debug "symbol server download plugin was called for ${repoPath.repoKey}"
-			if (repoPath.repoKey == "microsoft-symbols") {
-				def map = ["User-Agent": "Microsoft-Symbol-Server/6.3.9600.17095"]
-				headers = map
-				log.debug 'plugin beforeRemoteDownload called. header was added'
-			}
-	}catch (Error e){log.error(e.getMessage(),e)}
+    try {
+            log.debug "symbol server download plugin was called for ${repoPath.repoKey}"
+            if (repoPath.repoKey == "microsoft-symbols") {
+                def map = ["User-Agent": "Microsoft-Symbol-Server/6.3.9600.17095"]
+                headers = map
+                log.debug 'plugin beforeRemoteDownload called. header was added'
+            }
+    }catch (Error e){log.error(e.getMessage(),e)}
     }
 }

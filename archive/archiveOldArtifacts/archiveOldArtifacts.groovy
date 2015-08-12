@@ -32,7 +32,7 @@ import org.artifactory.exception.CancelException
  * builds (org.artifactory.build.Builds) [since 2.5.2]
  *
  * ctx (org.artifactory.spring.InternalArtifactoryContext) - NOT A PUBLIC API - FOR INTERNAL USE ONLY!
- * 
+ *
  * @author Adam Kunk
  */
 
@@ -49,40 +49,40 @@ import org.artifactory.exception.CancelException
  * 5. Archive any *.tgz artifact that is 30 days old and is tagged with artifact.delete:
  *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete"
  * 6. Archive any *.tgz artifact that is 15 days old and is tagged with artifact.delete=true:
- *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true" 
- * 
+ *    curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true"
+ *
  * Available 'time period' archive policies:
- * 1. lastModified      the last time the artifact was modified 
+ * 1. lastModified      the last time the artifact was modified
  * 2. lastUpdated       the last time the artifact was updated
  * 3. created           the creation date of the artifact
  * 4. lastDownloaded    the last time the artifact was downloaded
  * 5. age               the age of the artifact
  * (NOTE: the time period archive policies are all specified in number of days)
- * 
+ *
  * Available 'property' archive policies:
  * 1. includePropertySet   the artifact will be archived if it possesses all of the passed in properties
  * 2. excludePropertySet   the artifact will not be archived if it possesses all of the passed in properties
  * (NOTE: property set format ==> prop[:value1[;prop2[:value2]......[;propN[:valueN]]])
  *        A property key must be provided, but a corresponding value is not necessary.
  *        If a property is set without a value, then a check is made for just the key.
- * 
+ *
  * Available artifact keep policy:
  * 1. numKeepArtifacts      the number of artifacts to keep per directory
  * (NOTE: This allows one to keep X number of artifacts (based on natural directory sort
  *        per directory. So, if your artifacts are lain out in a flat directory structure,
  *        you can keep the last X artifacts in each directory with this setting.))
- * 
+ *
  * One can set any number of 'time period' archive policies as well as any number of include and exclude
- * attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy 
+ * attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy
  * parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact.
- * 
+ *
  * The 'archive' process performs the following:
  * 1. Grabs all of the currently set properties on the artifact
  * 2. Does a deploy over top of the artifact with a 1-byte size file (to conserve space)
  * 3. Adds all of the previously held attributes to the newly deployed 1-byte size artifact
  * 4. Moves the artifact from the source repository to the destination repository specified
  * 5. Adds a property containing the archive timestamp to the artifact
- * 
+ *
  */
 
 executions {
@@ -127,12 +127,12 @@ class ArchiveConstants {
 /**
  * Function to archive old build artifacts by moving them from a source repository to an "archive"
  * repository based on some archive policy (how old the artifact is, when it was last updated, the
- * last time it was downloaded, properties the artifact has, etc.). The artifact is re-deployed 
+ * last time it was downloaded, properties the artifact has, etc.). The artifact is re-deployed
  * with a 1-byte size file to preserve the record in Artifactory for auditing and history purposes.
- * All of the properties are preserved and some additional ones are set. 
- * 
+ * All of the properties are preserved and some additional ones are set.
+ *
  * This is done to preserve disk space on the server while keeping all auditing and history about
- * the artifacts that are archived. An example usage is to archive old product build artifacts 
+ * the artifacts that are archived. An example usage is to archive old product build artifacts
  * that are not used in a meaningful way within an organization.
  */
 private archiveOldArtifacts(
@@ -256,7 +256,7 @@ private archiveOldArtifacts(
                 // Check if we are supposed to leave any number of artifacts per directory
                 if (numKeepArtifacts > 0)
                 {
-                    // Get the parent path 
+                    // Get the parent path
                     // NOTE: assuming one directory per unique type of artifact
                     def parentPath = artifact.getParent()
                     // Get the number of artifacts per the parent directory

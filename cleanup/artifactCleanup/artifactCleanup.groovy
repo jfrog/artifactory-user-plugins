@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//curl command example for running this plugin. 
+//curl command example for running this plugin.
 //curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|log|dryRun"
 executions {
     cleanup() { params ->

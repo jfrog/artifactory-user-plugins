@@ -43,7 +43,8 @@ executions {
      *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/plugins.
      *          Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername,
      *          stagingPassword. The only optional parameter currently supported is comma separated list of exclusions
-     * 		 in form of ant fileset patterns; files, matched by those patterns won't be staged.         Example for local Nexus install with default credentials:
+     *          in form of ant fileset patterns; files, matched by those patterns won't be staged.
+     *          Example for local Nexus install with default credentials:
      *                 stagingUrl=http://localhost:8081/nexus
      *                 stagingUsername=admin
      *                 stagingPassword=admin123

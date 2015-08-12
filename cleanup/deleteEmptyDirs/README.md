@@ -1,7 +1,7 @@
 Artifactory Delete Empty Dirs User Plugin
 =========================================
 
-This plugin deletes all empty directories found inside any of a given set of 
+This plugin deletes all empty directories found inside any of a given set of
 paths.
 
 Parameters

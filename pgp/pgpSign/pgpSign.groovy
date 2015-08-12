@@ -48,7 +48,6 @@ storage {
     afterCreate { item ->
         String itemKey = item.repoKey
         String itemPath = item.repoPath.path
-        
         if (!itemKey.endsWith("-local")) {
            // Only local should be signed
            return

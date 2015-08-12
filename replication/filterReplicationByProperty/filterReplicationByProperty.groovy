@@ -19,15 +19,15 @@ import com.google.common.collect.HashMultimap;
 
 replication {
     beforeFileReplication {localRepoPath ->
-    	SetMultimap<String,String> props = HashMultimap.create()
-    	props.put("foo","true")
-    	List<RepoPath> found = searches.itemsByProperties(props, "libs-release-local")
-  		if (found.contains(localRepoPath)){
-			log.info "Replicating file: ${localRepoPath.getPath()} as it has the right property"
-			skip=false
-		}else{
-			log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it does not have the right property"
-  			skip=true;
-		}
+        SetMultimap<String,String> props = HashMultimap.create()
+        props.put("foo","true")
+        List<RepoPath> found = searches.itemsByProperties(props, "libs-release-local")
+        if (found.contains(localRepoPath)){
+            log.info "Replicating file: ${localRepoPath.getPath()} as it has the right property"
+            skip=false
+        }else{
+            log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it does not have the right property"
+            skip=true;
+        }
     }
 }

@@ -43,7 +43,6 @@ class Params{
 }
 
 executions {
-    
     remoteDownload() {ResourceStreamHandle body ->
         assert body
         def json = new JsonSlurper().parse(new InputStreamReader(body.inputStream))
@@ -53,7 +52,6 @@ executions {
         input.path = json.path as String
         input.url = json.url as String
         //need to add validation to whether empty or not
-        
         input.username = json.username as String
         input.password = json.password as String
 
@@ -66,17 +64,15 @@ executions {
         }
 
         //Fetch the remote file
-        log.info "Fetching remote file from: " + input.url 
-        
+        log.info "Fetching remote file from: " + input.url
         //Failure
         if(!fetchAndDeploy(input.url, input.repo, input.path, input.username, input.password)){
-            def msg = "Remote response failure, error code indicated on the log" 
+            def msg = "Remote response failure, error code indicated on the log"
             status = 500
             message = msg
             return
         }
-        
-    }      
+    }
 }
 
 def boolean fetchAndDeploy(url, repoKey, deployPath, username, password) {
@@ -87,17 +83,15 @@ def boolean fetchAndDeploy(url, repoKey, deployPath, username, password) {
     http.request(Method.GET, BINARY) { req ->
         response.success = { resp, binary ->
         log.info "Got response: ${resp.statusLine}"
-        def targetRepoKey = repoKey 
-        def targetPath = deployPath 
+        def targetRepoKey = repoKey
+        def targetPath = deployPath
         RepoPath deployRepoPath = create(targetRepoKey, targetPath)
         repositories.deploy(deployRepoPath, binary)
-        } 
-        response.failure = { resp -> 
+        }
+        response.failure = { resp ->
             //Can't throw an error to the client from here; returning 0, indicating failure
             log.error "Request failed with the following status code: " + resp.statusLine.statusCode
             return 0
         }
-        
     }
-    
 }

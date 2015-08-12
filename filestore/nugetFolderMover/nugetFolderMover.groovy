@@ -22,8 +22,6 @@ download {
          * interval (long) -  An interval in milliseconds between job runs.
          * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
          */
-         
-       
 
         nugetMover(cron: "0 0/5 * * * ?") {
             List<String> localRepoKeys = getLocalNugetRepositories()

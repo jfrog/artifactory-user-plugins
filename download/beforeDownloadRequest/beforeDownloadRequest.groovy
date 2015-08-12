@@ -56,12 +56,10 @@ def isRemote(String repoKey) {
 
 def shouldExpire(RepoPath repoPath) {
     if(!repositories.exists(repoPath)) {
-	    return false
-	}
-	
+        return false
+    }
     FileInfo fileInfo = repositories.getFileInfo(repoPath)
     long cacheAge = getCacheAge(fileInfo)
-
     return cacheAge > JSON_CACHE_MILLIS || cacheAge == -1
 }
 

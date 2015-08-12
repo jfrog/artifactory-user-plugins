@@ -37,14 +37,14 @@ Input Parameters
 
 ### Available 'time period' archive policies:
 
-- lastModified - the last time the artifact was modified 
+- lastModified - the last time the artifact was modified
 - lastUpdated - the last time the artifact was updated
 - created - the creation date of the artifact
 - lastDownloaded - the last time the artifact was downloaded
 - age - the age of the artifact
 
 NOTE: the time period archive policies are all specified in number of days
-  
+
 ### Available 'property' archive policies:
 
 - includePropertySet - the artifact will be archived if it possesses all of the passed in properties
@@ -58,8 +58,8 @@ If a property is set without a value, then a check is made for just the key.
 - numKeepArtifacts - the number of artifacts to keep per directory
 
 NOTE: This allows one to keep X number of artifacts (based on natural directory sort per directory). So, if your artifacts are lain out in a flat directory structure, you can keep the last X artifacts in each directory with this setting.
-  
-One can set any number of 'time period' archive policies as well as any number of include and exclude attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact. 
+
+One can set any number of 'time period' archive policies as well as any number of include and exclude attribute sets. It is up to the caller to decide how best to archive artifacts. If no archive policy parameters are sent in, the plugin aborts in order to not allow default deleting of every artifact.
 
 Permissions
 ------------

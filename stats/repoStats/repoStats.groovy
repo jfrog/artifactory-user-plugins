@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
- import org.artifactory.repo.RepoPathFactory
- import org.artifactory.repo.RepoPath
- 
- import groovy.json.JsonBuilder
- 
- /**
- *
- * @author itamarb
- * @since 21/07/13
- */
 
-/** 
+import org.artifactory.repo.RepoPathFactory
+import org.artifactory.repo.RepoPath
+
+import groovy.json.JsonBuilder
+
+/**
+*
+* @author itamarb
+* @since 21/07/13
+*/
+
+/**
  * This execution is named 'repoStats' and it will be called by REST by this name
  * The expected (and mandatory) parameter is comma separated list of repoPaths for which the stats will be be queried
  * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/repoStats?params=paths=repoPath,otherRepoPath"
@@ -36,10 +36,10 @@ executions {
         try {
             def json = new JsonBuilder()
             json {
-		//create a list of all repositories from the params 
+                //create a list of all repositories from the params
                 stats((params['paths'] as List).findResults { path ->
                     repoPath = RepoPathFactory.create("$path/")
-		    //if the path exists and was typed correctly, get its artifact count and size and insert to the json
+                    //if the path exists and was typed correctly, get its artifact count and size and insert to the json
                     if (repositories.exists(repoPath)) {
                         [
                                 repoPath: path,
@@ -58,7 +58,6 @@ executions {
                 message = 'no valid paths found'
                 status = 400
             }
-
         } catch (e) {
             log.error 'Failed to execute plugin', e
             message = e.message
