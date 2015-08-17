@@ -17,8 +17,8 @@ class IncludedUser {
 }
 /**
  * The command to get the info:
- * curl -X GET "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}" -u{admin_user}:{password}
- * for example: curl -X GET "http://localhost:8081/artifactory/api/plugins/execute/findIncludedUsers?params=group=readers" -uadmin:password
+ * curl -X GET -u{admin_user}:{password} "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}" 
+ * for example: curl -X GET -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/findIncludedUsers?params=group=readers" 
  */
 executions {
 
