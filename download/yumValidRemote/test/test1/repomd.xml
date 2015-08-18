@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<repomd xmlns='http://linux.duke.edu/metadata/repo'>
+  <data type='other'>
+    <location href='repodata/other.xml.gz' />
+    <checksum type='sha' pkgid='YES'>f29436ce426d074da7d00ee86462e25afbdad4b3</checksum>
+    <timestamp>1439573315</timestamp>
+    <size>107</size>
+    <open-size>103</open-size>
+    <open-checksum type='sha' pkgid='YES'>62e0116f72dede13d2aad10346ec52f11d2e487a</open-checksum>
+  </data>
+  <data type='filelists'>
+    <location href='repodata/filelists.xml.gz' />
+    <checksum type='sha' pkgid='YES'>4d5f90b6ca896d51fb993d8e05452d4ba1b1386c</checksum>
+    <timestamp>1439573315</timestamp>
+    <size>106</size>
+    <open-size>107</open-size>
+    <open-checksum type='sha' pkgid='YES'>3707c4c6d17d212f3a726cebae9f006d0ed94593</open-checksum>
+  </data>
+  <data type='primary'>
+    <location href='repodata/primary.xml.gz' />
+    <checksum type='sha' pkgid='YES'>17e0bf546e19e9f33b188da0a74bc8228f094499</checksum>
+    <timestamp>1439573315</timestamp>
+    <size>115</size>
+    <open-size>149</open-size>
+    <open-checksum type='sha' pkgid='YES'>3a00f1c42a603a96d10430efb43c55227639576a</open-checksum>
+  </data>
+  <revision />
+</repomd>
