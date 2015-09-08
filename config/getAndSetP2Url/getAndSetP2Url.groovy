@@ -27,6 +27,7 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor
 import org.artifactory.descriptor.repo.P2Configuration
 import org.artifactory.descriptor.repo.RepoLayout
+import org.artifactory.descriptor.repo.RepoType
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
 
@@ -100,7 +101,7 @@ executions {
         MutableCentralConfigDescriptor config = centralConfigService.mutableDescriptor
         def repoDescriptor = config.getVirtualRepositoriesMap()?.get(input.repo)
         // check that the repo descriptor is not NULL and that its a virtual repo. if not - return.
-        if (!repoDescriptor || !repoDescriptor.isP2Support() ) {
+        if (!repoDescriptor || repoDescriptor.getP2() == null || !repoDescriptor.getType().equals(RepoType.P2)) {
             def msg = "The virtual repo ${input.repo} is not virtual or doesnt have a p2 configuration"
             log.warn(msg)
             status = 400
