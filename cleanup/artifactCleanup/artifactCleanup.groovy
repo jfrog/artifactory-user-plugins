@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 //curl command example for running this plugin.
-//curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|log|dryRun"
+//curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun=true"
 executions {
     cleanup() { params ->
         def months = params['months'] ? params['months'][0] as int: 6
@@ -37,9 +37,11 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
     def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
 
+    long bytesFound = 0;
     def artifactsCleanedUp =
         searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos).
         each {
+            bytesFound += repositories.getItemInfo(it)?.getSize()
             if (dryRun) {
                 log.info "Found $it";
             } else {
@@ -49,8 +51,8 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
         }
 
     if (dryRun) {
-        log.info "Dry run - nothing deleted. found $artifactsCleanedUp.size artifacts"
+        log.info "Dry run - nothing deleted. found $artifactsCleanedUp.size artifacts consuming $bytesFound bytes"
     } else {
-        log.info "Finished cleanup, deleted $artifactsCleanedUp.size artifacts"
+        log.info "Finished cleanup, deleted $artifactsCleanedUp.size artifacts that took up $bytesFound bytes"
     }
 }
