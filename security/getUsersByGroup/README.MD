@@ -12,4 +12,4 @@ Executing
 
 To execute this plugin:
 
-curl -X GET "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}" -u{admin_user}:{password}
+curl -X GET -u{admin_user}:{password} "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}" 

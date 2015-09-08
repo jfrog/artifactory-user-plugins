@@ -1,6 +1,7 @@
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+
 import java.nio.charset.Charset
 
 /**
@@ -17,25 +18,37 @@ class IncludedUser {
 }
 /**
  * The command to get the info:
- * curl -X GET "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}" -u{admin_user}:{password}
- * for example: curl -X GET "http://localhost:8081/artifactory/api/plugins/execute/findIncludedUsers?params=group=readers" -uadmin:password
+ * curl -X GET -u{admin_user}:{password} "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/findIncludedUsers?params=group={group_name}"
+ * for example: curl -X GET -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/findIncludedUsers?params=group=readers"
  */
 executions {
 
-    findIncludedUsers(httpMethod: 'GET'){ params ->
+    findIncludedUsers(httpMethod: 'GET') { params ->
 
         //Change the URL to your server url
-        String urlString = "http://localhost:8081/artifactory/api/security/users";
-
+        String basicUrlString = "http://localhost:8081/artifactory/api/security/";
+        //constracts the URL to get all the users information
+        String urlString = basicUrlString + "users";
         //retriving the user that performs the request. Most be an admin user.
         String user = security.getCurrentUsername();
         String pass = security.getEncryptedPassword();
         ArrayList<String> groupNameArrayFromParams = params['group']
         String groupName = groupNameArrayFromParams.get(0)
+
         log.info("Getting the required users for the group $groupName")
+        //constracts the URL to get group details
+        String getGroupDetails = basicUrlString + "groups/" + groupName;
+        //validation if the group exists
+        boolean passValidation = validation(getGroupDetails,user,pass);
+        //if the group does not exists return 400
+        if (!passValidation) {
+            status = 400;
+            message = "No such Group $groupName";
+            log.error("Group $groupName does not exists");
+        }
 
         //open the connection to the URL and retrieve the json from the call
-        def allUsersJson = getJson(urlString,user,pass);
+        def allUsersJson = getJson(urlString, user, pass);
         boolean namesOfGroups;
         ArrayList<String> names = allUsersJson.name
         ArrayList<String> uri = allUsersJson.uri
@@ -46,7 +59,7 @@ executions {
         ArrayList<IncludedUser> list = new ArrayList<>();
         while (i < uri.size()) {
             // get if the user is included or not.
-            namesOfGroups = getUsersInfo(uri.get(i),groupName, user,pass)
+            namesOfGroups = getUsersInfo(uri.get(i), groupName, user, pass)
             //if included add the required info to the list as new object IncludedUser (in the basic plugin the info is the user name)
             if (namesOfGroups) {
                 list.add(new IncludedUser(names[i]))
@@ -57,7 +70,7 @@ executions {
         json(groupName, list)
 
         //printing the message to the requested user.
-        message  = json.toPrettyString()
+        message = json.toPrettyString()
         log.info("Finished retrieving the required users for the group $groupName")
 
     }
@@ -73,8 +86,8 @@ executions {
  */
 
 private boolean getUsersInfo(String uri, String group, String user, String pass) {
-
-    def users = getJson(uri,user,pass);
+    //get users, parse the user retrieved information and check if the required group is included in the user info.
+    def users = getJson(uri, user, pass);
     ArrayList<String> usersGroups = users.groups
     if (usersGroups != null) {
         ArrayList<String> groups = usersGroups.value
@@ -95,7 +108,7 @@ private boolean getUsersInfo(String uri, String group, String user, String pass)
  * @param pass - password for the authentication
  * @return - return the json object of the result.
  */
-private Object getJson(String urlString, String user, String pass){
+private Object getJson(String urlString, String user, String pass) {
     URL url = new URL(urlString);
     URLConnection uc = url.openConnection();
     String userpass = user + ":" + pass;
@@ -106,4 +119,28 @@ private Object getJson(String urlString, String user, String pass){
     //close the connection since we are done using it.
     is.close()
     return json;
+}
+
+/**
+ * This method performs the REST call to the required URL and returns true if the group exists if not then return false
+ * @param urlString - the URL to do the REST call to get group info
+ * @param user - user for authentication
+ * @param pass - password for the authentication
+ * @return - return true if the group exists else return false.
+ */
+
+private boolean validation(String urlString, String user, String pass) {
+
+    try{
+        URL url = new URL(urlString);
+        URLConnection uc = url.openConnection();
+        String userpass = user + ":" + pass;
+        String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()));
+        uc.setRequestProperty("Authorization", basicAuth);
+        InputStream is = uc.getInputStream();
+        return true;
+    }catch (FileNotFoundException e){
+        return false;
+    }
+
 }
