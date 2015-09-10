@@ -30,7 +30,10 @@ import org.artifactory.descriptor.repo.RepoLayout
 import org.artifactory.descriptor.repo.RepoType
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
-
+import org.artifactory.addon.p2.P2Repo
+import org.artifactory.ui.rest.service.admin.configuration.repositories.util.UpdateRepoConfigHelper
+import org.artifactory.ui.rest.service.admin.configuration.repositories.util.builder.RepoConfigModelBuilder
+import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel
 
 /**
  ************************************************************************************
@@ -83,6 +86,8 @@ executions {
 
     //curl -uadmin:password -T /path/to/.json/file -X POST "http://localhost:8081/artifactory/api/plugins/execute/modifyP2Urls"
     modifyP2Urls() { ResourceStreamHandle body ->
+        def updater = ctx.beanForType(UpdateRepoConfigHelper.class)
+        def builder = ctx.beanForType(RepoConfigModelBuilder.class)
         assert body
         def json = new JsonSlurper().parse(new InputStreamReader(body.inputStream))
         def input = new P2UrlsConf()
@@ -97,11 +102,10 @@ executions {
             return
         }
 
-        def centralConfigService = ctx.centralConfig
-        MutableCentralConfigDescriptor config = centralConfigService.mutableDescriptor
+        CentralConfigDescriptor config = ctx.centralConfig.descriptor
         def repoDescriptor = config.getVirtualRepositoriesMap()?.get(input.repo)
         // check that the repo descriptor is not NULL and that its a virtual repo. if not - return.
-        if (!repoDescriptor || repoDescriptor.getP2() == null || !repoDescriptor.getType().equals(RepoType.P2)) {
+        if (!repoDescriptor?.p2 || repoDescriptor.type != RepoType.P2) {
             def msg = "The virtual repo ${input.repo} is not virtual or doesnt have a p2 configuration"
             log.warn(msg)
             status = 400
@@ -109,21 +113,29 @@ executions {
             return
         }
 
-        P2Configuration p2Conf = repoDescriptor?.p2
-        if (!p2Conf) {
-            def msg = "The virtual repo ${input.repo} doesnt have a P2 configuration"
-            log.warn(msg)
-            status = 400
-            message = msg
-            return
-        }
-        p2Conf.setUrls(Arrays.asList(input.urls))
-        repoDescriptor.setP2(p2Conf)
-        config.getVirtualRepositoriesMap().put(repoDescriptor.key, repoDescriptor)
+        def model = new VirtualRepositoryConfigModel()
+        model = model.fromDescriptor(builder, repoDescriptor)
 
-        centralConfigService.saveEditedDescriptorAndReload(config)
+        def p2Repos = Arrays.asList(input.urls).collect {
+            new P2Repo(null, null, it)
+        }
+
+        model.typeSpecific.p2Repos = p2Repos
+        model.updateRepo(updater)
+
+        //refetch and push the config, to get rid of any invalid repos
+        config = ctx.centralConfig.descriptor
+        repoDescriptor = config.getVirtualRepositoriesMap()?.get(input.repo)
+        model = new VirtualRepositoryConfigModel()
+        model = model.fromDescriptor(builder, repoDescriptor)
+        model.updateRepo(updater)
+
+        config = ctx.centralConfig.descriptor
         status = 201
-        message = new JsonBuilder(p2Conf).toPrettyString()
+        def result = new P2UrlsConf()
+        result.repo = input.repo
+        result.urls = config.virtualRepositoriesMap?.get(input.repo)?.p2?.urls?.toArray(new String[0])
+        message = new JsonBuilder(result).toPrettyString()
 
         //virtual repo needs to be cleand
         def rootPath = RepoPathFactory.create(repoDescriptor.getKey(), "")
