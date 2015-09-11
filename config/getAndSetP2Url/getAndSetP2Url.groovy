@@ -20,20 +20,16 @@
  * @since 12/10/14
  */
 
-
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import org.artifactory.addon.p2.P2Repo
 import org.artifactory.descriptor.config.CentralConfigDescriptor
-import org.artifactory.descriptor.config.MutableCentralConfigDescriptor
-import org.artifactory.descriptor.repo.P2Configuration
-import org.artifactory.descriptor.repo.RepoLayout
 import org.artifactory.descriptor.repo.RepoType
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
-import org.artifactory.addon.p2.P2Repo
+import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.UpdateRepoConfigHelper
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.builder.RepoConfigModelBuilder
-import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel
 
 /**
  ************************************************************************************
@@ -53,7 +49,7 @@ import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.Virt
  *
  */
 
-class P2UrlsConf{
+class P2UrlsConf {
     String repo
     String[] urls
 
@@ -62,11 +58,7 @@ class P2UrlsConf{
     }
 }
 
-
 executions {
-
-
-
     getP2Urls() { params ->
         def repoKey = params?.('repo')?.get(0) as String
         if (!repoKey) {
@@ -105,7 +97,7 @@ executions {
         CentralConfigDescriptor config = ctx.centralConfig.descriptor
         def repoDescriptor = config.getVirtualRepositoriesMap()?.get(input.repo)
         // check that the repo descriptor is not NULL and that its a virtual repo. if not - return.
-        if (!repoDescriptor?.p2 || repoDescriptor.type != RepoType.P2) {
+        if (!repoDescriptor || repoDescriptor.type != RepoType.P2) {
             def msg = "The virtual repo ${input.repo} is not virtual or doesnt have a p2 configuration"
             log.warn(msg)
             status = 400
@@ -137,7 +129,7 @@ executions {
         result.urls = config.virtualRepositoriesMap?.get(input.repo)?.p2?.urls?.toArray(new String[0])
         message = new JsonBuilder(result).toPrettyString()
 
-        //virtual repo needs to be cleand
+        //virtual repo needs to be cleaned
         def rootPath = RepoPathFactory.create(repoDescriptor.getKey(), "")
         repositories.delete(rootPath)
     }
