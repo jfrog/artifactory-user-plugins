@@ -13,20 +13,26 @@ To kick off replication, make a simple REST request.
 
 - Call a predefined pull configuration
 
-      >>> curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=myPullKey"
-      Builds [.*] from http://localhost:8080/artifactory/ successfully replicated:
-      my-build-name-1: already-synched
-      my-build-name-2:7:3:3
+  ```
+  >>> curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=myPullKey"
+  Builds [.*] from http://localhost:8080/artifactory/ successfully replicated:
+  my-build-name-1: already-synched
+  my-build-name-2:7:3:3
+  ```
 
 - Call a predefined push configuration
 
-      >>>  curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPushConfig?params=key=myPushKey"
-      (need example output)
+  ```
+  >>>  curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPushConfig?params=key=myPushKey"
+  (need example output)
+  ```
 
 - Call an event push replication
 
-      >>> Needs an example
-      (need example output)
+  ```
+  >>> Needs an example
+  (need example output)
+  ```
 
 Boom, your builds will be replicated to the appropriate server.
 
@@ -47,9 +53,11 @@ To install Build Sync:
 
 1. Edit the `${ARTIFACTORY_HOME}/etc/logback.xml` to add:
 
-       <logger name="buildSync">
-           <level value="debug"/>
-       </logger>
+   ```xml
+   <logger name="buildSync">
+       <level value="debug"/>
+   </logger>
+   ```
 
 2. Edit the `buildSync.json` file. See the example `buildSync.json` provided or
    the details below on how `buildSync.json` works.
@@ -70,32 +78,36 @@ Creating A buildSync.json
 
 1. First list the servers with:
 
-       "servers": [
-           {
-               "key": "local-1",
-               "url": "http://localhost:8080/artifactory",
-               "user": "admin",
-               "password": "password"
-           },
-           ...
-       ]
+   ```json
+   "servers": [
+       {
+           "key": "local-1",
+           "url": "http://localhost:8080/artifactory",
+           "user": "admin",
+           "password": "password"
+       },
+       ...
+   ]
+   ```
 
    Each server should have a unique key identifying it, and url/user/pass used
    to access the REST API.
 
 2. Then list the pull replication configurations with:
 
-       "pullConfigs": [
-           {
-               "key": "AllFrom2",
-               "source": "local-2",
-               "buildNames": [".*"],
-               "delete": true,
-               "reinsert": false,
-               "activatePlugins": true
-           },
-           ...
-       ]
+   ```json
+   "pullConfigs": [
+       {
+           "key": "AllFrom2",
+           "source": "local-2",
+           "buildNames": [".*"],
+           "delete": true,
+           "reinsert": false,
+           "activatePlugins": true
+       },
+       ...
+   ]
+   ```
 
    - Each pull configuration should have a unique `key` identifying it.
      (mandatory)
@@ -121,16 +133,18 @@ Creating A buildSync.json
 
 3. Then list the push replication configurations with:
 
-       "pushConfigs": [
-           {
-               "key": "PushTo23",
-               "destinations": [ "local-2", "local-3" ],
-               "buildNames": [".*"],
-               "delete": true,
-               "activateOnSave": false
-           },
-           ...
-       ]
+   ```json
+   "pushConfigs": [
+       {
+           "key": "PushTo23",
+           "destinations": [ "local-2", "local-3" ],
+           "buildNames": [".*"],
+           "delete": true,
+           "activateOnSave": false
+       },
+       ...
+   ]
+   ```
 
    Everything is the same as pull configurations, except:
    - The `activateOnSave` flag will add a listener in this plugin that will
