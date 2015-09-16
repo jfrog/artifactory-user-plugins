@@ -41,14 +41,6 @@ private def buildCleanup(int days, dryRun) {
     } else {
         echo "Starting build cleanup older than $days days..."
     }
-    /*
-    WARNING: UNSUPPORTED INTERNAL API USAGE!
-     */
-    //TODO: Remove this and replace with the following line once the new build.buildNames API is available
-    /*List<String> buildNames = ctx.beanForType(
-            org.artifactory.storage.build.service.BuildStoreService).getAllBuildNames()*/
-
-    // Below is available only from Artifactory 3.2.0, see: https://www.jfrog.com/jira/browse/RTFACT-5942
     List<String> buildNames = builds.buildNames
 
     def n = 0

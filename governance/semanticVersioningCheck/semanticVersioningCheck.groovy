@@ -43,12 +43,6 @@ import static org.semver.Delta.CompatibilityType.BACKWARD_COMPATIBLE_USER
  * Property binaryCompatibleWith or binaryIncompatibleWith will be added with the version of artifact the check was performed against as a value.
  */
 storage {
-    /**
-     * Handle after create events.
-     *
-     * Closure parameters:
-     * item (org.artifactory.fs.ItemInfo) - the original item being created.
-     */
     afterCreate { ItemInfo item ->
         FileLayoutInfo currentLayout = repositories.getLayoutInfo(item.repoPath)
         if (currentLayout.organization) {

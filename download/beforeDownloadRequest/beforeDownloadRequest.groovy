@@ -25,23 +25,6 @@ class CacheConstants {
 import static CacheConstants.JSON_CACHE_MILLIS
 
 download {
-    /**
-     * Handle before any download events, at this point the request passed all of Artifactory's filters (authentication etc) and is about to reach the repositories.
-     *
-     * Context variables:
-     * expired (boolean) - Mark the requested resource as expired. Defaults to false (unset).
-     *                     An expired resource is one that it's (now() - (last updated time)) time is higher than the repository retrieval cache period milliseconds.
-     *                     Setting this option to true should be treated with caution, as it means both another database hit (for updating the last updated time)
-     *                     as well as network overhead since if the resource is expired, a remote download will occur to re-download it to the cache.
-     *                     A common implementation of this extension point is to check if the resource comply with a certain pattern (for example: a *.json file)
-     *                     AND the original request was to the remote repository (and not directly to it's cache)
-     *                     AND a certain amount of time has passed since the last expiry check (to minimize DB hits).
-     *
-     * Closure parameters:
-     * request (org.artifactory.request.Request) - a read-only parameter of the request.
-     * repoPath (org.artifactory.repo.RepoPath) -  a read-only parameter of the response RepoPath (containing the
-     *                                                    physical repository the resource was found in).
-     */
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (repoPath.path.endsWith(".json") && isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
             log.info 'Expiring json file: ${repoPath.name}'

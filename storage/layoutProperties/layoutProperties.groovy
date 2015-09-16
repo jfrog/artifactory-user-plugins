@@ -26,12 +26,6 @@ import org.artifactory.repo.RepoPath
  * or layout.customTokenHere with the values as strings.
  */
 storage {
-    /**
-     * Handle after create events.
-     *
-     * Closure parameters:
-     * item (org.artifactory.fs.ItemInfo) - the original item being created.
-     */
     afterCreate { ItemInfo item ->
         RepoPath repoPath = item.repoPath //Gets the full path of the artifact, including the repo
         FileLayoutInfo currentLayout = repositories.getLayoutInfo(repoPath) //Gets the actual layout of the repository the artifact is deployed to

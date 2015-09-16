@@ -22,17 +22,6 @@ import org.artifactory.md.Properties
 import org.artifactory.exception.CancelException
 
 /**
- *
- * Globally bound variables:
- *
- * log (org.slf4j.Logger)
- * repositories (org.artifactory.repo.Repositories)
- * security (org.artifactory.security.Security)
- * searches (org.artifactory.search.Searches) [since: 2.3.4]
- * builds (org.artifactory.build.Builds) [since 2.5.2]
- *
- * ctx (org.artifactory.spring.InternalArtifactoryContext) - NOT A PUBLIC API - FOR INTERNAL USE ONLY!
- *
  * @author Adam Kunk
  */
 
