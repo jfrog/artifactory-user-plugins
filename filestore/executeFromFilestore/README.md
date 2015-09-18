@@ -15,7 +15,7 @@ To execute the plugin:
 
 The `execCommand.json` file is a JSON file with the following fields:
 
-- srcRepo: The Artifactory repository to copy from
-- srcDir: The Artifactory directory path to copy
-- destLocalDir: The local filesystem path to copy the file tree into
-- params: Any parameters to pass to the `find` command
+- `srcRepo`: The Artifactory repository to copy from
+- `srcDir`: The Artifactory directory path to copy
+- `destLocalDir`: The local filesystem path to copy the file tree into
+- `params`: Any parameters to pass to the `find` command

@@ -1,5 +1,10 @@
-This plugin converts the nuget packages under the root of the repository like in the following example:
+Artifactory NuGet Folder Mover User Plugin
+==========================================
 
-nuget-local/NHibernate.3.3.1.4000.nupkg -> nuget-local/NHibernate/NHibernate/NHibernate.3.3.1.4000.nupkg
+This plugin converts the NuGet packages under the root of the repository, as in
+the following example:
 
-The user plugin has a cron job scheduled to run every five minutes
+`nuget-local/NHibernate.3.3.1.4000.nupkg` &rarr;
+`nuget-local/NHibernate/NHibernate/NHibernate.3.3.1.4000.nupkg`
+
+This plugin has a cron job scheduled to run every five minutes.

@@ -1,5 +1,5 @@
-Get Users By Group
-==================
+Artifactory Get Users By Group User Plugin
+==========================================
 
 This plugin provides you the ability to get all users in a specific group.
 

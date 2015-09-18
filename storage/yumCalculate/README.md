@@ -1,5 +1,5 @@
-Artifactory YUM Calculate Plugin
-================================
+Artifactory YUM Calculate User Plugin
+=====================================
 
 This plugin synchronously calculates the YUM metadata at a given repository
 path.

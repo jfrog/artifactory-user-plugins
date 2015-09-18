@@ -8,7 +8,8 @@ scheduled job.
 Parameters
 ----------
 
-- `months`: The number of months back to look before deleting an artifact. Default 6.
+- `months`: The number of months back to look before deleting an artifact.
+  Default 6.
 - `repos`: A list of repositories to clean. This parameter is required.
 - `dryRun`: If this parameter is passed, artifacts will not actually be deleted.
 

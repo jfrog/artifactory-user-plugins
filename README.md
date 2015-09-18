@@ -1,5 +1,6 @@
-Artifactory Sample Plugins
-==========================
+Artifactory Sample User Plugins
+===============================
+
 A collection of sample [groovy user plugins] for [Artifactory].
 
 Copyright &copy; 2011-, JFrog Ltd.
