@@ -1,7 +1,9 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import java.text.SimpleDateFormat
-import spock.lang.Specification
 import groovy.json.JsonBuilder
+import spock.lang.Specification
+
+import java.text.SimpleDateFormat
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class BuildCleanupTest extends Specification {
     def 'build cleanup test'() {

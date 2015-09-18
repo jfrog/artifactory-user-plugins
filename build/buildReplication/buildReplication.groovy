@@ -13,12 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Build Replication plugin replicates All build info json from master Artifactory to slave Artifactory instance.
+
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+import groovyx.net.http.ContentType
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.HttpResponseException
+@Grapes([
+    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
+          module = 'http-builder', version = '0.6')
+])
+@GrabExclude('commons-codec:commons-codec')
+import groovyx.net.http.Method
+import org.apache.http.HttpRequestInterceptor
+import org.apache.http.entity.StringEntity
+import org.artifactory.exception.CancelException
+
+import static groovyx.net.http.Method.PUT
+
+/**
+ * Build Replication plugin replicates All build info json from master
+ * Artifactory to slave Artifactory instance.
  *
  * 1. Set Up:
- *   1.1. Place this script under the muster Artifactory server ${ARTIFACTORY_HOME}/etc/plugins.
- *   1.2. Place buildReplication.properties file under ${ARTIFACTORY_HOME}/etc/plugins.
+ *   1.1. Place this script under the muster Artifactory server
+ *        ${ARTIFACTORY_HOME}/etc/plugins.
+ *   1.2. Place buildReplication.properties file under
+ *        ${ARTIFACTORY_HOME}/etc/plugins.
  * 2. Run the plugin:
  *  2.1. The plugin may run using the buildReplication.properties
  *  2.2. the file should contain:
@@ -38,52 +59,35 @@
  *
  * 3. Logic:
  *   3.1. The plugin compare the list of build from master and slave and:
- *     3.1.1. Add all builds of projects that are found on master but not on slave.
- *     3.1.2. Projects that are found on slave but not on master are completely ignored.
+ *     3.1.1. Add all builds of projects that are found on master but not on
+ *            slave.
+ *     3.1.2. Projects that are found on slave but not on master are completely
+ *            ignored.
  *   3.2. If deleteDifferentBuild=false:
- *     3.2.1. Builds deleted from master and already exists in slave will not be deleted.
+ *     3.2.1. Builds deleted from master and already exists in slave will not be
+ *            deleted.
  *   3.3. BE CAREFUL  deleteDifferentBuild=true BE CAREFUL
- *     3.3.1. Builds deleted from master and already exists in slave will be deleted from slave.
- *     If the delete artifacts flag is on inside the build info it will also delete artifacts on the slave
+ *     3.3.1. Builds deleted from master and already exists in slave will be
+ *            deleted from slave.
+ *     If the delete artifacts flag is on inside the build info it will also
+ *     delete artifacts on the slave
  *
- */
-
-
-
-import groovy.json.JsonBuilder
-import groovyx.net.http.HttpResponseException
-@Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
-]) @GrabExclude('commons-codec:commons-codec')
-import groovyx.net.http.Method
-import org.artifactory.exception.CancelException
-import groovy.json.JsonSlurper
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
-import org.apache.http.HttpRequestInterceptor
-import org.apache.http.entity.StringEntity
-import static groovyx.net.http.Method.PUT
-import org.artifactory.exception.CancelException
-
-
-//The script can get 7 params :
-// * Artifactory main server name (the replication will be from this server to the replicated one)
-// * User name and password\security key to the main server
-// * Artifactory replicated server
-// * User name and password\security key to the replicated server
-// * True\false flag which delete builds that don't exist at the main server and exist at the replicated server (not mandatory)
-
-/**
+ * The script can get 7 params:
+ *  - Artifactory main server name (the replication will be from this server to
+ *    the replicated one)
+ *  - User name and password\security key to the main server
+ *  - Artifactory replicated server
+ *  - User name and password\security key to the replicated server
+ *  - True\false flag which delete builds that don't exist at the main server
+ *    and exist at the replicated server (not mandatory)
+ *
  * curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=masterArtifactory|masterUser=masterArtifactoryUser|masterPassword=masterPassword|slave=slaveArtifactory|slaveUser=slaveUser|slavePassword=slavePassword|deleteDifferentBuild=true/false"
  */
 
-
 executions {
     buildReplication() { params ->
-
         try {
-
-            //Defaults for success
+            // Defaults for success
             status = 200
             message = 'Builds were successfully replicated'
 
@@ -107,7 +111,6 @@ executions {
             }
 
             buildsDiff.each {
-
                 def buildColonLoc = it.lastIndexOf(':')
                 def buildName = it[0..buildColonLoc - 1]
                 String buildNumber = it.substring(buildColonLoc + 1)
@@ -130,17 +133,14 @@ executions {
                     masterBuildkeys << buildName
                 }
 
-
-
                 def removeBuild = [:]
 
                 secondChanges.each {
                     String buildNumber = org.apache.commons.lang.StringUtils.substringAfterLast(it, ':/')
                     String buildName = org.apache.commons.lang.StringUtils.substringBeforeLast(it, ':/')
                     buildName = org.apache.commons.lang.StringUtils.removeStart(buildName, '/')
-                    //Don't delete project that only exist in slave
+                    // Don't delete project that only exist in slave
                     if (masterBuildkeys.contains(buildName)) {
-
                         if (removeBuild.containsKey(buildName)) {
                             String value = removeBuild.get(buildName) + ",$buildNumber"
                             removeBuild.put(buildName, value)
@@ -148,16 +148,14 @@ executions {
                             removeBuild.put(buildName, buildNumber)
                         }
                     }
-
                 }
 
                 removeBuild.each {
                     deleteBuild(it.key, it.value)
                 }
             }
-
         } catch (CancelException e) {
-            //aborts during execution
+            // aborts during execution
             status = e.status
             message = e.message
         }
@@ -167,7 +165,7 @@ executions {
 def validate(params) throws CancelException {
     Properties replicationProps
     File propertiesFile
-    //If query parameters were sent then use them otherwise use properties file
+    // If query parameters were sent then use them otherwise use properties file
     if (params.size() > 1) {
         replicationProps = new Properties()
         replicationProps.putAll(params)
@@ -209,7 +207,6 @@ def validate(params) throws CancelException {
         replicationProps.load(new FileReader(propertiesFile))
     }
 
-
     if (!replicationProps) {
         handleError 400, "Failed to load properties file at ${propertiesFile.absolutePath}. Are the permissions right and is it properly formatted?"
     }
@@ -242,11 +239,7 @@ def validate(params) throws CancelException {
     replicationProps
 }
 
-
-
 def buildNameAndNumberes(String server, String user, String password) {
-
-
     def http = new HTTPBuilder(server)
     http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
         httpRequest.addHeader('Authorization', "Basic ${"${user}:${password}".getBytes().encodeBase64()}")
@@ -257,7 +250,7 @@ def buildNameAndNumberes(String server, String user, String password) {
     def buildNamesAndNumbers = []
 
     buildsNames?.each { buildName ->
-        buildName = URLDecoder.decode(buildName, "UTF-8");
+        buildName = URLDecoder.decode(buildName, "UTF-8")
         http.get(path: "api/build/$buildName") { resp, json ->
             json.buildsNumbers.uri.each { buildNumber ->
                 buildNamesAndNumbers << buildName + ":" + buildNumber
@@ -282,7 +275,6 @@ def getBuildNames(String server, String user, String password) {
         }
     } catch (HttpResponseException e) {
         log.info("Could not get build information from : ${server}api/build")
-
     }
     return buildNames
 }
@@ -337,11 +329,8 @@ def putCommand(def server, def repServerUser, def repServerPassword, def json) {
     }
 }
 
-
-
 def deleteBuild(String buildName, String buildNumbers) {
     def dbn = org.apache.commons.httpclient.util.URIUtil.encodeQuery(buildName)
-    //def dbn = URLDecoder.decode(buildName, "UTF-8");
     HTTPBuilder http = new HTTPBuilder(repProps.slave)
     http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
         httpRequest.addHeader('Authorization', "Basic ${"${repProps.slaveUser}:${repProps.slavePassword}".getBytes().encodeBase64()}")
@@ -361,8 +350,6 @@ def deleteBuild(String buildName, String buildNumbers) {
     }
 }
 
-
-
 def parseJson(def json) {
     def pJson = new JsonSlurper().parseText(json)
     pJson.remove('uri')
@@ -370,7 +357,6 @@ def parseJson(def json) {
     JsonBuilder builder = new JsonBuilder(pJson)
     map << [build: org.apache.commons.lang.StringUtils.removeStart(builder.toString(), '{"buildInfo":')]
 }
-
 
 def handleError(int status, message) throws CancelException {
     log.error message

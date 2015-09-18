@@ -1,5 +1,6 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class RemoteDownloadTest extends Specification {
     def 'example remote download plugin test'() {

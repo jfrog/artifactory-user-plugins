@@ -1,7 +1,8 @@
 import groovyx.net.http.HttpResponseException
 import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class YumCalculateTest extends Specification {
     def 'simple yum calculate test'() {

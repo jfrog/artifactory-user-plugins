@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
-import org.artifactory.security.RealmPolicy;
-import org.artifactory.security.groups.LdapGroupsSettings;
+
+import org.artifactory.security.RealmPolicy
+import org.artifactory.security.groups.LdapGroupsSettings
 
 /**
  * An example of attaching Ldap groups to any user (can be internal, SSO etc..)
  *
  * @author Shay Yaakov
  */
+
 realms {
     myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.ADDITIVE]) {
         authenticate { username, credentials ->
@@ -30,7 +31,7 @@ realms {
             // All of it's groups will be fetched and attached to the user
             settings.ldapGroupSettingsName = 'il-users'
             groups += security.getCurrentUserGroupNames(settings)
-            return true;
+            return true
         }
     }
 }

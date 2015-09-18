@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import groovy.transform.Field
 import org.artifactory.fs.FileLayoutInfo
 import org.artifactory.fs.ItemInfo
@@ -27,17 +28,20 @@ import org.artifactory.repo.RepoPath
  */
 storage {
     afterCreate { ItemInfo item ->
-        RepoPath repoPath = item.repoPath //Gets the full path of the artifact, including the repo
-        FileLayoutInfo currentLayout = repositories.getLayoutInfo(repoPath) //Gets the actual layout of the repository the artifact is deployed to
+        RepoPath repoPath = item.repoPath
+        // Gets the full path of the artifact, including the repo
+        FileLayoutInfo currentLayout = repositories.getLayoutInfo(repoPath)
+        // Gets the actual layout of the repository the artifact is deployed to
         if (currentLayout.isValid()) {
             try {
                 ['organization', 'module', 'baseRevision', 'folderIntegrationRevision', 'fileIntegrationRevision', 'classifier', 'ext', 'type'].each { String propName ->
-                    repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout."$propName" as String) } //This pulls all the default tokens
+                    repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout."$propName" as String)
+                } // This pulls all the default tokens
                 def customFields = currentLayout.getCustomFields()
                 if (customFields) {
                     Set<String> customProps = customFields.keySet()
                     customProps.each { String propName -> repositories.setProperty(repoPath, PROPERTY_PREFIX + propName, currentLayout.getCustomField("$propName")) }
-                    //pulls the custom tokens
+                    // pulls the custom tokens
                 }
             } catch (Exception ex) {
                 log.error("Could not set properties on ${repoPath}", ex)

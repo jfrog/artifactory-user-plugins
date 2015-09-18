@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import groovy.json.JsonSlurper
 import org.apache.commons.io.IOUtils
 import org.artifactory.fs.ItemInfo
@@ -42,9 +43,9 @@ class ExecuteConstants {
 }
 
 executions {
-    copyAndExecute(version : '1.0',
-            description : 'Copy repoPath to local drive and execute command',
-            groups: ['executors'].toSet()) { ResourceStreamHandle body ->
+    copyAndExecute(version: '1.0',
+        description: 'Copy repoPath to local drive and execute command',
+        groups: ['executors'].toSet()) { ResourceStreamHandle body ->
         assert body
         def json = new JsonSlurper().parse(new InputStreamReader(body.inputStream))
 
@@ -57,7 +58,7 @@ executions {
         LocalLog localLog = new LocalLog(start, log)
         if (!repoKey || !destLocalDir) {
             localLog.error(
-                    "One parameter repoKey, destLocalDir is missing please provide them in your input JSON body")
+                "One parameter repoKey, destLocalDir is missing please provide them in your input JSON body")
             status = 400
             message = localLog.finalMessage()
             return
@@ -86,7 +87,7 @@ executions {
 
         localLog.info("Running copy of ${srcRepoPath.id} into ${dest.getAbsolutePath()} log at ${localLog.logFile.getAbsolutePath()}")
         long totFiles = copyRecursive(localLog, repositories, srcItemInfo, dest, filestoreDir)
-        localLog.info("Copied $totFiles binary files, in ${System.currentTimeMillis()-start}ms")
+        localLog.info("Copied $totFiles binary files, in ${System.currentTimeMillis() - start}ms")
 
         def execCommand = ExecuteConstants.baseExecute.replace('{destLocalDir}', dest.getAbsolutePath())
         if (params) {
@@ -100,7 +101,7 @@ executions {
             localLog.error("Could not execute ${execCommand}: ${IOUtils.toString(execLn.errorStream)}")
             status = 500
         } else {
-            localLog.info("Total successful script execution in ${System.currentTimeMillis()-start}ms")
+            localLog.info("Total successful script execution in ${System.currentTimeMillis() - start}ms")
             status = 200
         }
         message = localLog.finalMessage()
@@ -136,7 +137,7 @@ class LocalLog {
     File logFile
     List<String> messages = []
 
-    LocalLog(id,log) {
+    LocalLog(id, log) {
         this.id = id
         this.log = log
         this.logFile = new File("/tmp/copyAndExec-${id}.log")
@@ -183,7 +184,9 @@ long copyRecursive(LocalLog localLog, Repositories repositories, ItemInfo item, 
             if (name.endsWith(excl)) return 0L
         }
         def sha1 = item.sha1
-        def cpCommand = """${ExecuteConstants.copyCommand} ${filestoreDir}/${sha1.substring(0,2)}/$sha1 ${destFolder.getAbsolutePath()}/${name}"""
+        def cpCommand = """${ExecuteConstants.copyCommand} ${filestoreDir}/${sha1.substring(0, 2)}/$sha1 ${
+            destFolder.getAbsolutePath()
+        }/${name}"""
         localLog.debug("Executing: $cpCommand")
         def execLn = cpCommand.execute()
         if (execLn.waitFor() != 0) {

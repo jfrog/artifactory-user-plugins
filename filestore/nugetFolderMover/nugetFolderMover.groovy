@@ -1,28 +1,27 @@
+/*
+ * Copyright (C) 2015 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import org.artifactory.common.StatusHolder
 import org.artifactory.fs.FileLayoutInfo
+import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
-import org.artifactory.fs.ItemInfo
-import org.artifactory.resource.ResourceStreamHandle
-import org.jfrog.metadata.extractor.GemFileInfoExtractor
-import org.jfrog.metadata.extractor.api.GemArtifact
-import org.jfrog.metadata.extractor.model.GemInfo
 
 download {
     jobs {
-
-        /**
-         * A job definition.
-         * The first value is a unique name for the job.
-         * Job runs are controlled by the provided interval or cron expression, which are mutually exclusive.
-         * The actual code to run as part of the job should be part of the job's closure.
-         *
-         * Parameters:
-         * delay (long) - An initial delay in milliseconds before the job starts running (not applicable for a cron job).
-         * interval (long) -  An interval in milliseconds between job runs.
-         * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
-         */
-
         nugetMover(cron: "0 0/5 * * * ?") {
             List<String> localRepoKeys = getLocalNugetRepositories()
             log.debug "Found ${localRepoKeys.size()} local Nuget repositories"
@@ -40,7 +39,7 @@ download {
                         String version = properties.getFirst('nuget.version')
                         if (id && version) {
                             log.debug "Found a new Nuget package '${itemInfo.repoPath.toPath()}'"
-                            FileLayoutInfo layout = new NugetLayoutInfo(id,  version)
+                            FileLayoutInfo layout = new NugetLayoutInfo(id, version)
                             RepoPath newPath
                             try {
                                 newPath = repositories.getArtifactRepoPath(layout, repoRoot.repoKey)
@@ -59,8 +58,6 @@ download {
                 }
             }
         }
-
-
     }
 }
 
@@ -70,8 +67,6 @@ private List<String> getLocalNugetRepositories() {
         repositories.getRepositoryConfiguration(repoKey)?.isEnableNuGetSupport()
     }
 }
-
-
 
 class NugetLayoutInfo implements FileLayoutInfo {
     String organization

@@ -28,16 +28,16 @@ import static org.artifactory.util.PathUtils.getFileName
 
 final String TARGET_RELEASES_REPOSITORY = 'ext-release-local'
 final String TARGET_SNAPSHOTS_REPOSITORY = 'ext-snapshot-local'
-final String MAVEN_DESCRIPTORS_REPOSITORY= 'maven'
+final String MAVEN_DESCRIPTORS_REPOSITORY = 'maven'
 
 download {
     afterDownloadError { Request request ->
         RepoPath repoPath = request.repoPath
         FileLayoutInfo fileLayoutInfo = repositories.getLayoutInfo(repoPath)
         if (isIvyDescriptor(fileLayoutInfo, repoPath)) {
-            //it was ivy lookup, let's rock
+            // it was ivy lookup, let's rock
             def srcPath = repoPath.path
-            //[orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier].pom
+            // [orgPath]/[module]/[baseRev](-[folderItegRev])/[module]-[baseRev](-[fileItegRev])(-[classifier].pom
             def dstPath = fileLayoutInfo.with {
                 "${organization.replace('.', '/')}/$module/$baseRevision${integration ? '-' + folderIntegrationRevision : ''}/$module-$baseRevision${integration ? '-' + fileIntegrationRevision : ''}${classifier ? '-' + classifier : ''}.pom"
             }
@@ -51,15 +51,15 @@ download {
             }
             def reader = new InputStreamReader(stream)
             log.info("Successfully retrieved ${fileLayoutInfo.module}.pom for $srcPath")
-            //we got pom, let's transform to ivy
+            // we got pom, let's transform to ivy
             File newFile = pom2Ivy(reader)
-            //let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
+            // let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
             String targetRepoKey = fileLayoutInfo.isIntegration() ? TARGET_SNAPSHOTS_REPOSITORY : TARGET_RELEASES_REPOSITORY
             String targetPath = repositories.translateFilePath(repoPath, targetRepoKey)
             RepoPath deployRepoPath = create(targetRepoKey, targetPath)
             newFile.withInputStream { repositories.deploy(deployRepoPath, it) }
             deleteQuietly(newFile)
-            //and now let's return it to the user:
+            // and now let's return it to the user:
             def retStream = repositories.getContent(deployRepoPath).inputStream
             if (retStream != null) {
                 inputStream = retStream
@@ -75,13 +75,14 @@ download {
 }
 
 private File pom2Ivy(Reader reader) {
-    //we'll reuse Ivy Ant task. It works with files
+    // we'll reuse Ivy Ant task. It works with files
     File srcFile = createTempFile('pom', '.xml')
     srcFile << reader
     File dstFile = createTempFile('ivy', '.xml')
     def ant = new AntBuilder()
-    //noinspection GroovyAssignabilityCheck
-    ant.project.removeBuildListener ant.project.buildListeners[0] //remove the default logger (clear() on getBuildListeners() won't work - protective copy)
+    // noinspection GroovyAssignabilityCheck
+    ant.project.removeBuildListener ant.project.buildListeners[0]
+    // remove the default logger (clear() on getBuildListeners() won't work - protective copy)
     ant.project.addBuildListener new AntToSlf4jConduit()
     def ivy = NamespaceBuilder.newInstance(ant, 'antlib:fr.jayasoft.ivy.ant')
     ivy.convertpom pomFile: srcFile.absolutePath, ivyFile: dstFile.absolutePath
@@ -92,11 +93,11 @@ private File pom2Ivy(Reader reader) {
 private boolean isIvyDescriptor(FileLayoutInfo fileLayoutInfo, RepoPath repoPath) {
     String fileName = getFileName(repoPath.path)
     String repoLayoutRef = repositories.getRepositoryConfiguration(repoPath.repoKey).repoLayoutRef
-    fileLayoutInfo.valid && //it was search for some descriptor.
-            (repoLayoutRef.contains('ivy') || // Now let's check if it was ivy. We can't be sure, Ivy is flexible. We'll do our best effort
-                    repoLayoutRef.contains('gradle') ||
-                    'ivy.xml'.equals(fileName) ||
-                    (fileName.startsWith('ivy-') && fileName.endsWith('.xml')) ||
-                    fileName.endsWith('.ivy') ||
-                    fileName.endsWith('-ivy.xml'))
+    fileLayoutInfo.valid && // it was search for some descriptor.
+        (repoLayoutRef.contains('ivy') || // Now let's check if it was ivy. We can't be sure, Ivy is flexible. We'll do our best effort
+            repoLayoutRef.contains('gradle') ||
+            'ivy.xml'.equals(fileName) ||
+            (fileName.startsWith('ivy-') && fileName.endsWith('.xml')) ||
+            fileName.endsWith('.ivy') ||
+            fileName.endsWith('-ivy.xml'))
 }

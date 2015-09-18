@@ -1,7 +1,8 @@
-import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import groovy.xml.MarkupBuilder
+import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class Pom2ivyTest extends Specification {
     def 'simple pom to ivy plugin test'() {

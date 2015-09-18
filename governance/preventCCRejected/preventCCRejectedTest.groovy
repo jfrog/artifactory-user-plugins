@@ -1,5 +1,6 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class PreventCCRejectedTest extends Specification {
     def 'prevent cc rejected test'() {
@@ -13,10 +14,10 @@ class PreventCCRejectedTest extends Specification {
 
         when:
         artifactory.plugins().execute('setCCProperty').
-                withParameter('id', 'sample').
-                withParameter('appName', 'sampleapp').
-                withParameter('appVersion', '3.14').
-                withParameter('status', 'approved').sync()
+            withParameter('id', 'sample').
+            withParameter('appName', 'sampleapp').
+            withParameter('appVersion', '3.14').
+            withParameter('status', 'approved').sync()
         def conn = new URL(baseurl + '/libs-release-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
         def code1 = conn.getResponseCode()
 
@@ -25,10 +26,10 @@ class PreventCCRejectedTest extends Specification {
 
         when:
         artifactory.plugins().execute('setCCProperty').
-                withParameter('id', 'sample').
-                withParameter('appName', 'sampleapp').
-                withParameter('appVersion', '3.14').
-                withParameter('status', 'rejected').sync()
+            withParameter('id', 'sample').
+            withParameter('appName', 'sampleapp').
+            withParameter('appVersion', '3.14').
+            withParameter('status', 'rejected').sync()
         conn = new URL(baseurl + '/libs-release-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
         def code2 = conn.getResponseCode()
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.HaAddon
 import org.artifactory.addon.ha.message.HaMessageTopic
@@ -20,9 +21,11 @@ import org.artifactory.addon.ha.message.HaMessageTopic
 /**
  * This plugin will send a notification on CONFIG_CHANGE_TOPIC and ACL_CHANGE_TOPIC
  *
- * Created by Michal on 10/20/2014.
  * To run this plugin use:
  * curl -X GET -v -u {user}:{password} -X POST "http://{Artifactory_IP}/artifactory/api/plugins/execute/syncNotification"
+ *
+ * @author Michal
+ * @since 10/20/14
  */
 executions {
     syncNotification(description: 'send HA notifications for permission target and configuration change') {

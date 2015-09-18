@@ -23,10 +23,10 @@
 download {
     altResponse { request, responseRepoPath ->
         def artifactStatus = repositories.getProperties(responseRepoPath).getFirst('approver.status')
-        if (artifactStatus  && artifactStatus != 'approved'){
+        if (artifactStatus && artifactStatus != 'approved') {
             status = 403
             message = 'This artifact wasn\'t approved yet, please use the Approver application.'
-            log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!";
+            log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!"
         }
     }
 }

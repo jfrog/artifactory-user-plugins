@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/**
- *
- * @author Michal Reuven
- * @since 12/10/14
- */
-
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import org.artifactory.addon.p2.P2Repo
@@ -32,21 +26,21 @@ import org.artifactory.ui.rest.service.admin.configuration.repositories.util.Upd
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.builder.RepoConfigModelBuilder
 
 /**
- ************************************************************************************
- * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
- ************************************************************************************
- */
-
-/**
  * Test with
  * curl -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/getP2Urls?params=repo=repoKey"
  *
  * and
- * curl -uadmin:password -X POST --data-binary "{
- \"repo\": \"repoKey\",
- \"urls\": [ "", "" ]
- }" http://localhost:8080/artifactory/api/plugins/execute/modifyP2Urls
+ * curl -uadmin:password -X POST --data-binary "{\"repo\": \"repoKey\",
+ \"urls\": [ "", "" ]}" http://localhost:8080/artifactory/api/plugins/execute/modifyP2Urls
  *
+ * @author Michal Reuven
+ * @since 12/10/14
+ */
+
+/**
+ ************************************************************************************
+ * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
+ ************************************************************************************
  */
 
 class P2UrlsConf {
@@ -76,7 +70,7 @@ executions {
         message = new JsonBuilder(result).toPrettyString()
     }
 
-    //curl -uadmin:password -T /path/to/.json/file -X POST "http://localhost:8081/artifactory/api/plugins/execute/modifyP2Urls"
+    // curl -uadmin:password -T /path/to/.json/file -X POST "http://localhost:8081/artifactory/api/plugins/execute/modifyP2Urls"
     modifyP2Urls() { ResourceStreamHandle body ->
         def updater = ctx.beanForType(UpdateRepoConfigHelper.class)
         def builder = ctx.beanForType(RepoConfigModelBuilder.class)
@@ -115,7 +109,7 @@ executions {
         model.typeSpecific.p2Repos = p2Repos
         model.updateRepo(updater)
 
-        //refetch and push the config, to get rid of any invalid repos
+        // refetch and push the config, to get rid of any invalid repos
         config = ctx.centralConfig.descriptor
         repoDescriptor = config.getVirtualRepositoriesMap()?.get(input.repo)
         model = new VirtualRepositoryConfigModel()
@@ -129,7 +123,7 @@ executions {
         result.urls = config.virtualRepositoriesMap?.get(input.repo)?.p2?.urls?.toArray(new String[0])
         message = new JsonBuilder(result).toPrettyString()
 
-        //virtual repo needs to be cleaned
+        // virtual repo needs to be cleaned
         def rootPath = RepoPathFactory.create(repoDescriptor.getKey(), "")
         repositories.delete(rootPath)
     }

@@ -1,6 +1,7 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class PreventUnapprovedTest extends Specification {
     def 'prevent unapproved test'() {

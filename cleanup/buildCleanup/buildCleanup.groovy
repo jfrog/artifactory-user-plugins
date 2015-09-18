@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.artifactory.repo.RepoPath
 
-//curl -f -XPOST -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50&dryRun=1"
-
-
+// curl -f -XPOST -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50&dryRun=1"
 
 executions {
     cleanBuilds() { params ->
@@ -29,11 +26,10 @@ executions {
 
 jobs {
     buildCleanup(cron: "0 0 12 1/1 * ? *") {
-        def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL());
-        buildCleanup(config.days, config.dryRun);
+        def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
+        buildCleanup(config.days, config.dryRun)
     }
 }
-
 
 private def buildCleanup(int days, dryRun) {
     if (dryRun) {
@@ -47,20 +43,16 @@ private def buildCleanup(int days, dryRun) {
     buildNames.each { buildName ->
         builds.getBuilds(buildName, null, null).each {
             def before = new Date() - days
-            //log.warn "Found build $buildName#$it.number: $it.startedDate"
+            // log.warn "Found build $buildName#$it.number: $it.startedDate"
             if (it.startedDate.before(before)) {
                 if (dryRun) {
-                    log.info "Found $it";
+                    log.info "Found $it"
                     echo "**DryRun** Deleting build: $buildName#$it.number ($it.startedDate)"
                 } else {
                     echo "Deleting build: $buildName#$it.number ($it.startedDate)"
                     builds.deleteBuild it
                 }
-
-                if (!dryRun) {
-
-                }
-                n++;
+                n++
             }
         }
     }
@@ -69,7 +61,6 @@ private def buildCleanup(int days, dryRun) {
     } else {
         echo "Finished build cleanup older than $days days. $n builds were deleted."
     }
-
 }
 
 private void echo(msg) {

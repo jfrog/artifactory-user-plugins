@@ -18,12 +18,12 @@ import groovy.json.JsonBuilder
 
 /**
  *
- * Date: 2/4/15
  * @author Michal
+ * @since 02/04/15
  */
 
 executions {
-    getCurrentUserDetails(httpMethod: 'GET', groups:['readers']) {
+    getCurrentUserDetails(httpMethod: 'GET', groups: ['readers']) {
         log.info "Requesting user details for ${security.currentUsername()}"
         JsonBuilder builder = new JsonBuilder(security.currentUser())
         message = builder.toPrettyString()

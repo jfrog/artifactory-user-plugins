@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
-import org.jfrog.build.api.BlackDuckPropertiesFields
-import org.jfrog.build.api.BuildInfoProperties
 
 import static com.google.common.collect.Multimaps.forMap
 import static org.jfrog.build.api.BlackDuckPropertiesFields.APP_NAME
@@ -25,10 +24,10 @@ import static org.jfrog.build.api.BuildInfoProperties.BUILD_INFO_BLACK_DUCK_PROP
 
 /**
  * Prevent the download of all rejected code center artifact for specific code center application
+ *
  * @author michal
  * @since 12/11/14
- *
-  */
+ */
 
 final CC_PROP_NAME_PREFIX = 'blackduck.cc'
 final ID_PROP_NAME = CC_PROP_NAME_PREFIX + '.id'
@@ -43,11 +42,11 @@ download {
         def appVersion = request.properties.getFirst(APP_VERSION_MATRIX_PARAM)
         // If no name or version skip => do nothing
         if (appName && appVersion) {
-            def artifactStatus = repositories.getProperties(responseRepoPath).getFirst(CC_PROP_NAME_PREFIX + '.' +appName + '.' +appVersion + '.rejected.timestamp')
-            if (artifactStatus){
+            def artifactStatus = repositories.getProperties(responseRepoPath).getFirst(CC_PROP_NAME_PREFIX + '.' + appName + '.' + appVersion + '.rejected.timestamp')
+            if (artifactStatus) {
                 status = 403
                 message = 'This artifact was rejected by cc.'
-                log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!";
+                log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!"
             }
         }
     }
@@ -56,9 +55,9 @@ download {
 executions {
     // The BD CC calls the REST API /api/plugins/execute/setStatusProperty?params=id=459201|externalId=:Newtonsoft.Json:5.0.6|appName=demo|appVersion=1.0|status=rejected
     setCCProperty(version: '1.0',
-            description:'set a new status value on all files with CodeCenter id or externalId provided',
-            httpMethod: 'POST', users: ['blackduck'].toSet(),
-            params: [id:'', externalid: '', appName:'', appVersion:'', status: 'rejected' ]) { params ->
+        description: 'set a new status value on all files with CodeCenter id or externalId provided',
+        httpMethod: 'POST', users: ['blackduck'].toSet(),
+        params: [id: '', externalid: '', appName: '', appVersion: '', status: 'rejected']) { params ->
         String id = params?.get('id')?.get(0)
         String externalId = params?.get('externalId')?.get(0)
         String appName = params?.get('appName')?.get(0)
@@ -81,11 +80,9 @@ executions {
             return
         }
 
-
         def filter = [:]
         if (id) {
             filter.put(ID_PROP_NAME, id)
-
         } else {
             if (externalId.contains("%")) {
                 externalId = org.artifactory.util.HttpUtils.decodeUri(externalId)
@@ -101,7 +98,6 @@ executions {
         String propValue = System.currentTimeMillis()
         List<String> results = ['Converted BEGIN']
         found.each { RepoPath repoPath ->
-
             log.debug "Setting ${CC_PROP_NAME_PREFIX}.${appName}.${appVersion}.${ccStatus}.timestamp on ${repoPath.getId()}"
             String propertyName = CC_PROP_NAME_PREFIX + '.' + appName + '.' + appVersion + '.' + ccStatus + '.timestamp'
             repositories.setProperty(repoPath, propertyName, propValue)

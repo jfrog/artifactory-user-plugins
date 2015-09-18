@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//curl command example for running this plugin.
-//curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun=true"
+
+// curl command example for running this plugin.
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun=true"
 executions {
     cleanup() { params ->
-        def months = params['months'] ? params['months'][0] as int: 6
+        def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
-        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean: false
+        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
         artifactCleanup(months, repos, log, dryRun)
     }
 }
@@ -27,7 +28,7 @@ executions {
 jobs {
     scheduledCleanup(cron: "0 0 5 ? * 1") {
         def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/artifactCleanup.properties").toURL())
-        artifactCleanup(config.monthsUntil, config.repos as String[], log);
+        artifactCleanup(config.monthsUntil, config.repos as String[], log)
     }
 }
 
@@ -37,18 +38,18 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
     def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
 
-    long bytesFound = 0;
+    long bytesFound = 0
     def artifactsCleanedUp =
         searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos).
-        each {
-            bytesFound += repositories.getItemInfo(it)?.getSize()
-            if (dryRun) {
-                log.info "Found $it";
-            } else {
-                log.info "Deleting $it";
-                repositories.delete it
+            each {
+                bytesFound += repositories.getItemInfo(it)?.getSize()
+                if (dryRun) {
+                    log.info "Found $it"
+                } else {
+                    log.info "Deleting $it"
+                    repositories.delete it
+                }
             }
-        }
 
     if (dryRun) {
         log.info "Dry run - nothing deleted. found $artifactsCleanedUp.size artifacts consuming $bytesFound bytes"

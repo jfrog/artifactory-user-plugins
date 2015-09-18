@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.blackduck.generic.model.ExternalComponentInfo
 import org.artifactory.addon.blackduck.service.BlackDuckApplicationService
@@ -39,11 +40,12 @@ import static com.google.common.collect.Multimaps.forMap
  * @since 14/01/14
  */
 
- /**
-  ************************************************************************************
-  * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
-  ************************************************************************************
-  */
+/**
+ ************************************************************************************
+ * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
+ ************************************************************************************
+ */
+
 final CC_PROP_NAME_PREFIX = 'blackduck.cc'
 final GLOBAL_CC_APP_NAME = 'GlobalApp'
 final GLOBAL_CC_APP_VERSION = '1.0'
@@ -52,7 +54,7 @@ final EXTERNALID_PROP_NAME = CC_PROP_NAME_PREFIX + '.externalid'
 final STATUS_PROP_NAME = CC_PROP_NAME_PREFIX + '.status'
 final REQUEST_ID_PROP_NAME = CC_PROP_NAME_PREFIX + '.' + GLOBAL_CC_APP_NAME + '.' + GLOBAL_CC_APP_VERSION + '.requestId'
 final ERROR_PROP_NAME = CC_PROP_NAME_PREFIX + '.' + GLOBAL_CC_APP_NAME + '.' + GLOBAL_CC_APP_VERSION + '.error'
-final String[] otherProps = ['riskLevel','vulnerabilities']
+final String[] otherProps = ['riskLevel', 'vulnerabilities']
 
 enum GeneralStatuses {
     NEW, PENDING, APPROVED, REJECTED, MANUAL_PENDING, ERROR
@@ -61,9 +63,9 @@ enum GeneralStatuses {
 executions {
     // The BD CC calls the REST API /api/plugins/execute/setStatusProperty?params=id=459201|externalId=:Newtonsoft.Json:5.0.6|status=APPROVED
     setStatusProperty(version: '1.0',
-            description:'set a new status value on all files with CodeCenter id or externalId provided',
-            httpMethod: 'POST', users: ['blackduck'].toSet(),
-            params: [id:'', externalid: '', status: 'APPROVED']) { params ->
+        description: 'set a new status value on all files with CodeCenter id or externalId provided',
+        httpMethod: 'POST', users: ['blackduck'].toSet(),
+        params: [id: '', externalid: '', status: 'APPROVED']) { params ->
         String id = params?.get('id')?.get(0)
         String externalId = params?.get('externalId')?.get(0)
         String ccStatus = params?.get('status')?.get(0)
@@ -78,7 +80,7 @@ executions {
             message = "No value for the new status was provided!"
             return
         }
-        if (GeneralStatuses.values().any {it.name() == ccStatus} ) {
+        if (GeneralStatuses.values().any { it.name() == ccStatus }) {
             log.debug "Found valid status $ccStatus"
         } else {
             status = 400
@@ -126,8 +128,8 @@ storage {
             RepoPath repoPath = item.repoPath
             // Activate Code Center workflow only on actual artifacts not pom
             if (!item.folder && isRemote(repoPath.repoKey) &&
-                    !MavenNaming.isMavenMetadata(repoPath.path) &&
-                    !MavenNaming.isPom(repoPath.path)
+                !MavenNaming.isMavenMetadata(repoPath.path) &&
+                !MavenNaming.isPom(repoPath.path)
             ) {
                 log.debug "Setting status=NEW on ${repoPath.getId()}"
                 repositories.setProperty(repoPath, STATUS_PROP_NAME, GeneralStatuses.NEW.name())
@@ -155,21 +157,21 @@ jobs {
         def filter = [:]
         filter.put(STATUS_PROP_NAME, GeneralStatuses.NEW.name())
         List<RepoPath> paths = searches.itemsByProperties(forMap(filter))
-        Map<String,BlackDuckRequestInfo> requestsByGav = [:]
+        Map<String, BlackDuckRequestInfo> requestsByGav = [:]
         paths.each { RepoPath newArtifact ->
             // Be careful that all POM and JARS for the same GAV are retrieved here
             log.debug "Found new artifact ${newArtifact.getId()} that needs approval!"
-            ModuleInfo moduleInfo = repoService.getItemModuleInfo(newArtifact);
-            String gav = BlackDuckUtils.getGav(moduleInfo);
+            ModuleInfo moduleInfo = repoService.getItemModuleInfo(newArtifact)
+            String gav = BlackDuckUtils.getGav(moduleInfo)
             if (!requestsByGav.containsKey(gav)) {
                 ExternalComponentInfo eci = bdService.getExternalComponentInfo(newArtifact)
-                def req = new BlackDuckRequestInfo();
+                def req = new BlackDuckRequestInfo()
                 req.published = false
                 req.repoPath = newArtifact
                 req.license = LicenseInfo.UNKNOWN.getName()
                 req.gav = gav
-                req.componentName = moduleInfo.getModule();
-                req.componentVersion = moduleInfo.getBaseRevision();
+                req.componentName = moduleInfo.getModule()
+                req.componentVersion = moduleInfo.getBaseRevision()
                 if (eci?.componentId) {
                     req.componentId = eci.componentId
                     req.componentName = eci.name
@@ -216,6 +218,6 @@ jobs {
 }
 
 def isRemote(String repoKey) {
-    if (repoKey.endsWith('-cache')) repoKey = repoKey.substring(0,repoKey.length() - 6)
+    if (repoKey.endsWith('-cache')) repoKey = repoKey.substring(0, repoKey.length() - 6)
     return repositories.getRemoteRepositories().contains(repoKey)
 }

@@ -15,23 +15,21 @@
  */
 
 @Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
+    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
+          module = 'http-builder', version = '0.6')
 ])
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpRequestInterceptor
 import org.artifactory.api.security.UserGroupService
 import org.artifactory.factory.InfoFactoryHolder
 import org.artifactory.repo.RepoPath
-import org.artifactory.request.Request
-import org.artifactory.webapp.servlet.HttpArtifactoryRequest
 
 import javax.servlet.http.HttpServletRequest
 
-
 /**
- * Date: 2/28/13
- * Time: 1:29 PM
+ *
  * @author freds
+ * @since 02/28/13
  */
 
 String syncAdminUser = 'admin'
@@ -69,7 +67,7 @@ executions {
         // Use the find or create that is used for external LDAP users
         def userService = ctx.beanForType(UserGroupService.class)
         def foundUser = userService.findOrCreateExternalAuthUser(username, false)
-        def newUser = InfoFactoryHolder.get().copyUser(foundUser);
+        def newUser = InfoFactoryHolder.get().copyUser(foundUser)
         newUser.setEmail(email)
         newUser.setPrivateKey(privateKey)
         newUser.setPublicKey(publicKey)
@@ -90,10 +88,10 @@ download {
             def remoteUrl = "${getOtherHostRootUrl(request.httpRequest)}/api/plugins/execute/setUserKeys"
             // Synchronize the user keys
             def http = new HTTPBuilder(remoteUrl)
-            http.client.addRequestInterceptor({def httpRequest, def httpContext ->
+            http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
                 httpRequest.addHeader('Authorization', "Basic ${"${syncAdminUser}:${syncAdminPassword}".getBytes().encodeBase64()}")
             } as HttpRequestInterceptor)
-            http.post( query : [params : "username=${currentUser.username}|email=${currentUser.email}|private=${currentUser.privateKey}|public=${currentUser.publicKey}"]) {
+            http.post(query: [params: "username=${currentUser.username}|email=${currentUser.email}|private=${currentUser.privateKey}|public=${currentUser.publicKey}"]) {
                 success = { resp ->
                     log.debug "User ${currentUser.username} was successfully synchronize"
                 }

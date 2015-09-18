@@ -1,8 +1,3 @@
-import org.artifactory.repo.RepoPath
-import org.artifactory.fs.FileInfo
-import com.google.common.collect.SetMultimap
-import com.google.common.collect.Multimaps;
-
 /*
  * Copyright (C) 2014 JFrog Ltd.
  *
@@ -18,6 +13,11 @@ import com.google.common.collect.Multimaps;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.google.common.collect.Multimaps
+import com.google.common.collect.SetMultimap
+import org.artifactory.fs.FileInfo
+import org.artifactory.repo.RepoPath
 
 /**
  * curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/exposeRepository?params=repo=repoKey|dest=destFolder"
@@ -43,22 +43,22 @@ executions {
 
         long start = System.currentTimeMillis()
         long totFiles = 0
-        SetMultimap<String, String> props = Multimaps.forMap([expose:'true'])
-        searches.itemsByProperties(props , repoKey).each { RepoPath repoPath ->
+        SetMultimap<String, String> props = Multimaps.forMap([expose: 'true'])
+        searches.itemsByProperties(props, repoKey).each { RepoPath repoPath ->
             def itemInfo = repositories.getItemInfo(repoPath)
             def destFile = new File(dest, repoPath.path)
             if (itemInfo.isFolder()) {
                 if (destFile.exists() && !destFile.isDirectory()) {
-                    destFile.delete();
+                    destFile.delete()
                 }
                 if (!destFile.exists()) {
                     destFile.mkdirs()
                 }
             } else {
                 def sha1 = ((FileInfo) itemInfo).checksumsInfo.sha1
-                def filestoreFile = new File(filestoreDir, "${sha1.substring(0,2)}/$sha1")
+                def filestoreFile = new File(filestoreDir, "${sha1.substring(0, 2)}/$sha1")
                 if (destFile.exists()) {
-                    destFile.delete();
+                    destFile.delete()
                 }
                 destFile.getParentFile().mkdirs()
                 def execLn = "ln -s ${filestoreFile.getAbsolutePath()} ${destFile.getAbsolutePath()}".execute()
@@ -69,7 +69,7 @@ executions {
                 }
             }
         }
-        message = "Linked $totFiles binary files, in ${System.currentTimeMillis()-start}ms\n"
+        message = "Linked $totFiles binary files, in ${System.currentTimeMillis() - start}ms\n"
         status = 200
         return
     }

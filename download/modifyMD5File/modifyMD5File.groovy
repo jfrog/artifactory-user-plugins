@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.request.Request
@@ -21,8 +22,8 @@ import org.artifactory.request.Request
  * Here all files under md5-test-remote that ends with '.md5' will be modified
  * to '.md5.txt'
  *
- * Date: 3/13/14 3:43 PM
  * @author freds
+ * @since 03/13/14
  */
 
 download {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 
 replication {
-    beforeFileReplication {localRepoPath ->
-        if (!localRepoPath.getName().endsWith(".jar")){
+    beforeFileReplication { localRepoPath ->
+        if (!localRepoPath.getName().endsWith(".jar")) {
             log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it is not a JAR file"
-            skip=true;
+            skip = true
         }
     }
 }

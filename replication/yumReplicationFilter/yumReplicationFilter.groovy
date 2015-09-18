@@ -1,6 +1,5 @@
-
 /*
- * Copyright 2015 JFrog Ltd.
+ * Copyright (C) 2015 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +15,10 @@
  */
 
 replication {
-    beforeFileReplication {localRepoPath ->
-        if ((localRepoPath.getName().endsWith(".xml.gz") || localRepoPath.getName().equals("repomd.xml")) && (localRepoPath.getPath().contains("/repodata/") || localRepoPath.getPath().startsWith("repodata/"))){
+    beforeFileReplication { localRepoPath ->
+        if ((localRepoPath.getName().endsWith(".xml.gz") || localRepoPath.getName().equals("repomd.xml")) && (localRepoPath.getPath().contains("/repodata/") || localRepoPath.getPath().startsWith("repodata/"))) {
             log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it is a YUM metadata file"
-            skip=true;
+            skip = true
         }
     }
 }

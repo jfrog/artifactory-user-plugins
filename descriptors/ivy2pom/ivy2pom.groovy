@@ -34,10 +34,10 @@ download {
         RepoPath repoPath = request.repoPath
         FileLayoutInfo fileLayoutInfo = repositories.getLayoutInfo(repoPath)
         if (repoPath.path.endsWith('.pom')) {
-            //it was pom lookup, let's rock
+            // it was pom lookup, let's rock
             def srcPath = repoPath.path
-            //[org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml
-            //ivy is flexible, so the repo layout may differ from the one I construct here. Change at will.
+            // [org]/[module]/[baseRev](-[folderItegRev])/[type]s/ivy-[baseRev](-[fileItegRev]).xml
+            // ivy is flexible, so the repo layout may differ from the one I construct here. Change at will.
             def dstPath = fileLayoutInfo.with {
                 "${organization}/$module/$baseRevision${integration ? '-' + folderIntegrationRevision : ''}/${type}s/ivy-${baseRevision}${integration ? '-' + fileIntegrationRevision : ''}.xml"
             }
@@ -51,15 +51,15 @@ download {
             }
             def reader = new InputStreamReader(stream)
             log.info("Successfully retrieved ivy decriptor for $srcPath")
-            //we got ivy, let's transform to pom
+            // we got ivy, let's transform to pom
             File newFile = ivy2Pom(reader)
-            //let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
+            // let's translate the path from originally requested (to repo with some layout) to the layout of the target repo
             String targetRepoKey = fileLayoutInfo.isIntegration() ? TARGET_SNAPSHOTS_REPOSITORY : TARGET_RELEASES_REPOSITORY
             String targetPath = repositories.translateFilePath(repoPath, targetRepoKey)
             RepoPath deployRepoPath = create(targetRepoKey, targetPath)
             newFile.withInputStream { repositories.deploy(deployRepoPath, it) }
             deleteQuietly(newFile)
-            //and now let's return it to the user:
+            // and now let's return it to the user:
             def retStream = repositories.getContent(deployRepoPath).inputStream
             if (retStream != null) {
                 inputStream = retStream
@@ -75,13 +75,14 @@ download {
 }
 
 private File ivy2Pom(Reader reader) {
-    //we'll reuse Ivy Ant task. It works with files
+    // we'll reuse Ivy Ant task. It works with files
     File srcFile = createTempFile('ivy', '.xml')
     srcFile << reader
     File dstFile = createTempFile('pom', '.xml')
     def ant = new AntBuilder()
-    //noinspection GroovyAssignabilityCheck
-    ant.project.removeBuildListener ant.project.buildListeners[0] //remove the default logger (clear() on getBuildListeners() won't work - protective copy)
+    // noinspection GroovyAssignabilityCheck
+    ant.project.removeBuildListener ant.project.buildListeners[0]
+    // remove the default logger (clear() on getBuildListeners() won't work - protective copy)
     ant.project.addBuildListener new AntToSlf4jConduit()
     def ivy = NamespaceBuilder.newInstance(ant, 'antlib:fr.jayasoft.ivy.ant')
     ivy.makepom pomFile: dstFile.absolutePath, ivyFile: srcFile.absolutePath

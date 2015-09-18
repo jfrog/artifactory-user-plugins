@@ -1,15 +1,16 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class SkipReplicationTest extends Specification {
     def 'test name'() {
         setup:
         def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
 
-        //when:
+        // when:
 
-        //then:
+        // then:
 
-        //cleanup:
+        // cleanup:
     }
 }

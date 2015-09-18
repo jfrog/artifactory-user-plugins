@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 
 /**
- * Created by Michal on 9/26/2014.
+ *
+ * @author Michal
+ * @since 09/26/14
  */
 
 download {
-    beforeRemoteDownload {  Request request, RepoPath path ->
-        if(request.getHeader()==""){
-
+    beforeRemoteDownload { Request request, RepoPath path ->
+        if (request.getHeader() == "") {
+            // do something
         }
     }
 }

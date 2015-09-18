@@ -1,8 +1,6 @@
-import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import spock.lang.Specification
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import spock.lang.Specification
 
 class GetAndSetP2UrlTest extends Specification {
     def 'P2 URL get/set test'() {

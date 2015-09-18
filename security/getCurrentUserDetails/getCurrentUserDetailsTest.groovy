@@ -1,7 +1,6 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import spock.lang.Specification
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import spock.lang.Specification
 
 class GetCurrentUserDetailsTest extends Specification {
     def 'get current user details test'() {

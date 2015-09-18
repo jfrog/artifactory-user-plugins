@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2015 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import com.sun.org.apache.xerces.internal.impl.dv.util.Base64
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
@@ -5,74 +21,74 @@ import groovy.json.JsonSlurper
 import java.nio.charset.Charset
 
 /**
- * Created by Alexei Vainshtein on 7/21/15.
  * This plugin finds all the users that are included in a specific group
+ *
+ * @author Alexei Vainshtein
+ * @since 07/21/15
  */
-class IncludedUser {
 
-    String name;
+class IncludedUser {
+    String name
 
     IncludedUser(String name) {
         this.name = name
     }
 }
+
 /**
  * The command to get the info:
  * curl -X GET -u{admin_user}:{password} "http://{ARTIFACTORY_URL}:{PORT}/artifactory/api/plugins/execute/getUsersByGroup?params=group={group_name}"
  * for example: curl -X GET -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/getUsersByGroup?params=group=readers"
  */
 executions {
-
     getUsersByGroup(httpMethod: 'GET') { params ->
-
-        //Change the URL to your server url
-        String basicUrlString = "http://localhost:8081/artifactory/api/security/";
-        //constracts the URL to get all the users information
-        String urlString = basicUrlString + "users";
-        //retriving the user that performs the request. Most be an admin user.
-        String user = security.getCurrentUsername();
-        String pass = security.getEncryptedPassword();
+        // Change the URL to your server url
+        String basicUrlString = "http://localhost:8081/artifactory/api/security/"
+        // constracts the URL to get all the users information
+        String urlString = basicUrlString + "users"
+        // retriving the user that performs the request. Most be an admin user.
+        String user = security.getCurrentUsername()
+        String pass = security.getEncryptedPassword()
         ArrayList<String> groupNameArrayFromParams = params['group']
         String groupName = groupNameArrayFromParams.get(0)
 
         log.info("Getting the required users for the group $groupName")
-        //constracts the URL to get group details
-        String getGroupDetails = basicUrlString + "groups/" + groupName;
-        //validation if the group exists
-        boolean passValidation = validation(getGroupDetails,user,pass);
-        //if the group does not exists return 400
+        // constracts the URL to get group details
+        String getGroupDetails = basicUrlString + "groups/" + groupName
+        // validation if the group exists
+        boolean passValidation = validation(getGroupDetails, user, pass)
+        // if the group does not exists return 400
         if (!passValidation) {
-            status = 400;
-            message = "No such Group $groupName";
-            log.error("Group $groupName does not exists");
+            status = 400
+            message = "No such Group $groupName"
+            log.error("Group $groupName does not exists")
         }
 
-        //open the connection to the URL and retrieve the json from the call
-        def allUsersJson = getJson(urlString, user, pass);
-        boolean namesOfGroups;
+        // open the connection to the URL and retrieve the json from the call
+        def allUsersJson = getJson(urlString, user, pass)
+        boolean namesOfGroups
         ArrayList<String> names = allUsersJson.name
         ArrayList<String> uri = allUsersJson.uri
-        def json = new JsonBuilder();
+        def json = new JsonBuilder()
 
-        int i = 0;
+        int i = 0
 
-        ArrayList<IncludedUser> list = new ArrayList<>();
+        ArrayList<IncludedUser> list = new ArrayList<>()
         while (i < uri.size()) {
             // get if the user is included or not.
             namesOfGroups = getUsersInfo(uri.get(i), groupName, user, pass)
-            //if included add the required info to the list as new object IncludedUser (in the basic plugin the info is the user name)
+            // if included add the required info to the list as new object IncludedUser (in the basic plugin the info is the user name)
             if (namesOfGroups) {
                 list.add(new IncludedUser(names[i]))
             }
             i++
         }
-        //creating the json
+        // creating the json
         json(groupName, list)
 
-        //printing the message to the requested user.
+        // printing the message to the requested user.
         message = json.toPrettyString()
         log.info("Finished retrieving the required users for the group $groupName")
-
     }
 }
 
@@ -84,21 +100,20 @@ executions {
  * @param user = the user that made the request (this is needed to retrieve the json)
  * @param pass = the user password that made the request (this is needed to retrieve the json)
  */
-
 private boolean getUsersInfo(String uri, String group, String user, String pass) {
-    //get users, parse the user retrieved information and check if the required group is included in the user info.
-    def users = getJson(uri, user, pass);
+    // get users, parse the user retrieved information and check if the required group is included in the user info.
+    def users = getJson(uri, user, pass)
     ArrayList<String> usersGroups = users.groups
     if (usersGroups != null) {
         ArrayList<String> groups = usersGroups.value
 
         for (int i = 0; i < groups.size(); i++) {
             if (group.equalsIgnoreCase(groups.get(i).toString())) {
-                return true;
+                return true
             }
         }
     }
-    return false;
+    return false
 }
 
 /**
@@ -109,16 +124,16 @@ private boolean getUsersInfo(String uri, String group, String user, String pass)
  * @return - return the json object of the result.
  */
 private Object getJson(String urlString, String user, String pass) {
-    URL url = new URL(urlString);
-    URLConnection uc = url.openConnection();
-    String userpass = user + ":" + pass;
-    String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()));
-    uc.setRequestProperty("Authorization", basicAuth);
-    InputStream is = uc.getInputStream();
-    def json = new JsonSlurper().parse(new InputStreamReader(is, Charset.forName("UTF-8")));
-    //close the connection since we are done using it.
+    URL url = new URL(urlString)
+    URLConnection uc = url.openConnection()
+    String userpass = user + ":" + pass
+    String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()))
+    uc.setRequestProperty("Authorization", basicAuth)
+    InputStream is = uc.getInputStream()
+    def json = new JsonSlurper().parse(new InputStreamReader(is, Charset.forName("UTF-8")))
+    // close the connection since we are done using it.
     is.close()
-    return json;
+    return json
 }
 
 /**
@@ -128,19 +143,16 @@ private Object getJson(String urlString, String user, String pass) {
  * @param pass - password for the authentication
  * @return - return true if the group exists else return false.
  */
-
 private boolean validation(String urlString, String user, String pass) {
-
-    try{
-        URL url = new URL(urlString);
-        URLConnection uc = url.openConnection();
-        String userpass = user + ":" + pass;
-        String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()));
-        uc.setRequestProperty("Authorization", basicAuth);
-        InputStream is = uc.getInputStream();
-        return true;
-    }catch (FileNotFoundException e){
-        return false;
+    try {
+        URL url = new URL(urlString)
+        URLConnection uc = url.openConnection()
+        String userpass = user + ":" + pass
+        String basicAuth = "Basic " + new String(new Base64().encode(userpass.getBytes()))
+        uc.setRequestProperty("Authorization", basicAuth)
+        InputStream is = uc.getInputStream()
+        return true
+    } catch (FileNotFoundException e) {
+        return false
     }
-
 }

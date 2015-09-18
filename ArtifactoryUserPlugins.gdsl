@@ -3,7 +3,7 @@
  */
 
 contributor(context(scriptScope())) {
-    //global context
+    // global context
     property name: 'log', type: 'org.slf4j.Logger', doc: 'Writes to Artifactory log; logger name is the name of the script file '
     property name: 'repositories', type: 'org.artifactory.repo.Repositories', doc: 'Allows queries and operations on repositories and artifacts '
     property name: 'security', type: 'org.artifactory.security.Security', doc: 'Provides information about current security context, (e.g. current user and her permissions) '
@@ -11,7 +11,7 @@ contributor(context(scriptScope())) {
     property name: 'builds', type: 'org.artifactory.build.Builds', doc: 'Allows CRUD operations on builds'
     property name: 'ctx', type: 'org.artifactory.spring.InternalArtifactoryContext', doc: 'Internal Artifactory context'
 
-    //plugin types
+    // plugin types
     method name: 'download', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating download events'
     method name: 'storage', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating storage events'
     method name: 'jobs', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: '''A section for defining scheduled jobs.<p>

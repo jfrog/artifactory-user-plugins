@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-import org.artifactory.repo.RepoPath
-import org.artifactory.repo.RepoPathFactory
-import org.artifactory.fs.FileInfo
+import org.artifactory.exception.CancelException
 import org.artifactory.fs.StatsInfo
 import org.artifactory.md.Properties
-import org.artifactory.exception.CancelException
-
-/**
- * @author Adam Kunk
- */
+import org.artifactory.repo.RepoPath
+import org.artifactory.repo.RepoPathFactory
 
 /**
  * Example REST call(s):
@@ -49,8 +44,10 @@ import org.artifactory.exception.CancelException
  * (NOTE: the time period archive policies are all specified in number of days)
  *
  * Available 'property' archive policies:
- * 1. includePropertySet   the artifact will be archived if it possesses all of the passed in properties
- * 2. excludePropertySet   the artifact will not be archived if it possesses all of the passed in properties
+ * 1. includePropertySet   the artifact will be archived if it possesses all of
+ *    the passed in properties
+ * 2. excludePropertySet   the artifact will not be archived if it possesses all
+ *    of the passed in properties
  * (NOTE: property set format ==> prop[:value1[;prop2[:value2]......[;propN[:valueN]]])
  *        A property key must be provided, but a corresponding value is not necessary.
  *        If a property is set without a value, then a check is made for just the key.
@@ -72,22 +69,23 @@ import org.artifactory.exception.CancelException
  * 4. Moves the artifact from the source repository to the destination repository specified
  * 5. Adds a property containing the archive timestamp to the artifact
  *
+ * @author Adam Kunk
  */
 
 executions {
     archive_old_artifacts { params ->
-        def filePattern = params['filePattern'] ? params['filePattern'][0] as String: '*'
-        def srcRepo = params['srcRepo'] ? params['srcRepo'][0] as String: 'build-packages'
-        def archiveRepo = params['archiveRepo'] ? params['archiveRepo'][0] as String: 'build-packages-archived'
-        def lastModifiedDays = params['lastModifiedDays'] ? params['lastModifiedDays'][0] as int: 0
-        def lastUpdatedDays = params['lastUpdatedDays'] ? params['lastUpdatedDays'][0] as int: 0
-        def createdDays = params['createdDays'] ? params['createdDays'][0] as int: 0
-        def lastDownloadedDays = params['lastDownloadedDays'] ? params['lastDownloadedDays'][0] as int: 0
-        def ageDays = params['ageDays'] ? params['ageDays'][0] as int: 0
-        def excludePropertySet = params['excludePropertySet'] ? params['excludePropertySet'][0] as String: ''
-        def includePropertySet = params['includePropertySet'] ? params['includePropertySet'][0] as String: ''
-        def archiveProperty = params['archiveProperty'] ? params['archiveProperty'][0] as String: 'archived.timestamp'
-        def numKeepArtifacts = params['numKeepArtifacts'] ? params['numKeepArtifacts'][0] as int: 0
+        def filePattern = params['filePattern'] ? params['filePattern'][0] as String : '*'
+        def srcRepo = params['srcRepo'] ? params['srcRepo'][0] as String : 'build-packages'
+        def archiveRepo = params['archiveRepo'] ? params['archiveRepo'][0] as String : 'build-packages-archived'
+        def lastModifiedDays = params['lastModifiedDays'] ? params['lastModifiedDays'][0] as int : 0
+        def lastUpdatedDays = params['lastUpdatedDays'] ? params['lastUpdatedDays'][0] as int : 0
+        def createdDays = params['createdDays'] ? params['createdDays'][0] as int : 0
+        def lastDownloadedDays = params['lastDownloadedDays'] ? params['lastDownloadedDays'][0] as int : 0
+        def ageDays = params['ageDays'] ? params['ageDays'][0] as int : 0
+        def excludePropertySet = params['excludePropertySet'] ? params['excludePropertySet'][0] as String : ''
+        def includePropertySet = params['includePropertySet'] ? params['includePropertySet'][0] as String : ''
+        def archiveProperty = params['archiveProperty'] ? params['archiveProperty'][0] as String : 'archived.timestamp'
+        def numKeepArtifacts = params['numKeepArtifacts'] ? params['numKeepArtifacts'][0] as int : 0
 
         archiveOldArtifacts(
             log,
@@ -125,20 +123,19 @@ class ArchiveConstants {
  * that are not used in a meaningful way within an organization.
  */
 private archiveOldArtifacts(
-        log,
-        filePattern,
-        srcRepo,
-        archiveRepo,
-        lastModifiedDays,
-        lastUpdatedDays,
-        createdDays,
-        lastDownloadedDays,
-        ageDays,
-        excludePropertySet,
-        includePropertySet,
-        archiveProperty,
-        numKeepArtifacts) {
-
+    log,
+    filePattern,
+    srcRepo,
+    archiveRepo,
+    lastModifiedDays,
+    lastUpdatedDays,
+    createdDays,
+    lastDownloadedDays,
+    ageDays,
+    excludePropertySet,
+    includePropertySet,
+    archiveProperty,
+    numKeepArtifacts) {
     log.warn('Starting archive process for old artifacts ...')
     log.info('File match pattern: {}', filePattern)
     log.info('Source repository: {}', srcRepo)
@@ -161,7 +158,6 @@ private archiveOldArtifacts(
         ageDays == 0 &&
         excludePropertySet == '' &&
         includePropertySet == '') {
-
         log.error('No selection criteria specified, exiting now!')
         throw new CancelException('No selection criteria specified!', 400)
     }
@@ -198,7 +194,6 @@ private archiveOldArtifacts(
                 createdDays != 0 ||
                 lastDownloadedDays != 0 ||
                 ageDays != 0) {
-
                 log.info('We are going to perform a timing policies check...')
 
                 // Call the function to check if we need to archive based on timing policies
@@ -243,8 +238,7 @@ private archiveOldArtifacts(
                 def boolean keepArtifact = false
 
                 // Check if we are supposed to leave any number of artifacts per directory
-                if (numKeepArtifacts > 0)
-                {
+                if (numKeepArtifacts > 0) {
                     // Get the parent path
                     // NOTE: assuming one directory per unique type of artifact
                     def parentPath = artifact.getParent()
@@ -278,7 +272,7 @@ private archiveOldArtifacts(
                     properties.keys().each { key ->
                         Set<String> values = properties.get(key)
                         log.debug('Adding key: {}, values: {} to re-deployed artifact', key, values)
-                        repositories.setProperty(artifact, key, * (values as List))
+                        repositories.setProperty(artifact, key, *(values as List))
                     }
 
                     // Call the function to move the artifact
@@ -286,8 +280,7 @@ private archiveOldArtifacts(
 
                     artifactsArchived++
                 }
-            }
-            else {
+            } else {
                 log.info('Not archiving artifact: {}', artifact)
                 log.debug('Timing archive policy status: {}', archiveTiming)
                 log.debug('Exclude properties policy status: {}', archiveExcludeProperties)
@@ -300,7 +293,7 @@ private archiveOldArtifacts(
 }
 
 // Function to move the build artifact and set a property for the time it was moved
-def moveBuildArtifact (archiveRepo, RepoPath artifact, String property, time) {
+def moveBuildArtifact(archiveRepo, RepoPath artifact, String property, time) {
     // Get the translated file path for the new repo
     def translatedFilePath = repositories.translateFilePath(artifact, archiveRepo)
     log.debug('translatedFilePath: {}', translatedFilePath)
@@ -323,15 +316,14 @@ def moveBuildArtifact (archiveRepo, RepoPath artifact, String property, time) {
 
 // Function to check if an artifact meets the archive timing policies
 boolean checkArchiveTimingPolicies(
-        artifact,
-        lastModifiedDays,
-        lastUpdatedDays,
-        createdDays,
-        lastDownloadedDays,
-        ageDays,
-        itemInfo,
-        todayTime) {
-
+    artifact,
+    lastModifiedDays,
+    lastUpdatedDays,
+    createdDays,
+    lastDownloadedDays,
+    ageDays,
+    itemInfo,
+    todayTime) {
     long compareDays
 
     // Check the last modified policy if it is set

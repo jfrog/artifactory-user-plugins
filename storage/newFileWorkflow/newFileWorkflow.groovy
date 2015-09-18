@@ -1,10 +1,3 @@
-import org.artifactory.exception.CancelException
-import org.artifactory.fs.ItemInfo
-import org.artifactory.mime.MavenNaming
-import org.artifactory.repo.RepoPath
-
-import static com.google.common.collect.Multimaps.forMap
-
 /*
  * Copyright (C) 2014 JFrog Ltd.
  *
@@ -21,17 +14,26 @@ import static com.google.common.collect.Multimaps.forMap
  * limitations under the License.
  */
 
+import org.artifactory.exception.CancelException
+import org.artifactory.fs.ItemInfo
+import org.artifactory.mime.MavenNaming
+import org.artifactory.repo.RepoPath
+
+import static WorkflowStatuses.*
+import static com.google.common.collect.Multimaps.forMap
+
 /**
  * Execute a workflow each time a new file is saved
+ *
  * @author Michal Reuven
  * @since 10/09/14
  */
 
- /**
-  ************************************************************************************
-  * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
-  ************************************************************************************
-  */
+/**
+ ************************************************************************************
+ * NOTE!!! This code makes use of non-advertized APIs, and may break in the future! *
+ ************************************************************************************
+ */
 
 enum WorkflowStatuses {
     NEW, // State of the artifact as it is created in Artifactory
@@ -43,25 +45,22 @@ enum WorkflowStatuses {
     static final WORKFLOW_RESULT_PROP_NAME = 'workflow.result'
 }
 
-import static WorkflowStatuses.*
-
 boolean applyTo(ItemInfo item) {
     // Add the code to filter the kind of element the workflow applies to
     // Following Example: All non pom or metadata files saved in a local repository
     RepoPath repoPath = item.repoPath
     // Activate workflow only on actual local artifacts not pom or metadata
     !item.folder && !isRemote(repoPath.repoKey) &&
-            !MavenNaming.isMavenMetadata(repoPath.path) &&
-            !MavenNaming.isPom(repoPath.path)
+        !MavenNaming.isMavenMetadata(repoPath.path) &&
+        !MavenNaming.isPom(repoPath.path)
 }
 
 String dummyExecute(RepoPath repoPath) {
     // Throw an exception if the file contains 'A' in it.
 
-    //closeable.withCloseable(repositories.getContent(repoPath).inputStream) { InputStream is ->
+    // closeable.withCloseable(repositories.getContent(repoPath).inputStream) { InputStream is ->
     InputStream is = repositories.getContent(repoPath).inputStream
     try {
-
         def b = new byte[8096]
         int n
         while ((n = is.read(b)) != -1) {
@@ -78,8 +77,6 @@ String dummyExecute(RepoPath repoPath) {
     }
     "OK"
 }
-
-
 
 storage {
     afterCreate { ItemInfo item ->
@@ -126,6 +123,6 @@ private void setWorkflowResult(RepoPath repoPath, WorkflowStatuses status, Strin
 }
 
 def isRemote(String repoKey) {
-    if (repoKey.endsWith('-cache')) repoKey = repoKey.substring(0,repoKey.length() - 6)
+    if (repoKey.endsWith('-cache')) repoKey = repoKey.substring(0, repoKey.length() - 6)
     return repositories.getRemoteRepositories().contains(repoKey)
 }

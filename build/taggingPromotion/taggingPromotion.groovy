@@ -13,30 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
-* This plugin show tagging and promoting war files which can later be resolved by one generic url that filter resolution with matrix params
-*/
 
-import groovy.transform.Field
-import groovy.xml.StreamingMarkupBuilder
-import org.artifactory.build.Artifact
 import org.artifactory.build.BuildRun
-import org.artifactory.build.Dependency
-import org.artifactory.build.DetailedBuildRun
-import org.artifactory.build.Module
-import org.artifactory.build.ReleaseStatus
 import org.artifactory.common.StatusHolder
 import org.artifactory.exception.CancelException
 import org.artifactory.fs.FileInfo
 import org.artifactory.repo.RepoPath
-import org.artifactory.util.StringInputStream
-import static groovy.xml.XmlUtil.serialize
+
 import static org.artifactory.repo.RepoPathFactory.create
 
-
+/**
+ * This plugin show tagging and promoting war files which can later be resolved
+ * by one generic url that filter resolution with matrix params
+ */
 
 promotions {
-
     cloudPromote(users: "jenkins", params: ['aol.staging': '', 'aol.oss': '', 'aol.prod': '', targetRepository: 'cloud-deploy-local']) { buildName, buildNumber, params ->
         log.info 'Promoting build: ' + buildName + '/' + buildNumber
 
@@ -67,7 +58,7 @@ promotions {
         StatusHolder cstatus
         stageArtifactsList.each { item ->
             RepoPath repoPath = item.getRepoPath()
-            if(repoPath.getPath().endsWith('.war')){
+            if (repoPath.getPath().endsWith('.war')) {
                 RepoPath targetRepoPath = create(targetRepo, repoPath.getPath())
                 targetList << targetRepoPath
                 if (!repositories.exists(targetRepoPath)) {
@@ -77,18 +68,13 @@ promotions {
                         message = "Copy of $repoPath failed ${cstatus.getLastError().getMessage()}"
                         cancelPromotion(message, cstatus.getLastError().getException(), 500)
                     }
-
                 }
                 properties.each { prop ->
                     repositories.setProperty(targetRepoPath, prop.key, prop.value)
                 }
-
             }
         }
-
-
     }
-
 }
 
 private addStagingProperty(params, props, String pName) {

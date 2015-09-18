@@ -1,7 +1,8 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import groovy.json.JsonBuilder
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
-import groovy.json.JsonBuilder
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class ProtectPropertiesEditTest extends Specification {
     def 'property edit protect test'() {

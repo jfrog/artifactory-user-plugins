@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 import org.artifactory.build.DetailedBuildRun
 import org.jfrog.build.api.Build
+
 /**
- *
- * Date: 2/23/15
- * @author Michal Reuven
- *
  * This plugin is responsible to check whether the module properties are longer than 900 charaters, which cause the DB
  * to fale. If true, chop the property to 900 characters.
+ *
+ * @author Michal Reuven
+ * @since 02/23/15
  */
 
 build {
@@ -31,13 +31,13 @@ build {
         Build build = buildRun.build
         build.modules.each { m ->
             log.debug "m.properties: ${m.properties}"
-            Map<String,String> changed = [:]
+            Map<String, String> changed = [:]
             m.properties.each { String k, String v ->
                 log.debug "property: $k $v"
                 log.debug "p.property length: ${v.length()}"
                 if (v.length() > 899) {
                     log.debug "property is too long. chopping"
-                    changed[k] = v.substring(0,899)
+                    changed[k] = v.substring(0, 899)
                 }
             }
             m.properties.putAll(changed)

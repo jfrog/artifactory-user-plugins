@@ -1,6 +1,7 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.apache.commons.codec.digest.DigestUtils
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class ChecksumsTest extends Specification {
     def 'checksums test'() {

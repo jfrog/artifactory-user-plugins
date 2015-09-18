@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-import java.io.ByteArrayOutputStream
-import java.io.FileInputStream
-import java.io.InputStream
-
+import org.artifactory.common.StatusHolder
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
-import org.artifactory.common.StatusHolder
+@Grapes(@Grab(group = 'org.bouncycastle', module = 'bcpg-jdk16', version = '1.46'))
+import org.bouncycastle.bcpg.ArmoredOutputStream
+import org.bouncycastle.bcpg.BCPGOutputStream
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.openpgp.*
+
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
+import java.io.InputStream
+import java.security.Security
 
 /**
  * Artifactory user plugin that signs all incoming artifacts using the key
@@ -37,6 +43,7 @@ import org.artifactory.common.StatusHolder
  *
  * @author Chris Beams
  */
+
 storage {
     Properties props = new Properties()
     props.load(new FileReader(
@@ -49,13 +56,12 @@ storage {
         String itemKey = item.repoKey
         String itemPath = item.repoPath.path
         if (!itemKey.endsWith("-local")) {
-           // Only local should be signed
-           return
+            // Only local should be signed
+            return
         } else if (item.isFolder()) {
             log.debug("Ignoring creation of new folder: ${itemKey}:${itemPath}")
             return
-        }
-        else if(itemPath.endsWith(".asc")) {
+        } else if (itemPath.endsWith(".asc")) {
             log.debug("Ignoring deployment of signature file: ${itemKey}:${itemPath}")
             return
         }
@@ -68,7 +74,7 @@ storage {
         ArmoredOutputStream armoredSignatureOut = new ArmoredOutputStream(signatureOut)
 
         SimplePGPUtil.signFile(
-            secretKeyFile, passphrase, content.getInputStream(), armoredSignatureOut);
+            secretKeyFile, passphrase, content.getInputStream(), armoredSignatureOut)
 
         byte[] signatureBytes = signatureOut.toByteArray()
         ByteArrayInputStream signatureIn = new ByteArrayInputStream(signatureBytes)
@@ -91,7 +97,7 @@ storage {
     }
 }
 
-//Handle after copy/move events to follow with asc's
+// Handle after copy/move events to follow with asc's
 private void handleCopyMoveAscs(item, targetRepoPath, boolean move) {
     if (item.isFolder()) {
         log.debug("Ignoring copy/move of folder: ${item}")
@@ -100,37 +106,22 @@ private void handleCopyMoveAscs(item, targetRepoPath, boolean move) {
     srcAscRepoPath = RepoPathFactory.create(item.repoKey, item.relPath + ".asc")
     if (repositories.exists(srcAscRepoPath)) {
         tgtAscRepoPath = RepoPathFactory.create(targetRepoPath.repoKey, targetRepoPath.path + ".asc")
-        //Copy/move the asc to the target
+        // Copy/move the asc to the target
         log.debug("Copy/move: ${srcAscRepoPath} to ${tgtAscRepoPath}")
         if (move) {
-            //Note: with Artifactory 2.5.1.1 and below, folder-level moving when the folder contains ascs will cause an
-            //error - an asc moved by the plugin does not exist for the folder children move iteration (RTFACT-4878)
+            // Note: with Artifactory 2.5.1.1 and below, folder-level moving when the folder contains ascs will cause an
+            // error - an asc moved by the plugin does not exist for the folder children move iteration (RTFACT-4878)
             repositories.move(srcAscRepoPath, tgtAscRepoPath)
             srcParentDirRepoPath = srcAscRepoPath.parent
             while (!srcParentDirRepoPath.root && repositories.getChildren(srcParentDirRepoPath).empty) {
                 repositories.delete(srcParentDirRepoPath)
                 srcParentDirRepoPath = srcParentDirRepoPath.parent
             }
-        }
-        else {
+        } else {
             repositories.copy(srcAscRepoPath, tgtAscRepoPath)
         }
     }
 }
-
-import java.security.Security
-
-@Grapes(@Grab(group='org.bouncycastle', module='bcpg-jdk16', version='1.46'))
-import org.bouncycastle.bcpg.ArmoredOutputStream
-import org.bouncycastle.bcpg.BCPGOutputStream
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import org.bouncycastle.openpgp.PGPPrivateKey
-import org.bouncycastle.openpgp.PGPSecretKey
-import org.bouncycastle.openpgp.PGPSecretKeyRing
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection
-import org.bouncycastle.openpgp.PGPSignature
-import org.bouncycastle.openpgp.PGPSignatureGenerator
-import org.bouncycastle.openpgp.PGPUtil
 
 /**
  * Simple PGP utility that takes a target file and produces a .asc-style signature for it.
@@ -140,7 +131,6 @@ import org.bouncycastle.openpgp.PGPUtil
  * @author Chris Beams
  */
 class SimplePGPUtil {
-
     /**
      * Sign the contents of the given input stream using the given secret key and
      * passphrase, writing the resulting signature to the given armored output stream,
@@ -153,49 +143,48 @@ class SimplePGPUtil {
      * @throws Exception if anything fails in the signing process
      */
     static void signFile(File secretKeyFile, char[] passphrase, InputStream targetFileIn,
-            ArmoredOutputStream signatureFileOut) throws Exception {
+                         ArmoredOutputStream signatureFileOut) throws Exception {
         if (secretKeyFile.exists() == false) {
             throw new IllegalArgumentException(
-                "secretKeyFile does not exist: ${secretKeyFile.getPath()}");
+                "secretKeyFile does not exist: ${secretKeyFile.getPath()}")
         }
 
-        FileInputStream secretKeyIn = new FileInputStream(secretKeyFile);
-        BCPGOutputStream bcpgOut = null;
+        FileInputStream secretKeyIn = new FileInputStream(secretKeyFile)
+        BCPGOutputStream bcpgOut = null
 
         try {
             if (Security.getProvider("BC") == null) {
-                Security.addProvider(new BouncyCastleProvider());
+                Security.addProvider(new BouncyCastleProvider())
             }
 
             // as advertised, the .key file must have one and only one secret key within due
             // to the opinionated nature of the following call chain.
-            PGPSecretKey pgpSec = ((PGPSecretKey)((PGPSecretKeyRing)new PGPSecretKeyRingCollection(
-                    PGPUtil.getDecoderStream(secretKeyIn)).getKeyRings().next()).getSecretKeys().next());
+            PGPSecretKey pgpSec = ((PGPSecretKey) ((PGPSecretKeyRing) new PGPSecretKeyRingCollection(
+                PGPUtil.getDecoderStream(secretKeyIn)).getKeyRings().next()).getSecretKeys().next())
 
-            PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(passphrase, "BC");
+            PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(passphrase, "BC")
 
             PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
-                    pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC");
+                pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC")
 
-            signatureGenerator.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+            signatureGenerator.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey)
 
-            bcpgOut = new BCPGOutputStream(signatureFileOut);
+            bcpgOut = new BCPGOutputStream(signatureFileOut)
 
-            int ch = 0;
+            int ch = 0
             while ((ch = targetFileIn.read()) >= 0) {
-                signatureGenerator.update((byte)ch);
+                signatureGenerator.update((byte) ch)
             }
 
-            PGPSignature signature = signatureGenerator.generate();
-            signature.encode(bcpgOut);
+            PGPSignature signature = signatureGenerator.generate()
+            signature.encode(bcpgOut)
         } finally {
-            secretKeyIn.close();
-            targetFileIn.close();
+            secretKeyIn.close()
+            targetFileIn.close()
             if (bcpgOut != null) {
-                bcpgOut.close();
+                bcpgOut.close()
             }
-            signatureFileOut.close();
+            signatureFileOut.close()
         }
     }
-
 }

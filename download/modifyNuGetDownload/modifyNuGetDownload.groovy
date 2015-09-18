@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.request.Request
 
 /**
  * An example on how to use internal rewrite plugin.
- * Instead of saving nupkg files as flat in a remote repository, we save them in a 2 level folder hierarchy
+ * Instead of saving nupkg files as flat in a remote repository, we save them in
+ * a 2 level folder hierarchy
  *
  * nuget-gallery/NHibernate.3.3.1.4000.nupkg -> nuget-gallery/NHibernate/NHibernate/NHibernate.3.3.1.4000.nupkg
  *
  * @author Shay Yaakov
  */
+
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (repoPath.repoKey == "nuget-gallery" && repoPath.path.endsWith('.nupkg')) {
-            String[] pathElements = request.alternativeRemoteDownloadUrl.split("/"); // api/v2/package/jQuery/2.0.1
+            // api/v2/package/jQuery/2.0.1
+            String[] pathElements = request.alternativeRemoteDownloadUrl.split("/")
             String pkgName = pathElements[pathElements.length - 2]
             String pkgVersion = pathElements[pathElements.length - 1]
 

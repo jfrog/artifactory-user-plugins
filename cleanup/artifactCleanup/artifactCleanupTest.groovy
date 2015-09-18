@@ -1,6 +1,7 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class ArtifactCleanupTest extends Specification {
     def 'artifact cleanup test'() {
@@ -12,7 +13,7 @@ class ArtifactCleanupTest extends Specification {
 
         when:
         artifactory.plugins().execute('cleanup').
-                withParameter('repos', 'libs-release-local').sync()
+            withParameter('repos', 'libs-release-local').sync()
         repo.file('test').info()
 
         then:
@@ -20,8 +21,8 @@ class ArtifactCleanupTest extends Specification {
 
         when:
         artifactory.plugins().execute('cleanup').
-                withParameter('repos', 'libs-release-local').
-                withParameter('months', '0').sync()
+            withParameter('repos', 'libs-release-local').
+            withParameter('months', '0').sync()
         repo.file('test').info()
 
         then:

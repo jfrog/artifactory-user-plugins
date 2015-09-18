@@ -1,8 +1,10 @@
 import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
-import static org.jfrog.artifactory.client.model.impl.RemoteRepoChecksumPolicyTypeImpl.pass_thru
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import java.security.MessageDigest
 import spock.lang.Specification
+
+import java.security.MessageDigest
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import static org.jfrog.artifactory.client.model.impl.RemoteRepoChecksumPolicyTypeImpl.pass_thru
 
 class yumValidRemoteTest extends Specification {
     def 'check valid yum remote test'() {

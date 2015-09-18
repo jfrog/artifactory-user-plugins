@@ -17,7 +17,7 @@
 // usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/dummyPlugin
 
 executions {
-    dummyPlugin(users:['anonymous']) {
+    dummyPlugin(users: ['anonymous']) {
         message = '{"status":"okay"}'
         status = 200
     }

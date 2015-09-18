@@ -15,12 +15,12 @@
  */
 
 @Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6'),
-@Grab(group = 'org.ccil.cowan.tagsoup', module = 'tagsoup', version = '1.2.1'),
-@GrabExclude('commons-codec:commons-codec'),
-@GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
+    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
+          module = 'http-builder', version = '0.6'),
+    @Grab(group = 'org.ccil.cowan.tagsoup', module = 'tagsoup', version = '1.2.1'),
+    @GrabExclude('commons-codec:commons-codec'),
+    @GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
 ])
-
 import com.google.common.collect.HashMultimap
 import groovy.xml.MarkupBuilder
 import groovyx.net.http.HTTPBuilder
@@ -29,53 +29,63 @@ import org.apache.http.entity.InputStreamEntity
 import org.artifactory.checksum.ChecksumsInfo
 import org.artifactory.resource.ResourceStreamHandle
 import org.springframework.util.AntPathMatcher
+
 import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
 import static org.artifactory.repo.RepoPathFactory.create
 import static org.artifactory.util.PathUtils.getExtension
 
 executions {
-
     /**
-     * Artifactory plugin for pushing artifacts to A Nexus Staging Repository (for example, oss.sonatype.org).
+     * Artifactory plugin for pushing artifacts to A Nexus Staging Repository
+     * (for example, oss.sonatype.org).
      * 1. Setup:
      *   1.1. Place this script under ${ARTIFACTORY_HOME}/etc/plugins.
      *   1.2. Place profile file under ${ARTIFACTORY_HOME}/etc/plugins.
-     *          Profile file should be a Java properties file and contain 3 mandatory parameters: stagingUrl, stagingUsername,
-     *          stagingPassword. The only optional parameter currently supported is comma separated list of exclusions
-     *          in form of ant fileset patterns; files, matched by those patterns won't be staged.
-     *          Example for local Nexus install with default credentials:
-     *                 stagingUrl=http://localhost:8081/nexus
-     *                 stagingUsername=admin
-     *                 stagingPassword=admin123
-     *                 # Comma separated exclusions (using Ant pattern format); matched files won't be staged
-     *                 exclusions=**\/*.zip, **\/*.tar.gz
+     *        Profile file should be a Java properties file and contain 3
+     *        mandatory parameters: stagingUrl, stagingUsername,
+     *        stagingPassword. The only optional parameter currently supported
+     *        is comma separated list of exclusions in form of ant fileset
+     *        patterns; files, matched by those patterns won't be staged.
+     *        Example for local Nexus install with default credentials:
+     *               stagingUrl=http://localhost:8081/nexus
+     *               stagingUsername=admin
+     *               stagingPassword=admin123
+     *               # Comma separated exclusions (using Ant pattern format);
+     *               # matched files won't be staged
+     *               exclusions=**\/*.zip, **\/*.tar.gz
      *
-     * 2. Execute POST request authenticated with Artifactory admin user with the following parameters separated by pipe (|):
-     *  2.1. 'stagingProfile': name of the profile file (without the 'properties' extension).
-     *      E.g. for profile saved in
-     *      ${ARTIFACTORY_HOME}/etc/plugins/nexusPush.properties the parameter will be profile=nexusPush
+     * 2. Execute POST request authenticated with Artifactory admin user with
+     *    the following parameters separated by pipe (|):
+     *  2.1. 'stagingProfile': name of the profile file (without the
+     *       'properties' extension).
+     *       E.g. for profile saved in
+     *       ${ARTIFACTORY_HOME}/etc/plugins/nexusPush.properties the parameter
+     *       will be profile=nexusPush
      *  2.2. Query parameters can be one of the two:
-     *      2.2.1. By directory: defined by parameter 'dir'. The format of the parameter is repo-key/relative-path.
-     *          It's the desired directory URL just without the base Artifactory URL.
-     *          E.g. dir=lib-release-local/org/spacecrafts/spaceship-new-rel/1.0
-     *      2.2.2. By build properties: any number of 'property=value1,value2,valueN' pairs are allowed, applying "AND" clause both on properties and on property values,
-     *      where the 'property' is the full name of Artifactory property (inc. set name).
-     *          All artifacts with combination of those properties will be pushed.
-     *          E.g. build.name=spaceship-new-rel|build.number=143
+     *      2.2.1. By directory: defined by parameter 'dir'. The format of the
+     *             parameter is repo-key/relative-path. It's the desired
+     *             directory URL just without the base Artifactory URL.
+     *             E.g. dir=lib-release-local/org/spacecrafts/spaceship-new-rel/1.0
+     *      2.2.2. By build properties: any number of
+     *             'property=value1,value2,valueN' pairs are allowed, applying
+     *             "AND" clause both on properties and on property values, where
+     *             the 'property' is the full name of Artifactory property (inc.
+     *             set name). All artifacts with combination of those properties
+     *             will be pushed.
+     *             E.g. build.name=spaceship-new-rel|build.number=143
      *  2.3. 'close': whether the staging repository should be closed or not.
-     *      Boolean expression, true by default - the repository will be closed.
+     *       Boolean expression, true by default - the repository will be closed.
      *
      * 3. Examples of the request using CURL:
      *  3.1. Query by directory, upload only (without closing):
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
+     *       curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"
      *  3.2. Query by properties:
-     *      curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"
-     * */
+     *       curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"
+     */
     nexusPush { params ->
         try {
-
-            //Defaults for success
+            // Defaults for success
             status = 200
             message = 'Artifact successfully staged on Nexus'
 
@@ -89,7 +99,7 @@ executions {
             lookupRepoPath = uploadToStagingRepo searchResults
 
             if (!params.close || params.close[0] != 'false') {
-                //staging repo can be found only if some file was deployed.
+                // staging repo can be found only if some file was deployed.
                 if (lookupRepoPath) {
                     closeStagingRepoWith lookupRepoPath
                 } else {
@@ -103,8 +113,8 @@ executions {
             } else {
                 message = 'Artifact uploaded to Nexus, but according to \'close\' parameter the staging repo wasn\'t closed.'
             }
-
-        } catch (NexusPushException e) { //aborts during execution
+        } catch (NexusPushException e) {
+            // aborts during execution
             status = e.status
             message = e.message
         }
@@ -114,7 +124,7 @@ executions {
 def validate(params) throws NexusPushException {
     if (!params) handleError 400, 'Profile and query parameters are mandatory. Please supply them.'
     if (!params.stagingProfile) handleError 400, 'Profile name is mandatory. Please supply it.'
-    //noinspection GroovyAssignabilityCheck
+    // noinspection GroovyAssignabilityCheck
     File propertiesFile = new File(ctx.artifactoryHome.etcDir, "plugins/${params.stagingProfile[0]}.properties")
     if (!propertiesFile.isFile()) handleError 400, "No profile properties file was found at ${propertiesFile.absolutePath}"
     Properties stagingProps = new Properties()
@@ -131,36 +141,37 @@ def validate(params) throws NexusPushException {
 def findArtifactsBy(Map params) {
     assert params
     def queryParams = params - knownParams
-    assert queryParams //at least one param expected being it 'dir' or some property
+    assert queryParams // at least one param expected being it 'dir' or some property
     def searchResults = []
     if (queryParams.dir) {
         String dir = queryParams.dir[0]
-        def parts = dir.tokenize('/') //first part is repoKey
+        def parts = dir.tokenize('/')
+        // first part is repoKey
         if (parts.size() < 2) {
             handleError 400, "'${dir}' is invalid directory format. Should be 'repoKey/relativePath'."
         }
         def path = dir - parts[0]
-        searchResults = collectFiles(repositories.getItemInfo(create(parts[0], path)), []).collect {it.repoPath}
-    } else { //we now only have properties in params
-        searchResults = searches.itemsByProperties(queryParams.inject(HashMultimap.create()) {query, entry ->
-            query.putAll entry.key, entry.value //convert [:[]] parameters to SetMulimap acepted by searches
+        searchResults = collectFiles(repositories.getItemInfo(create(parts[0], path)), []).collect { it.repoPath }
+    } else {
+        // we now only have properties in params
+        searchResults = searches.itemsByProperties(queryParams.inject(HashMultimap.create()) { query, entry ->
+            query.putAll entry.key, entry.value // convert [:[]] parameters to SetMulimap acepted by searches
             query
-        }).grep {repoPath -> //filter files only
+        }).grep { repoPath -> // filter files only
             !repositories.getItemInfo(repoPath).folder
         }
     }
     if (stagingProps.exclusions) {
         def matcher = new AntPathMatcher()
         def patterns = stagingProps.exclusions.tokenize(',')
-        searchResults = searchResults.grep {repoPath ->
+        searchResults = searchResults.grep { repoPath ->
             !patterns.any { pattern ->
                 matcher.match(pattern, repoPath.path)
             }
-
         }
     }
 
-    //find and include PGP sigature (if any) for each search result
+    // find and include PGP sigature (if any) for each search result
     def signatures = []
     searchResults.each { repoPath ->
         def signature = create(repoPath.repoKey, repoPath.path + ".asc")
@@ -171,11 +182,11 @@ def findArtifactsBy(Map params) {
     searchResults + signatures
 }
 
-//get only files, not directories
+// get only files, not directories
 def collectFiles(item, files) {
     children = repositories.getChildren(item.repoPath)
     if (children) {
-        children.each {child ->
+        children.each { child ->
             collectFiles(child, files)
         }
     } else {
@@ -189,17 +200,17 @@ def uploadToStagingRepo(searchResults) {
 
     def referenceFileRepoPath = null
     def backupFileRepoPath = null
-    searchResults.each {repoPath ->
+    searchResults.each { repoPath ->
         def artifactUrl = "${stagingProps.stagingUrl}/service/local/staging/deploy/maven2/${repoPath.path}"
         ResourceStreamHandle content = repositories.getContent(repoPath)
         def http = new HTTPBuilder(artifactUrl)
-        //we don't want to send big jar only to get auth challenge back, so we need preemptive authentication
-        http.client.addRequestInterceptor({def httpRequest, def httpContext ->
-            httpRequest.addHeader('Authorization', "Basic ${"${stagingProps.stagingUsername}:${stagingProps.stagingPassword}".getBytes().encodeBase64()}") //strange stuff! bytes won't work! only getBytes()
+        // we don't want to send big jar only to get auth challenge back, so we need preemptive authentication
+        http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
+            httpRequest.addHeader('Authorization', "Basic ${"${stagingProps.stagingUsername}:${stagingProps.stagingPassword}".getBytes().encodeBase64()}") // strange stuff! bytes won't work! only getBytes()
         } as HttpRequestInterceptor)
-        //as opposite to ordinary input stream we do know the size, so we override regular binary encoder in the encoder registry.
-        //TODO since we already messing with entity, configure it further to be repeatable org.apache.http.HttpEntity (as it is actually repeatable) for IO errors retries
-        http.encoder.putAt(BINARY) {ResourceStreamHandle resourceStreamHandle ->
+        // as opposite to ordinary input stream we do know the size, so we override regular binary encoder in the encoder registry.
+        // TODO since we already messing with entity, configure it further to be repeatable org.apache.http.HttpEntity (as it is actually repeatable) for IO errors retries
+        http.encoder.putAt(BINARY) { ResourceStreamHandle resourceStreamHandle ->
             new InputStreamEntity(resourceStreamHandle.inputStream, resourceStreamHandle.size)
         }
         try {
@@ -208,7 +219,8 @@ def uploadToStagingRepo(searchResults) {
                 response.success = { resp ->
                     log.debug "Artifact ${repoPath.name} was successfully put in Staging Server"
                     backupFileRepoPath = repoPath
-                    if (getExtension(repoPath.path).equalsIgnoreCase('pom')) { //we'd better go with pom
+                    if (getExtension(repoPath.path).equalsIgnoreCase('pom')) {
+                        // we'd better go with pom
                         referenceFileRepoPath = repoPath
                     }
                 }
@@ -226,7 +238,7 @@ def uploadToStagingRepo(searchResults) {
             putChecksums("${artifactUrl}.sha1", checksumsInfo.sha1)
         }
     }
-    referenceFileRepoPath = referenceFileRepoPath ?: backupFileRepoPath //if no pom, let's go with some other file
+    referenceFileRepoPath = referenceFileRepoPath ?: backupFileRepoPath // if no pom, let's go with some other file
     log.debug "The following file will be used for closing stage repository: ${referenceFileRepoPath}"
     referenceFileRepoPath
 }
@@ -250,11 +262,11 @@ def putChecksums(url, checksum) {
 def closeStagingRepoWith(lookupRepoPath) {
     assert lookupRepoPath
 
-    //Staging server voodoo. Watch my fingers:
-    //1. Find all the possible open staging repos and their staging profiles
+    // Staging server voodoo. Watch my fingers:
+    // 1. Find all the possible open staging repos and their staging profiles
     def stages = getOpenStages()
 
-    //2. In those, find staging repo containing RepoPath in question
+    // 2. In those, find staging repo containing RepoPath in question
     def stage = findStageByRepoPath(stages, lookupRepoPath)
 
     if (!stage) {
@@ -262,7 +274,7 @@ def closeStagingRepoWith(lookupRepoPath) {
         return
     }
 
-    //3. Prepare XML instruction for closing the found repo & submit it to appropriate staging profile
+    // 3. Prepare XML instruction for closing the found repo & submit it to appropriate staging profile
     closeRepo(stage)
 }
 
@@ -272,7 +284,7 @@ def getOpenStages() {
     http.auth.basic stagingProps.stagingUsername, stagingProps.stagingPassword
     http.request(GET, XML) {
         response.success = { resp, stagingRepositories ->
-            stagingRepositories.data.stagingProfileRepository.each {stagingProfileRepository ->
+            stagingRepositories.data.stagingProfileRepository.each { stagingProfileRepository ->
                 def profileId = stagingProfileRepository.profileId.text()
                 def repoId = stagingProfileRepository.repositoryId.text()
                 log.debug "Found stage profile $profileId"
@@ -289,10 +301,10 @@ def getOpenStages() {
 }
 
 def findStageByRepoPath(stages, repoPath) {
-    assert stages != null //empty list is fine with us, but false by Groovy Truth
+    assert stages != null // empty list is fine with us, but false by Groovy Truth
     assert repoPath
 
-    stages.find {stage ->
+    stages.find { stage ->
         String stageRepoUrl = "${stagingProps.stagingUrl}/service/local/repositories/${stage.repoId}/content/${repoPath.path}?isLocal"
         def http = new HTTPBuilder(stageRepoUrl)
         http.auth.basic stagingProps.stagingUsername, stagingProps.stagingPassword
@@ -304,7 +316,7 @@ def findStageByRepoPath(stages, repoPath) {
             }
 
             response.'404' = {
-                //fine with us, the the repoPath is not there
+                // fine with us, the the repoPath is not there
                 log.debug "${repoPath} not found in ${stage}"
             }
 
@@ -312,7 +324,6 @@ def findStageByRepoPath(stages, repoPath) {
             response.failure = { resp ->
                 handleWarning resp, "Error while checking ${stage.stageId} repository for presence of ${repoPath}. This might cause unclosed staging repo. Please validate closing manually. Error is"
             }
-
         }
         found
     }
@@ -323,7 +334,7 @@ def closeRepo(stage) {
     assert stage.repoId
     assert stage.profileId
 
-    //Build stage repository closing XML
+    // Build stage repository closing XML
     def writer = new StringWriter()
     def xml = new MarkupBuilder(writer)
     xml.promoteRequest {
@@ -343,11 +354,11 @@ def closeRepo(stage) {
             log.debug 'Staging repo closed successfully'
         }
 
-        response.'400' = {resp, reader ->
+        response.'400' = { resp, reader ->
             slurper = new XmlSlurper(new org.ccil.cowan.tagsoup.Parser())
-            //noinspection GroovyAssignabilityCheck
+            // noinspection GroovyAssignabilityCheck
             def html = slurper.parse reader
-            handleError(400, html.toString().replaceAll('\u00A0', ' ')) //replace nbsp with regular ones
+            handleError(400, html.toString().replaceAll('\u00A0', ' ')) // replace nbsp with regular ones
         }
 
         response.failure = { resp ->
@@ -355,7 +366,6 @@ def closeRepo(stage) {
         }
     }
 }
-
 
 def handleError(int status, message) throws NexusPushException {
     log.error message

@@ -1,7 +1,7 @@
 import groovy.json.JsonSlurper
+import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import spock.lang.Specification
 
 class DummyPluginTest extends Specification {
     def 'simple dummy plugin test'() {

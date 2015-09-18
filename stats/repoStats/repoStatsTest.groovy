@@ -1,6 +1,7 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import groovy.json.JsonSlurper
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class RepoStatsTest extends Specification {
     def 'multi-file repo stats test'() {

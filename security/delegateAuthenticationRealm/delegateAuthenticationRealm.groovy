@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-@Grapes([
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.7.2')
-]) @GrabExclude('commons-codec:commons-codec')
-
-import groovyx.net.http.ContentType
-import groovyx.net.http.Method
-import groovyx.net.http.HTTPBuilder
-import org.artifactory.security.User
 import groovy.transform.Field
+@Grapes([
+    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
+          module = 'http-builder', version = '0.7.2')
+])
+@GrabExclude('commons-codec:commons-codec')
+import groovyx.net.http.ContentType
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.Method
+import org.artifactory.security.User
 
 /**
  *
- * Date: 2/4/15
  * @author Fred Simon
+ * @since 02/04/15
  */
 
 @Field final String centralAuthenticatorArtifactory = 'http://localhost:8081'
 @Field final String uriPath = '/artifactory/api/plugins/execute/getCurrentUserDetails'
-
 
 realms {
     delegateRealm(autoCreateUsers: true) {

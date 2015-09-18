@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
+import org.artifactory.addon.yum.InternalYumAddon
 import org.artifactory.repo.LocalRepositoryConfiguration
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
-import org.artifactory.addon.yum.InternalYumAddon
 
 // usage: curl -X POST -u admin:password http://localhost:8088/artifactory/api/plugins/execute/yumCalculate?params=path=yum-repository/path/to/dir
 

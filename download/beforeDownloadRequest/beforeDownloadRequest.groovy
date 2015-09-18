@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.fs.FileInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
+
+import static CacheConstants.JSON_CACHE_MILLIS
 
 class CacheConstants {
     // Cache *.json files for 1 hour
     static final long JSON_CACHE_MILLIS = 3600 * 1000L
 }
-
-import static CacheConstants.JSON_CACHE_MILLIS
 
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
@@ -38,7 +39,7 @@ def isRemote(String repoKey) {
 }
 
 def shouldExpire(RepoPath repoPath) {
-    if(!repositories.exists(repoPath)) {
+    if (!repositories.exists(repoPath)) {
         return false
     }
     FileInfo fileInfo = repositories.getFileInfo(repoPath)

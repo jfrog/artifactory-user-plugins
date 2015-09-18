@@ -1,5 +1,6 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import spock.lang.Specification
+
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class LayoutPropertiesTest extends Specification {
     def 'maven layout properties plugin test'() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ build {
             m.artifacts.each { a ->
                 def type = a.getType()
                 if (type.contains(';')) {
-                    a.setType(type.substring(0,type.indexOf(';')))
+                    a.setType(type.substring(0, type.indexOf(';')))
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ build {
         log.debug "removing properties of ${buildRun.name}."
         Build build = buildRun.build
         build.modules.each { m ->
-            //log.debug "property: ${m.properties}"
+            // log.debug "property: ${m.properties}"
             m.properties = new Properties()
-            //log.debug "property: ${m.properties}"
+            // log.debug "property: ${m.properties}"
         }
     }
 }

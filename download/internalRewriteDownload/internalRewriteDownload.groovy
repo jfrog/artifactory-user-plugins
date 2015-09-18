@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.request.Request
@@ -23,8 +24,8 @@ import org.artifactory.request.Request
  * of the repository.
  * In this example only dist-local repo name is working.
  *
- * Date: 3/13/14 3:43 PM
  * @author freds
+ * @since 03/13/14
  */
 
 download {

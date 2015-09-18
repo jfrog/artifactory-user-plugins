@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
+import groovy.json.JsonSlurper
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.Method
+import org.artifactory.repo.RepoPath
+import org.artifactory.resource.ResourceStreamHandle
+
+import static groovyx.net.http.ContentType.BINARY
+import static org.artifactory.repo.RepoPathFactory.create
+
 /**
  *
  * @author Uriah L.
  * @since 10/05/15
  */
 
-import static groovyx.net.http.ContentType.BINARY
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
-import org.artifactory.repo.RepoPath
-import static org.artifactory.repo.RepoPathFactory.create
-import groovy.json.JsonSlurper
-import org.artifactory.resource.ResourceStreamHandle
-import org.artifactory.common.StatusHolder
-
-class Params{
+class Params {
     String repo
     String path
     String url
-    //Basic authentication credentials for the remote location
+    // Basic authentication credentials for the remote location
     String username
     String password
 
@@ -43,7 +43,7 @@ class Params{
 }
 
 executions {
-    remoteDownload() {ResourceStreamHandle body ->
+    remoteDownload() { ResourceStreamHandle body ->
         assert body
         def json = new JsonSlurper().parse(new InputStreamReader(body.inputStream))
         def input = new Params()
@@ -51,7 +51,7 @@ executions {
         input.repo = json.repo as String
         input.path = json.path as String
         input.url = json.url as String
-        //need to add validation to whether empty or not
+        // need to add validation to whether empty or not
         input.username = json.username as String
         input.password = json.password as String
 
@@ -63,10 +63,10 @@ executions {
             return
         }
 
-        //Fetch the remote file
+        // Fetch the remote file
         log.info "Fetching remote file from: " + input.url
-        //Failure
-        if(!fetchAndDeploy(input.url, input.repo, input.path, input.username, input.password)){
+        // Failure
+        if (!fetchAndDeploy(input.url, input.repo, input.path, input.username, input.password)) {
             def msg = "Remote response failure, error code indicated on the log"
             status = 500
             message = msg
@@ -76,20 +76,19 @@ executions {
 }
 
 def boolean fetchAndDeploy(url, repoKey, deployPath, username, password) {
-
     def http = new HTTPBuilder(url)
     http.auth.basic(username, password)
-    //GET request to retrieve remote file
+    // GET request to retrieve remote file
     http.request(Method.GET, BINARY) { req ->
         response.success = { resp, binary ->
-        log.info "Got response: ${resp.statusLine}"
-        def targetRepoKey = repoKey
-        def targetPath = deployPath
-        RepoPath deployRepoPath = create(targetRepoKey, targetPath)
-        repositories.deploy(deployRepoPath, binary)
+            log.info "Got response: ${resp.statusLine}"
+            def targetRepoKey = repoKey
+            def targetPath = deployPath
+            RepoPath deployRepoPath = create(targetRepoKey, targetPath)
+            repositories.deploy(deployRepoPath, binary)
         }
         response.failure = { resp ->
-            //Can't throw an error to the client from here; returning 0, indicating failure
+            // Can't throw an error to the client from here; returning 0, indicating failure
             log.error "Request failed with the following status code: " + resp.statusLine.statusCode
             return 0
         }

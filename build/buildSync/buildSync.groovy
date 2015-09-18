@@ -13,20 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Build Synchronization plugin replicates some build info json from one Artifactory
- * to multiple remotes Artifactory instances.
- * In this document "current server" means the Artifactory server where the plugin
- * is installed and running.
- * And "remote server" or "remote servers" defines the Artifactory servers accessed
- * via URL from this plugin. The URLs are configured either as fields in JSON to the REST
- * query or as part of the buildSync.json file.
+
+import groovy.json.JsonSlurper
+import groovyx.net.http.HTTPBuilder
+import org.apache.http.HttpRequestInterceptor
+import org.apache.http.StatusLine
+import org.artifactory.addon.AddonsManager
+import org.artifactory.addon.plugin.PluginsAddon
+import org.artifactory.addon.plugin.build.AfterBuildSaveAction
+import org.artifactory.addon.plugin.build.BeforeBuildSaveAction
+import org.artifactory.api.jackson.JacksonReader
+import org.artifactory.api.rest.build.BuildInfo
+import org.artifactory.build.BuildRun
+import org.artifactory.build.Builds
+import org.artifactory.build.DetailedBuildRun
+import org.artifactory.build.DetailedBuildRunImpl
+import org.artifactory.exception.CancelException
+import org.artifactory.rest.resource.ha.BuildRunImpl
+import org.artifactory.storage.build.service.BuildStoreService
+import org.artifactory.storage.db.DbService
+import org.artifactory.util.HttpUtils
+import org.jfrog.build.api.Build
+import org.slf4j.Logger
+
+import java.util.concurrent.Callable
+
+import static groovyx.net.http.ContentType.BINARY
+import static groovyx.net.http.ContentType.JSON
+import static groovyx.net.http.Method.DELETE
+import static groovyx.net.http.Method.PUT
+
+/**
+ * Build Synchronization plugin replicates some build info json from one
+ * Artifactory to multiple remotes Artifactory instances. In this document
+ * "current server" means the Artifactory server where the plugin is installed
+ * and running, and "remote server" or "remote servers" defines the Artifactory
+ * servers accessed via URL from this plugin. The URLs are configured either as
+ * fields in JSON to the REST query or as part of the buildSync.json file.
  *
  * This plugin can work in 3 modes:
  * 1. Pull: Reading build info from a remote server source and adding them
  *          to the current Artifactory server.
- * 2. Push: Deploying a list of build info from the current server and adding them
- *          to the remote servers.
+ * 2. Push: Deploying a list of build info from the current server and adding
+ *          them to the remote servers.
  * 3. Event Push: Adding all (or certain) build info as they are deployed
  *          on the current server to the remote servers.
  *
@@ -46,7 +75,8 @@
  *         },
  *         ...
  *       ]
- *       Each server should have a unique key identifying it, and url/user/pass used to access the REST API.
+ *       Each server should have a unique key identifying it, and url/user/pass
+ *       used to access the REST API.
  *     1.2.2 Then list the pull replication configurations with:
  *       "pullConfigs": [
  *         {
@@ -110,49 +140,6 @@
  *
  */
 
-
-/*@Grapes([
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.6')
-])
-@GrabExclude('commons-codec:commons-codec')
-*/
-
-import groovy.json.JsonSlurper
-import groovyx.net.http.HTTPBuilder
-import org.apache.http.HttpRequestInterceptor
-import org.apache.http.StatusLine
-
-import org.artifactory.addon.AddonsManager
-import org.artifactory.addon.plugin.PluginsAddon
-import org.artifactory.addon.plugin.build.AfterBuildSaveAction
-import org.artifactory.addon.plugin.build.BeforeBuildSaveAction
-import org.artifactory.api.jackson.JacksonReader
-import org.artifactory.api.rest.build.BuildInfo
-import org.artifactory.build.BuildRun
-import org.artifactory.build.Builds
-
-import org.artifactory.build.DetailedBuildRun
-import org.artifactory.build.DetailedBuildRunImpl
-import org.artifactory.exception.CancelException
-import org.artifactory.rest.resource.ha.BuildRunImpl
-import org.artifactory.storage.build.service.BuildStoreService
-import org.artifactory.storage.db.DbService
-import org.artifactory.util.HttpUtils
-import org.jfrog.build.api.Build
-import org.slf4j.Logger
-
-import java.util.concurrent.Callable
-
-import static groovyx.net.http.ContentType.BINARY
-import static groovyx.net.http.ContentType.JSON
-import static groovyx.net.http.Method.DELETE
-import static groovyx.net.http.Method.PUT
-
-
-
-
-
-
 def baseConfHolder = new BaseConfigurationHolder(ctx, log)
 
 executions {
@@ -176,10 +163,10 @@ executions {
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PullConfig pullConf = baseConf.pullConfigs[confKey]
             def res = doSync(
-                    new RemoteBuildService(pullConf.source, log),
-                    new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins),
-                    pullConf.buildNames,
-                    pullConf.delete, max, force
+                new RemoteBuildService(pullConf.source, log),
+                new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins),
+                pullConf.buildNames,
+                pullConf.delete, max, force
             )
             if (!res) {
                 status = 404
@@ -187,10 +174,10 @@ executions {
             } else {
                 status = 200
                 message = "Builds ${pullConf.buildNames} from ${pullConf.source.url}" +
-                        " successfully replicated:\n${res.join('\n')}\n"
+                    " successfully replicated:\n${res.join('\n')}\n"
             }
         } catch (Exception e) {
-            //aborts during execution
+            // aborts during execution
             log.error("Failed pull config", e)
             status = 500
             message = e.getMessage()
@@ -217,10 +204,10 @@ executions {
             List<String> res = []
             pushConf.destinations.each { destServer ->
                 res.addAll(doSync(
-                        localBuildService,
-                        new RemoteBuildService(destServer, log),
-                        pushConf.buildNames,
-                        pushConf.delete, 0, false
+                    localBuildService,
+                    new RemoteBuildService(destServer, log),
+                    pushConf.buildNames,
+                    pushConf.delete, 0, false
                 ))
             }
             if (!res) {
@@ -229,10 +216,10 @@ executions {
             } else {
                 status = 200
                 message = "Builds ${pushConf.buildNames} were successfully replicated" +
-                        " to ${pushConf.destinations.collect { it.url }}\n${res.join('\n')}\n"
+                    " to ${pushConf.destinations.collect { it.url }}\n${res.join('\n')}\n"
             }
         } catch (Exception e) {
-            //aborts during execution
+            // aborts during execution
             log.error("Failed pull config", e)
             status = 500
             message = e.message
@@ -259,7 +246,7 @@ def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String build
     log.debug "Checking if ${buildRun.name} match $buildNameFilter"
     boolean match
     if (buildNameFilter.contains('*')) {
-        match = buildName.matches(buildNameFilter);
+        match = buildName.matches(buildNameFilter)
     } else {
         match = buildNameFilter.equals(buildName)
     }
@@ -271,8 +258,8 @@ def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String build
                 rbs.addBuild(buildRun.build)
             } catch (Exception e) {
                 log.error(
-                        "Sending ${buildRun.name}:${buildRun.number} to ${server.url} failed with: ${e.getMessage()}",
-                        e)
+                    "Sending ${buildRun.name}:${buildRun.number} to ${server.url} failed with: ${e.getMessage()}",
+                    e)
             }
         }
     }
@@ -342,7 +329,7 @@ abstract class BuildListBase {
         return _allLatestBuilds
     }
 
-    abstract NavigableSet<BuildRun> loadAllBuilds();
+    abstract NavigableSet<BuildRun> loadAllBuilds()
 
     NavigableSet<BuildRun> filterBuildNames(List<String> buildNames) {
         NavigableSet<BuildRun> result = new TreeSet<>(comparator)
@@ -364,13 +351,13 @@ abstract class BuildListBase {
         getAllLatestBuilds().find { it.name == buildName }?.started
     }
 
-    abstract NavigableSet<BuildRun> getBuildNumbers(String buildName);
+    abstract NavigableSet<BuildRun> getBuildNumbers(String buildName)
 
-    abstract Build getBuildInfo(BuildRun b);
+    abstract Build getBuildInfo(BuildRun b)
 
-    abstract def addBuild(Build buildInfo);
+    abstract def addBuild(Build buildInfo)
 
-    abstract def deleteBuild(BuildRun buildRun);
+    abstract def deleteBuild(BuildRun buildRun)
 }
 
 class RemoteBuildService extends BuildListBase {
@@ -383,10 +370,10 @@ class RemoteBuildService extends BuildListBase {
         super(log)
         this.server = server
         http = new HTTPBuilder(server.url)
-        //http.auth.basic(server.user, server.password)
+        // http.auth.basic(server.user, server.password)
         http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
             httpRequest.addHeader('Authorization',
-                    "Basic ${"${server.user}:${server.password}".getBytes().encodeBase64()}")
+                "Basic ${"${server.user}:${server.password}".getBytes().encodeBase64()}")
         } as HttpRequestInterceptor)
         http.handler.failure = { resp ->
             lastFailure = resp.statusLine
@@ -397,14 +384,14 @@ class RemoteBuildService extends BuildListBase {
             def v = json.version.tokenize('.')
             if (v.size() < 3) {
                 throw new CancelException("Server ${server.url} version not correct. Got ${json.text}",
-                        500)
+                    500)
             }
             majorVersion = v[0] as int
             minorVersion = v[1] as int
         }
         if (lastFailure != null) {
             throw new CancelException("Server ${server.url} version unreadable! got: ${lastFailure.reasonPhrase}",
-                    lastFailure.statusCode)
+                lastFailure.statusCode)
         }
     }
 
@@ -421,9 +408,9 @@ class RemoteBuildService extends BuildListBase {
         http.get(contentType: JSON, path: 'api/build') { resp, json ->
             json.builds.each { b ->
                 result << new BuildRunImpl(
-                        HttpUtils.decodeUri(b.uri.substring(1)),
-                        "LATEST",
-                        b.lastStarted)
+                    HttpUtils.decodeUri(b.uri.substring(1)),
+                    "LATEST",
+                    b.lastStarted)
             }
         }
         if (lastFailure != null) {
@@ -447,8 +434,8 @@ class RemoteBuildService extends BuildListBase {
         http.get(contentType: JSON, path: "api/build/$buildName") { resp, json ->
             json.buildsNumbers.each { b ->
                 result << new BuildRunImpl(buildName,
-                        HttpUtils.decodeUri(b.uri.substring(1)),
-                        b.started)
+                    HttpUtils.decodeUri(b.uri.substring(1)),
+                    b.started)
             }
         }
         if (lastFailure != null) {
@@ -472,8 +459,8 @@ class RemoteBuildService extends BuildListBase {
         log.info "Downloading JSON build info ${server.url}$uri ${queryParams}"
         Build res = null
         http.get(contentType: BINARY,
-                headers: [Accept: 'application/json'],
-                path: "$uri", query: queryParams) { resp, stream ->
+            headers: [Accept: 'application/json'],
+            path: "$uri", query: queryParams) { resp, stream ->
             res = JacksonReader.streamAsClass(stream, BuildInfo.class).buildInfo
         }
         if (lastFailure != null) {
@@ -492,8 +479,8 @@ class RemoteBuildService extends BuildListBase {
         lastFailure = null
         http.request(PUT, JSON) {
             uri.path = "api/build"
-            //JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
-            //jsonGenerator.writeObject(buildInfo);
+            // JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream)
+            // jsonGenerator.writeObject(buildInfo)
             body = buildInfo
             response.success = {
                 log.info "Successfully uploaded build ${buildInfo.name}/${buildInfo.number} : ${buildInfo.started}"
@@ -535,7 +522,7 @@ class LocalBuildService extends BuildListBase {
         super(log)
         dbService = ctx.beanForType(DbService.class)
         addonsManager = ctx.beanForType(AddonsManager.class)
-        pluginsAddon = addonsManager.addonByType(PluginsAddon.class);
+        pluginsAddon = addonsManager.addonByType(PluginsAddon.class)
         buildStoreService = ctx.beanForType(BuildStoreService.class)
         builds = ctx.beanForType(Builds.class)
         this.reinsert = reinsert
@@ -544,7 +531,7 @@ class LocalBuildService extends BuildListBase {
 
     @Override
     NavigableSet<BuildRun> loadAllBuilds() {
-        def res = new TreeSet<BuildRun>(comparator);
+        def res = new TreeSet<BuildRun>(comparator)
         res.addAll(buildStoreService.getLatestBuildsByName().collect {
             new BuildRunImpl(it.name, "LATEST", it.started)
         })
@@ -554,7 +541,7 @@ class LocalBuildService extends BuildListBase {
 
     @Override
     NavigableSet<BuildRun> getBuildNumbers(String buildName) {
-        def res = new TreeSet<BuildRun>(comparator);
+        def res = new TreeSet<BuildRun>(comparator)
         res.addAll(buildStoreService.findBuildsByName(buildName).collect { new BuildRunImpl(it) })
         log.info "Found ${res.size()} local builds named $buildName"
         res
@@ -564,23 +551,23 @@ class LocalBuildService extends BuildListBase {
     def addBuild(Build buildInfo) {
         try {
             log.info "Deploying locally build ${buildInfo.name}:${buildInfo.number}:${buildInfo.started}"
-            DetailedBuildRun detailedBuildRun = new DetailedBuildRunImpl(buildInfo);
+            DetailedBuildRun detailedBuildRun = new DetailedBuildRunImpl(buildInfo)
             if (reinsert) {
                 builds.saveBuild(detailedBuildRun)
             } else {
-                dbService.invokeInTransaction("addBuild",new Callable<Object>() {
+                dbService.invokeInTransaction("addBuild", new Callable<Object>() {
                     @Override
                     public Object call() throws Exception {
                         if (activatePlugins) {
-                            pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, detailedBuildRun);
+                            pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, detailedBuildRun)
                         }
-                        buildStoreService.addBuild(buildInfo);
+                        buildStoreService.addBuild(buildInfo)
                         if (activatePlugins) {
-                            pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun);
+                            pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun)
                         }
-                        return null;
+                        return null
                     }
-                });
+                })
             }
         } catch (Exception e) {
             String message = "Insertion of build  ${buildInfo.name}:${buildInfo.number}:${buildInfo.started} failed due to: ${e.getMessage()}"
@@ -640,8 +627,8 @@ class BaseConfigurationHolder {
             }
             if (errors) {
                 log.error(
-                        "Some validation errors appeared while parsing ${confFile.absolutePath}\n" +
-                                "${errors.join("\n")}")
+                    "Some validation errors appeared while parsing ${confFile.absolutePath}\n" +
+                        "${errors.join("\n")}")
             }
         }
         current

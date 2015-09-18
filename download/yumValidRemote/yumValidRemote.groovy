@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import java.security.MessageDigest
 import org.artifactory.repo.RepoPathFactory
+
+import java.security.MessageDigest
 
 download {
     // If we're getting from remote a repomd.xml file with legacy repodata file
