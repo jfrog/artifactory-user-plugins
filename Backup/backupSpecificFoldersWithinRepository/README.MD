@@ -43,6 +43,7 @@ curl -X GET -u{admin_user}:{password} "http://{ARTIFACTORY_URL}:{PORT}/artifacto
 When the properties.json file need to include two parameters:
 
 Destination folder. For example: For windows use two back slashes: "destinationFolder":"c:\\Work\\Test"
+
 Path to back up. For example: "pathToFolder":"{repository_name}/{path}/{to}/{bakcup}"
 
 Jobs
@@ -51,4 +52,5 @@ This plugin by default is set to be fired up each day at 1:00 AM (0 0 1 1/1 * ? 
 The job execution point uses the properties file to retrieve the destination folder and the path:
 
 Destination folder. For example: For windows use two back slashes: "destinationFolder":"c:\\Work\\Test"
+
 Path to back up. For example: "pathToFolder":"{repository_name}/{path}/{to}/{bakcup}"
