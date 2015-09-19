@@ -215,9 +215,9 @@ private void downloadFileFromRoot(File mainDirectory, RepoPath repoPath) {
             is = repositories.getContent(repoPath).getInputStream();
             int len;
             while ((len = is.read(data)) > 0) {
-				if(file_name.getFreeSpace() < len){
-					throw new CancelException("There is not enough space on the Hard Drive",400)
-				}
+		if(file_name.getFreeSpace() < len){
+			throw new CancelException("There is not enough space on the Hard Drive",400)
+		}
                 fos.write(data, 0, len);
             }
         } catch (IOException e) {
