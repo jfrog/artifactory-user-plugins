@@ -11,7 +11,7 @@ import org.artifactory.exception.CancelException
 
 /**
  * The command to trigget the execution:
- * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/backup" -T my.json
+ * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/backup" -T properties.json
  **/
 
 executions {
