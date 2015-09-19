@@ -1,7 +1,7 @@
 Backup a specific path within the repository
 ============================================
 
-This plugin provides you the ability to backup specific path within the repository.
+Provides you the ability to backup specific path within the repository.
 
 Adding to Artifactory
 ----------------------
