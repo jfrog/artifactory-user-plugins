@@ -16,6 +16,13 @@ For more verbosity logs:
 	 <logger name="backUpFolder">
         <level value="debug"/>
     </logger>
+    
+For log level info:
+
+ <logger name="backUpFolder">
+        <level value="info"/>
+ </logger>
+
 	
 This would not require restart of the Artifactory Server.
 
