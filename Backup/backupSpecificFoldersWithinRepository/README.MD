@@ -29,6 +29,7 @@ Firing up the plugin:
 ----------------------
 
 This plugin has the ability to be executed in two ways:
+
 1. At a specific time with the job section (uses cron expression)
 2. By REST command.
 
