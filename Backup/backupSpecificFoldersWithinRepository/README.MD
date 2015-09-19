@@ -19,11 +19,10 @@ For more verbosity logs:
     
 For log level info:
 
- <logger name="backUpFolder">
+	 <logger name="backUpFolder">
         <level value="info"/>
- </logger>
+    </logger>
 
-	
 This would not require restart of the Artifactory Server.
 
 Firing up the plugin:
