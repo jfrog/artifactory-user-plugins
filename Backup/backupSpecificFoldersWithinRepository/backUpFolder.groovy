@@ -13,7 +13,7 @@ import org.artifactory.exception.CancelException
  * The command to trigget the execution:
  * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/backup" -T my.json
  **/
- 
+
 executions {
     backup { params, ResourceStreamHandle body ->
         assert body
@@ -47,7 +47,7 @@ jobs {
      * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
      */
 
-    backUpFolder(cron: "0 0 1 1/1 * ? *") {
+    backUpFolder(cron: "0 0/12 * 1/1 * ? *") {
         try {
             //getting the information from the properties file
             def configFile = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/folders.properties").toURL())
@@ -59,50 +59,50 @@ jobs {
     }
 }
 
-    /**
-     * Starts the backup operation.
-     *
-     * Parameters:
-     * destinationFolder (String) - The destination folder
-     * pathToFolder (String) -  The path to backup
-	 *
-     */
-	 
+/**
+ * Starts the backup operation.
+ *
+ * Parameters:
+ * destinationFolder (String) - The destination folder
+ * pathToFolder (String) -  The path to backup
+ *
+ */
+
 private void startBackup(String destinationFolder, String pathToFolder) {
     log.info("Starting backing up the folders")
 
-    //getting repopath from the file
+    // Getting repopath from the file
     RepoPath repoPath = RepoPathFactory.create(pathToFolder);
-    //getting a list of children from the provided path
+    // Getting a list of children from the provided path
     List<ItemInfo> children = repositories.getChildren(repoPath);
-	log.debug("Backup path is: " + pathToFolder)
-	if(children.size() == 0)
-		{
-			log.info("Path is empty");
-			return
-		}
-		
-	//creating the main folder directory
+    log.debug("Backup path is: " + pathToFolder)
+    // Checks if the path is empty or note
+    if (children.size() == 0) {
+        log.info("Path is empty");
+        return
+    }
+
+    // Creating the main folder directory
     File mainDirectory = new File(destinationFolder + "/" + System.currentTimeMillis() + "/" + repoPath.getRepoKey())
     //checking if the destination folder exists, if not creating.
     if (!mainDirectory.exists()) {
         mainDirectory.mkdirs();
     }
-	//Loop on all the direct children's of the path that would be backed. 
+    // Loop on all the direct children's of the path that would be backed.
     for (int i = 0; i < children.size(); i++) {
-        //checks if this is a folder or a file
+        // Checks if this is a folder or a file
         if (children.get(i).isFolder()) {
-            //if a folder then retrieve the children
+            // If a folder then retrieve the children
             List<ItemInfo> insideChildren = repositories.getChildren(children.get(i).getRepoPath())
             log.debug(insideChildren.size() + " Size of insideChildren")
-			
-			//Loop on all the direct children's of the children. 
+
+            // Loop on all the direct children's of the children.
             for (int allChildren = 0; allChildren < insideChildren.size(); allChildren++) {
-                //creating the structure
+                // creating the structure
                 createStructure(insideChildren, allChildren, mainDirectory)
             }
         } else {
-            //Downloads a file
+            // Downloads a file
             downloadFileFromRoot(mainDirectory, children.get(i).getRepoPath())
 
         }
@@ -110,40 +110,40 @@ private void startBackup(String destinationFolder, String pathToFolder) {
     log.info("Finishing backing up the folder " + pathToFolder + " to " + destinationFolder)
 }
 
-    /**
-     * Creates the structure of the folders.
-     *
-     * Parameters:
-     * children (List<ItemInfo>) - List of the children's 
-     * i (int) -  The pointer to the place in the List
-     * mainDirectory (File) -  The main directory where the files and the folders would be created
-	 *
-     */
+/**
+ * Creates the structure of the folders.
+ *
+ * Parameters:
+ * children (List<ItemInfo>) - List of the children's
+ * i (int) -  The pointer to the place in the List
+ * mainDirectory (File) -  The main directory where the files and the folders would be created
+ *
+ */
 
 private void createStructure(List<ItemInfo> children, int i, File mainDirectory) {
-    //retrieve the info and creates folder if the repo path is folder
+    // Retrieve the info and creates folder if the repo path is folder
     List<ItemInfo> insideChildren = getItemInfo(children.get(i).getRepoPath(), mainDirectory)
     log.debug(insideChildren.size() + " insideChildren Size within the createStructure")
 
-    //if it's a file then create it. (We can know this if the insideChildren size is 0 this means we have reached a file
+    // If it's a file then create it. (We can know this if the insideChildren size is 0 this means we have reached a file
     if (insideChildren.size() == 0) {
-        if(!children.get(i).getRepoPath().isFolder()){
+        if (!children.get(i).getRepoPath().isFolder()) {
             log.debug(children.get(i).getRepoPath().getParent().getPath())
-			//For safety creating a folder/checking if a folder exists
-            createFolder(children.get(i).getRepoPath().getParent(),mainDirectory)
+            // For safety creating a folder/checking if a folder exists
+            createFolder(children.get(i).getRepoPath().getParent(), mainDirectory)
             downloadFileFromRoot(mainDirectory, children.get(i).getRepoPath())
         }
-		//no need to continue since we reached a file.
+        // No need to continue since we reached a file.
         return
     }
-	
-	//Loop on all the direct children's of the children. 
+
+    // Loop on all the direct children's of the children.
     for (int j = 0; j < insideChildren.size(); j++) {
         log.debug("Name: " + insideChildren.get(j).getName())
         log.debug("RelPath: " + insideChildren.get(j).getRelPath())
 
         if (insideChildren.get(j).isFolder()) {
-			//We have not reached a file then let's recursive run to create a folder stracture.
+            // We have not reached a file then let's recursive run to create a folder stracture.
             createStructure(insideChildren, j, mainDirectory)
         } else {
             log.debug("repoPath Get Path root: " + insideChildren.get(j).getRepoPath())
@@ -152,15 +152,15 @@ private void createStructure(List<ItemInfo> children, int i, File mainDirectory)
     }
 }
 
-    /**
-     * Checks if the folder exists, if not creates it.
-     *
-     * Parameters:
-     * repoPath (RepoPath) - The RepoPath we need to create
-     * mainDirectory (File) -  The main directory where the files and the folders would be created
-	 *
-     */
-	 
+/**
+ * Checks if the folder exists, if not creates it.
+ *
+ * Parameters:
+ * repoPath (RepoPath) - The RepoPath we need to create
+ * mainDirectory (File) -  The main directory where the files and the folders would be created
+ *
+ */
+
 private void createFolder(RepoPath repoPath, File mainDirectory) {
     log.debug("Repo Path inside Create Folder : " + repoPath.getPath())
     File directory = new File(mainDirectory.getAbsolutePath() + "/" + repoPath.getPath())
@@ -170,15 +170,15 @@ private void createFolder(RepoPath repoPath, File mainDirectory) {
 
 }
 
-    /**
-     * Returns a list of all the children's. If the folder does not exists then creates it.
-     *
-     * Parameters:
-     * repoPath (RepoPath) - The RepoPath we need to create
-     * mainDirectory (File) -  The main directory where the files and the folders would be created
-	 *
-     */
-	 
+/**
+ * Returns a list of all the children's. If the folder does not exists then creates it.
+ *
+ * Parameters:
+ * repoPath (RepoPath) - The RepoPath we need to create
+ * mainDirectory (File) -  The main directory where the files and the folders would be created
+ *
+ */
+
 private List<ItemInfo> getItemInfo(RepoPath repoPath, File mainDirectory) {
     log.debug("repoPath Get Path info: " + repoPath.getPath())
     if (repoPath.isFolder()) {
@@ -192,14 +192,14 @@ private List<ItemInfo> getItemInfo(RepoPath repoPath, File mainDirectory) {
     return repositories.getChildren(repoPath);
 }
 
-    /**
-     * Downloads a file to the directory.
-     *
-     * Parameters:
-     * repoPath (RepoPath) - The RepoPath we need to create
-     * mainDirectory (File) -  The main directory where the files and the folders would be created
-	 *
-     */
+/**
+ * Downloads a file to the directory.
+ *
+ * Parameters:
+ * repoPath (RepoPath) - The RepoPath we need to create
+ * mainDirectory (File) -  The main directory where the files and the folders would be created
+ *
+ */
 
 private void downloadFileFromRoot(File mainDirectory, RepoPath repoPath) {
     byte[] data = new byte[1024];
@@ -215,9 +215,10 @@ private void downloadFileFromRoot(File mainDirectory, RepoPath repoPath) {
             is = repositories.getContent(repoPath).getInputStream();
             int len;
             while ((len = is.read(data)) > 0) {
-		if(file_name.getFreeSpace() < len){
-			throw new CancelException("There is not enough space on the Hard Drive",400)
-		}
+                // Checks if enough space on the hard drive.
+                if (file_name.getFreeSpace() < len) {
+                    throw new CancelException("There is not enough space on the Hard Drive", 400)
+                }
                 fos.write(data, 0, len);
             }
         } catch (IOException e) {
