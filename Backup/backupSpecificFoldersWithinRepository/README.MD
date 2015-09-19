@@ -12,6 +12,7 @@ Log information
 Please add the following to the $ARTIFACTORY_HOME/etc/logback.xml file:
 
 For log level info:
+
  <logger name="backUpFolder">
         <level value="info"/>
  </logger>
