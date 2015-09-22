@@ -13,6 +13,7 @@ class SamlConfigTest extends Specification {
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 200
         def backup = conn.inputStream.bytes
+        conn.disconnect()
 
         when:
         def json1 = [
@@ -28,10 +29,13 @@ class SamlConfigTest extends Specification {
         conn.setRequestProperty('Content-Type', 'application/json')
         conn.outputStream.write(new JsonBuilder(json1).toString().bytes)
         assert conn.responseCode == 200
+        conn.disconnect()
         conn = new URL("$baseurl/getSaml").openConnection()
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 200
-        def json1r = new JsonSlurper().parse(conn.inputStream)
+        def reader1r = new InputStreamReader(conn.inputStream)
+        def json1r = new JsonSlurper().parse(reader1r)
+        conn.disconnect()
 
         then:
         json1 == json1r
@@ -50,10 +54,13 @@ class SamlConfigTest extends Specification {
         conn.setRequestProperty('Content-Type', 'application/json')
         conn.outputStream.write(new JsonBuilder(json2).toString().bytes)
         assert conn.responseCode == 200
+        conn.disconnect()
         conn = new URL("$baseurl/getSaml").openConnection()
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 200
-        def json2r = new JsonSlurper().parse(conn.inputStream)
+        def reader2r = new InputStreamReader(conn.inputStream)
+        def json2r = new JsonSlurper().parse(reader2r)
+        conn.disconnect()
 
         then:
         json2 == json2r
@@ -66,5 +73,6 @@ class SamlConfigTest extends Specification {
         conn.setRequestProperty('Content-Type', 'application/json')
         conn.outputStream.write(backup)
         assert conn.responseCode == 200
+        conn.disconnect()
     }
 }

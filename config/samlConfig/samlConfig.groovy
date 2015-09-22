@@ -22,7 +22,7 @@ import org.artifactory.resource.ResourceStreamHandle
 executions {
     getSaml(httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.samlSettings
-        if (cfg == null) cfg = SamlSettings()
+        if (cfg == null) cfg = new SamlSettings()
         def json = [
             enableIntegration: cfg.isEnableIntegration(),
             loginUrl: cfg.loginUrl, logoutUrl: cfg.logoutUrl,
@@ -34,10 +34,11 @@ executions {
     }
 
     setSaml() { params, ResourceStreamHandle body ->
-        def json = new JsonSlurper().parse(body.inputStream)
+        def reader = new InputStreamReader(body.inputStream, 'UTF-8')
+        def json = new JsonSlurper().parse(reader)
         def cfg = ctx.centralConfig.mutableDescriptor
         def saml = cfg.security.samlSettings
-        if (saml == null) saml = SamlSettings()
+        if (saml == null) saml = new SamlSettings()
         if ('enableIntegration' in json.keySet())
             saml.enableIntegration = json['enableIntegration']
         if ('loginUrl' in json.keySet())
