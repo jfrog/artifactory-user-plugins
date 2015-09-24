@@ -20,22 +20,22 @@ import org.artifactory.descriptor.security.sso.SamlSettings
 import org.artifactory.resource.ResourceStreamHandle
 
 def propList = ['enableIntegration': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.enableIntegration = v ?: false }
     ], 'loginUrl': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.loginUrl = v ?: null }
     ], 'logoutUrl': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.logoutUrl = v ?: null }
     ], 'serviceProviderName': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.serviceProviderName = v ?: null }
     ], 'noAutoUserCreation': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.noAutoUserCreation = v ?: false }
     ], 'certificate': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.certificate = v ?: null }]]
 
 executions {
@@ -43,11 +43,12 @@ executions {
         def cfg = ctx.centralConfig.descriptor.security.samlSettings
         if (cfg == null) cfg = new SamlSettings()
         def json = [
-            enableIntegration: cfg.isEnableIntegration(),
-            loginUrl: cfg.loginUrl, logoutUrl: cfg.logoutUrl,
-            serviceProviderName: cfg.serviceProviderName,
-            noAutoUserCreation: cfg.noAutoUserCreation,
-            certificate: cfg.certificate]
+            enableIntegration: cfg.isEnableIntegration() ?: false,
+            loginUrl: cfg.loginUrl ?: null,
+            logoutUrl: cfg.logoutUrl ?: null,
+            serviceProviderName: cfg.serviceProviderName ?: null,
+            noAutoUserCreation: cfg.noAutoUserCreation ?: false,
+            certificate: cfg.certificate ?: null]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
@@ -73,11 +74,11 @@ executions {
         def err = null
         propList.each { k, v ->
             if (!err && k in json.keySet()) {
-                if ((!v[2] || json[k]) && !(v[0].isInstance(json[k]))) {
+                if (json[k] && !(v[0].isInstance(json[k]))) {
                     err = "Property '$k' is type"
                     err += " '${json[k].getClass().name}',"
                     err += " should be a ${v[1]}"
-                } else v[3](saml, json[k])
+                } else v[2](saml, json[k])
             }
         }
         if (err) {

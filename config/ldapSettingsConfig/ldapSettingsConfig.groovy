@@ -22,37 +22,37 @@ import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.util.AlreadyExistsException
 
 def propList = ['key': [
-        CharSequence.class, 'string', false,
-        { c, v -> c.key = v }
+        CharSequence.class, 'string',
+        { c, v -> c.key = v ?: null }
     ], 'enabled': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.enabled = v ?: false }
     ], 'ldapUrl': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.ldapUrl = v ?: null }
     ], 'userDnPattern': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.userDnPattern = v ?: null }
     ], 'searchFilter': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.search.searchFilter = v ?: null }
     ], 'searchBase': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.search.searchBase = v ?: null }
     ], 'searchSubTree': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.search.searchSubTree = v ?: false }
     ], 'managerDn': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.search.managerDn = v ?: null }
     ], 'managerPassword': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.search.managerPassword = v ?: null }
     ], 'autoCreateUser': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.autoCreateUser = v ?: false }
     ], 'emailAttribute': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.emailAttribute = v ?: null }]]
 
 executions {
@@ -78,17 +78,17 @@ executions {
             return
         }
         def json = [
-            key: setting.key,
-            enabled: setting.isEnabled(),
-            ldapUrl: setting.ldapUrl,
-            userDnPattern: setting.userDnPattern,
-            searchFilter: setting.search.searchFilter,
-            searchBase: setting.search.searchBase,
-            searchSubTree: setting.search.isSearchSubTree(),
-            managerDn: setting.search.managerDn,
-            managerPassword: setting.search.managerPassword,
-            autoCreateUser: setting.isAutoCreateUser(),
-            emailAttribute: setting.emailAttribute]
+            key: setting.key ?: null,
+            enabled: setting.isEnabled() ?: false,
+            ldapUrl: setting.ldapUrl ?: null,
+            userDnPattern: setting.userDnPattern ?: null,
+            searchFilter: setting.search.searchFilter ?: null,
+            searchBase: setting.search.searchBase ?: null,
+            searchSubTree: setting.search.isSearchSubTree() ?: false,
+            managerDn: setting.search.managerDn ?: null,
+            managerPassword: setting.search.managerPassword ?: null,
+            autoCreateUser: setting.isAutoCreateUser() ?: false,
+            emailAttribute: setting.emailAttribute ?: null]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
@@ -121,13 +121,17 @@ executions {
             status = 400
             return
         }
+        if (!(json instanceof Map)) {
+            message = 'Provided value must be a JSON object'
+            status = 400
+            return
+        }
+        if (!json['key']) {
+            message = 'A setting key is required'
+            status = 400
+            return
+        }
         def err = null
-        if (!err && !(json instanceof Map)) {
-            err = 'Provided value must be a JSON object'
-        }
-        if (!err && !json['key']) {
-            err = 'A setting key is required'
-        }
         def setting = new LdapSetting()
         setting.search = new SearchPattern()
         propList.each { k, v ->
@@ -135,7 +139,7 @@ executions {
                 err = "Property '$k' is type"
                 err += " '${json[k].getClass().name}',"
                 err += " should be a ${v[1]}"
-            } else v[3](setting, json[k])
+            } else v[2](setting, json[k])
         }
         if (err) {
             message = err
@@ -184,7 +188,7 @@ executions {
         }
         if ('key' in json.keySet()) {
             if (!json['key']) {
-                message = 'A setting key must not be an empty string'
+                message = 'A setting key must not be empty'
                 status = 400
                 return
             } else if (json['key'] != key
@@ -197,11 +201,11 @@ executions {
         def err = null
         propList.each { k, v ->
             if (!err && k in json.keySet()) {
-                if ((!v[2] || json[k]) && !(v[0].isInstance(json[k]))) {
+                if (json[k] && !(v[0].isInstance(json[k]))) {
                     err = "Property '$k' is type"
                     err += " '${json[k].getClass().name}',"
                     err += " should be a ${v[1]}"
-                } else v[3](setting, json[k])
+                } else v[2](setting, json[k])
             }
         }
         if (err) {

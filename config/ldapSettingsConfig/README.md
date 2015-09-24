@@ -19,8 +19,8 @@ $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/
 ]
 ```
 
-getLdapSettings
----------------
+getLdapSetting
+--------------
 
 `getLdapSetting` returns a JSON representation of the current configuration of a
 given setting. The key of the requested setting is passed as the parameter

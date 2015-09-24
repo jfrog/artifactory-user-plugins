@@ -21,32 +21,32 @@ import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.util.AlreadyExistsException
 
 def propList = ['key': [
-        CharSequence.class, 'string', false,
-        { c, v -> c.key = v }
+        CharSequence.class, 'string',
+        { c, v -> c.key = v ?: null }
     ], 'host': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.host = v ?: null }
     ], 'port': [
-        Number.class, 'integer', false,
+        Number.class, 'integer',
         { c, v -> c.port = v ?: 0 }
     ], 'username': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.username = v ?: null }
     ], 'password': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.password = v ?: null }
     ], 'ntHost': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.ntHost = v ?: null }
     ], 'domain': [
-        CharSequence.class, 'string', true,
+        CharSequence.class, 'string',
         { c, v -> c.domain = v ?: null }
     ], 'defaultProxy': [
-        Boolean.class, 'boolean', false,
+        Boolean.class, 'boolean',
         { c, v -> c.defaultProxy = v ?: false }
     ], 'redirectedToHosts': [
-        Iterable.class, 'list', false,
-        { c, v -> c.redirectedToHosts = v?.join(',') }]]
+        Iterable.class, 'list',
+        { c, v -> c.redirectedToHosts = v?.join(',') ?: '' }]]
 
 executions {
     getProxiesList(httpMethod: 'GET') { params ->
@@ -71,11 +71,14 @@ executions {
             return
         }
         def json = [
-            key: proxy.key,
-            host: proxy.host, port: proxy.port,
-            username: proxy.username, password: proxy.password,
-            ntHost: proxy.ntHost, domain: proxy.domain,
-            defaultProxy: proxy.defaultProxy,
+            key: proxy.key ?: null,
+            host: proxy.host ?: null,
+            port: proxy.port ?: 0,
+            username: proxy.username ?: null,
+            password: proxy.password ?: null,
+            ntHost: proxy.ntHost ?: null,
+            domain: proxy.domain ?: null,
+            defaultProxy: proxy.defaultProxy ?: false,
             redirectedToHosts: proxy.redirectedToHostsList]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
@@ -109,20 +112,24 @@ executions {
             status = 400
             return
         }
+        if (!(json instanceof Map)) {
+            message = 'Provided value must be a JSON object'
+            status = 400
+            return
+        }
+        if (!json['key']) {
+            message = 'A proxy key is required'
+            status = 400
+            return
+        }
         def err = null
-        if (!err && !(json instanceof Map)) {
-            err = 'Provided value must be a JSON object'
-        }
-        if (!err && !json['key']) {
-            err = 'A proxy key is required'
-        }
         def proxy = new ProxyDescriptor()
         propList.each { k, v ->
             if (!err && json[k] != null && !(v[0].isInstance(json[k]))) {
                 err = "Property '$k' is type"
                 err += " '${json[k].getClass().name}',"
                 err += " should be a ${v[1]}"
-            } else v[3](proxy, json[k])
+            } else v[2](proxy, json[k])
         }
         if (err) {
             message = err
@@ -171,7 +178,7 @@ executions {
         }
         if ('key' in json.keySet()) {
             if (!json['key']) {
-                message = 'A proxy key must not be an empty string'
+                message = 'A proxy key must not be empty'
                 status = 400
                 return
             } else if (json['key'] != key && cfg.isProxyExists(json['key'])) {
@@ -183,11 +190,11 @@ executions {
         def err = null
         propList.each { k, v ->
             if (!err && k in json.keySet()) {
-                if ((!v[2] || json[k]) && !(v[0].isInstance(json[k]))) {
+                if (json[k] && !(v[0].isInstance(json[k]))) {
                     err = "Property '$k' is type"
                     err += " '${json[k].getClass().name}',"
                     err += " should be a ${v[1]}"
-                } else v[3](proxy, json[k])
+                } else v[2](proxy, json[k])
             }
         }
         if (err) {
