@@ -19,6 +19,25 @@ import groovy.json.JsonSlurper
 import org.artifactory.descriptor.security.sso.SamlSettings
 import org.artifactory.resource.ResourceStreamHandle
 
+def propList = ['enableIntegration': [
+        Boolean.class, 'boolean', false,
+        { c, v -> c.enableIntegration = v ?: false }
+    ], 'loginUrl': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.loginUrl = v ?: null }
+    ], 'logoutUrl': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.logoutUrl = v ?: null }
+    ], 'serviceProviderName': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.serviceProviderName = v ?: null }
+    ], 'noAutoUserCreation': [
+        Boolean.class, 'boolean', false,
+        { c, v -> c.noAutoUserCreation = v ?: false }
+    ], 'certificate': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.certificate = v ?: null }]]
+
 executions {
     getSaml(httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.samlSettings
@@ -52,55 +71,14 @@ executions {
         def saml = cfg.security.samlSettings
         if (saml == null) saml = new SamlSettings()
         def err = null
-        if (!err && 'enableIntegration' in json.keySet()) {
-            if (!(json['enableIntegration'] instanceof Boolean)) {
-                err = "Property 'enableIntegration' is type"
-                err += " '${json['enableIntegration'].getClass()}',"
-                err += " should be type 'boolean'"
-            } else saml.enableIntegration = json['enableIntegration']
-        }
-        if (!err && 'loginUrl' in json.keySet()) {
-            if (!json['loginUrl']) json['loginUrl'] = null
-            if (json['loginUrl']
-                && !(json['loginUrl'] instanceof CharSequence)) {
-                err = "Property 'loginUrl' is type"
-                err += " '${json['loginUrl'].getClass()}',"
-                err += " should be type 'string'"
-            } else saml.loginUrl = json['loginUrl']
-        }
-        if (!err && 'logoutUrl' in json.keySet()) {
-            if (!json['logoutUrl']) json['logoutUrl'] = null
-            if (json['logoutUrl']
-                && !(json['logoutUrl'] instanceof CharSequence)) {
-                err = "Property 'logoutUrl' is type"
-                err += " '${json['logoutUrl'].getClass()}',"
-                err += " should be type 'string'"
-            } else saml.logoutUrl = json['logoutUrl']
-        }
-        if (!err && 'serviceProviderName' in json.keySet()) {
-            if (!json['serviceProviderName']) json['serviceProviderName'] = null
-            if (json['serviceProviderName']
-                && !(json['serviceProviderName'] instanceof CharSequence)) {
-                err = "Property 'serviceProviderName' is type"
-                err += " '${json['serviceProviderName'].getClass()}',"
-                err += " should be type 'string'"
-            } else saml.serviceProviderName = json['serviceProviderName']
-        }
-        if (!err && 'noAutoUserCreation' in json.keySet()) {
-            if (!(json['noAutoUserCreation'] instanceof Boolean)) {
-                err = "Property 'noAutoUserCreation' is type"
-                err += " '${json['noAutoUserCreation'].getClass()}',"
-                err += " should be type 'boolean'"
-            } else saml.noAutoUserCreation = json['noAutoUserCreation']
-        }
-        if (!err && 'certificate' in json.keySet()) {
-            if (!json['certificate']) json['certificate'] = null
-            if (json['certificate']
-                && !(json['certificate'] instanceof CharSequence)) {
-                err = "Property 'certificate' is type"
-                err += " '${json['certificate'].getClass()}',"
-                err += " should be type 'string'"
-            } else saml.certificate = json['certificate']
+        propList.each { k, v ->
+            if (!err && k in json.keySet()) {
+                if ((!v[2] || json[k]) && !(v[0].isInstance(json[k]))) {
+                    err = "Property '$k' is type"
+                    err += " '${json[k].getClass().name}',"
+                    err += " should be a ${v[1]}"
+                } else v[3](saml, json[k])
+            }
         }
         if (err) {
             message = err

@@ -18,6 +18,35 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import org.artifactory.descriptor.repo.ProxyDescriptor
 import org.artifactory.resource.ResourceStreamHandle
+import org.artifactory.util.AlreadyExistsException
+
+def propList = ['key': [
+        CharSequence.class, 'string', false,
+        { c, v -> c.key = v }
+    ], 'host': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.host = v ?: null }
+    ], 'port': [
+        Number.class, 'integer', false,
+        { c, v -> c.port = v ?: 0 }
+    ], 'username': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.username = v ?: null }
+    ], 'password': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.password = v ?: null }
+    ], 'ntHost': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.ntHost = v ?: null }
+    ], 'domain': [
+        CharSequence.class, 'string', true,
+        { c, v -> c.domain = v ?: null }
+    ], 'defaultProxy': [
+        Boolean.class, 'boolean', false,
+        { c, v -> c.defaultProxy = v ?: false }
+    ], 'redirectedToHosts': [
+        Iterable.class, 'list', false,
+        { c, v -> c.redirectedToHosts = v?.join(',') }]]
 
 executions {
     getProxiesList(httpMethod: 'GET') { params ->
@@ -82,72 +111,32 @@ executions {
         }
         def err = null
         if (!err && !(json instanceof Map)) {
-            err = "Provided JSON value must be a JSON object"
+            err = 'Provided value must be a JSON object'
         }
         if (!err && !json['key']) {
             err = 'A proxy key is required'
         }
         def proxy = new ProxyDescriptor()
-        if (!err && !(json['key'] instanceof CharSequence)) {
-            err = "Property 'key' is type"
-            err += " '${json['key'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.key = json['key']
-        if (!err && json['host'] != null
-            && !(json['host'] instanceof CharSequence)) {
-            err = "Property 'host' is type"
-            err += " '${json['host'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.host = json['host'] ?: null
-        if (!err && json['port'] != null
-            && !(json['port'] instanceof Number)) {
-            err = "Property 'port' is type"
-            err += " '${json['port'].getClass().name}',"
-            err += " should be a integer"
-        } else proxy.port = json['port'] ?: 0
-        if (!err && json['username'] != null
-            && !(json['username'] instanceof CharSequence)) {
-            err = "Property 'username' is type"
-            err += " '${json['username'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.username = json['username'] ?: null
-        if (!err && json['password'] != null
-            && !(json['password'] instanceof CharSequence)) {
-            err = "Property 'password' is type"
-            err += " '${json['password'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.password = json['password'] ?: null
-        if (!err && json['ntHost'] != null
-            && !(json['ntHost'] instanceof CharSequence)) {
-            err = "Property 'ntHost' is type"
-            err += " '${json['ntHost'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.ntHost = json['ntHost'] ?: null
-        if (!err && json['domain'] != null
-            && !(json['domain'] instanceof CharSequence)) {
-            err = "Property 'domain' is type"
-            err += " '${json['domain'].getClass().name}',"
-            err += " should be a string"
-        } else proxy.domain = json['domain'] ?: null
-        if (!err && json['defaultProxy'] != null
-            && !(json['defaultProxy'] instanceof Boolean)) {
-            err = "Property 'defaultProxy' is type"
-            err += " '${json['defaultProxy'].getClass().name}',"
-            err += " should be a boolean"
-        } else proxy.defaultProxy = json['defaultProxy'] ?: false
-        if (!err && json['redirectedToHosts'] != null
-            && !(json['redirectedToHosts'] instanceof Iterable)) {
-            err = "Property 'redirectedToHosts' is type"
-            err += " '${json['redirectedToHosts'].getClass().name}',"
-            err += " should be a list"
-        } else proxy.redirectedToHosts = json['redirectedToHosts']?.join(',')
+        propList.each { k, v ->
+            if (!err && json[k] != null && !(v[0].isInstance(json[k]))) {
+                err = "Property '$k' is type"
+                err += " '${json[k].getClass().name}',"
+                err += " should be a ${v[1]}"
+            } else v[3](proxy, json[k])
+        }
         if (err) {
             message = err
             status = 400
             return
         }
         def cfg = ctx.centralConfig.mutableDescriptor
-        cfg.addProxy(proxy, false)
+        try {
+            cfg.addProxy(proxy, false)
+        } catch (AlreadyExistsException ex) {
+            message = "Proxy with key '${json['key']}' already exists"
+            status = 409
+            return
+        }
         ctx.centralConfig.descriptor = cfg
         status = 200
     }
@@ -180,13 +169,8 @@ executions {
             status = 400
             return
         }
-        def err = null
-        if (!err && 'key' in json.keySet()) {
-            if (!(json['key'] instanceof CharSequence)) {
-                err = "Property 'key' is type"
-                err += " '${json['key'].getClass().name}',"
-                err += " should be a string"
-            } else if (!json['key']) {
+        if ('key' in json.keySet()) {
+            if (!json['key']) {
                 message = 'A proxy key must not be an empty string'
                 status = 400
                 return
@@ -194,70 +178,17 @@ executions {
                 message = "Proxy with key '${json['key']}' already exists"
                 status = 409
                 return
-            } else proxy.key = json['key']
+            }
         }
-        if (!err && 'host' in json.keySet()) {
-            if (!json['host']) json['host'] = null
-            if (json['host'] && !(json['host'] instanceof CharSequence)) {
-                err = "Property 'host' is type"
-                err += " '${json['host'].getClass().name}',"
-                err += " should be a string"
-            } else proxy.host = json['host']
-        }
-        if (!err && 'port' in json.keySet()) {
-            if (!(json['port'] instanceof Number)) {
-                err = "Property 'port' is type"
-                err += " '${json['port'].getClass().name}',"
-                err += " should be a integer"
-            } else proxy.port = json['port']
-        }
-        if (!err && 'username' in json.keySet()) {
-            if (!json['username']) json['username'] = null
-            if (json['username']
-                && !(json['username'] instanceof CharSequence)) {
-                err = "Property 'username' is type"
-                err += " '${json['username'].getClass().name}',"
-                err += " should be a string"
-            } else proxy.username = json['username']
-        }
-        if (!err && 'password' in json.keySet()) {
-            if (!json['password']) json['password'] = null
-            if (json['password']
-                && !(json['password'] instanceof CharSequence)) {
-                err = "Property 'password' is type"
-                err += " '${json['password'].getClass().name}',"
-                err += " should be a string"
-            } else proxy.password = json['password']
-        }
-        if (!err && 'ntHost' in json.keySet()) {
-            if (!json['ntHost']) json['ntHost'] = null
-            if (json['ntHost'] && !(json['ntHost'] instanceof CharSequence)) {
-                err = "Property 'ntHost' is type"
-                err += " '${json['ntHost'].getClass().name}',"
-                err += " should be a string"
-            } else proxy.ntHost = json['ntHost']
-        }
-        if (!err && 'domain' in json.keySet()) {
-            if (!json['domain']) json['domain'] = null
-            if (json['domain'] && !(json['domain'] instanceof CharSequence)) {
-                err = "Property 'domain' is type"
-                err += " '${json['domain'].getClass().name}',"
-                err += " should be a string"
-            } else proxy.domain = json['domain']
-        }
-        if (!err && 'defaultProxy' in json.keySet()) {
-            if (!(json['defaultProxy'] instanceof Boolean)) {
-                err = "Property 'defaultProxy' is type"
-                err += " '${json['defaultProxy'].getClass().name}',"
-                err += " should be a boolean"
-            } else proxy.defaultProxy = json['defaultProxy']
-        }
-        if (!err && 'redirectedToHosts' in json.keySet()) {
-            if (!(json['redirectedToHosts'] instanceof Iterable)) {
-                err = "Property 'redirectedToHosts' is type"
-                err += " '${json['redirectedToHosts'].getClass().name}',"
-                err += " should be a list"
-            } else proxy.redirectedToHosts = json['redirectedToHosts'].join(',')
+        def err = null
+        propList.each { k, v ->
+            if (!err && k in json.keySet()) {
+                if ((!v[2] || json[k]) && !(v[0].isInstance(json[k]))) {
+                    err = "Property '$k' is type"
+                    err += " '${json[k].getClass().name}',"
+                    err += " should be a ${v[1]}"
+                } else v[3](proxy, json[k])
+            }
         }
         if (err) {
             message = err
