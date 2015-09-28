@@ -6,10 +6,7 @@ executions:
 
 getSaml
 -------
-
-`getSaml` returns a JSON representation of the current SAML configuration. The
-returned JSON string has the following fields:
-
+`getSaml` returns a JSON representation of the current SAML configuration. The returned JSON string has the following fields: 
 - `enableIntegration`: Whether SAML is enabled
 - `loginUrl`: The SAML login URL
 - `logoutUrl`: The SAML logout URL
@@ -22,12 +19,12 @@ For example:
 ```
 $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/getSaml'
 {
-    "enableIntegration": false,
-    "loginUrl": "",
-    "logoutUrl": "",
-    "serviceProviderName": "",
+    "enableIntegration": true,
+    "loginUrl": "admin",
+    "logoutUrl": "password",
+    "serviceProviderName": "my-service-provider",
     "noAutoUserCreation": true,
-    "certificate": ""
+    "certificate": "..."
 }
 ```
 
@@ -43,7 +40,10 @@ For example:
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "enableIntegration": true,
+> "loginUrl": "admin",
+> "logoutUrl": "password",
 > "serviceProviderName": "my-service-provider",
-> "noAutoUserCreation": false
+> "noAutoUserCreation": true,
+> "certificate": "..."
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/setSaml'
 ```
