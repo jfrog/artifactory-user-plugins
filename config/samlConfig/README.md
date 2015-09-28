@@ -6,7 +6,10 @@ executions:
 
 getSaml
 -------
-`getSaml` returns a JSON representation of the current SAML configuration. The returned JSON string has the following fields: 
+
+`getSaml` returns a JSON representation of the current SAML configuration. The
+returned JSON string has the following fields:
+
 - `enableIntegration`: Whether SAML is enabled
 - `loginUrl`: The SAML login URL
 - `logoutUrl`: The SAML logout URL
