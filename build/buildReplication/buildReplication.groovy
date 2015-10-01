@@ -36,7 +36,7 @@ import static groovyx.net.http.Method.PUT
  * Artifactory to slave Artifactory instance.
  *
  * 1. Set Up:
- *   1.1. Place this script under the muster Artifactory server
+ *   1.1. Place this script under the master Artifactory server
  *        ${ARTIFACTORY_HOME}/etc/plugins.
  *   1.2. Place buildReplication.properties file under
  *        ${ARTIFACTORY_HOME}/etc/plugins.
