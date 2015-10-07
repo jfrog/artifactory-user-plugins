@@ -23,9 +23,6 @@ import org.artifactory.util.AlreadyExistsException
 def propList = ['name': [
         CharSequence.class, 'string',
         { c, v -> c.name = v ?: null }
-    ], 'visible': [
-        Boolean.class, 'boolean',
-        { c, v -> c.visible = v ?: false }
     ], 'properties': [
         Iterable.class, 'list',
         { c, v -> c.properties = validateProps(v) ?: [] }]]
@@ -146,7 +143,6 @@ executions {
         }
         def json = [
             name: propertySet.name ?: null,
-            visible: propertySet.isVisible() ?: false,
             properties: props]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
@@ -210,6 +206,7 @@ executions {
             status = 400
             return
         }
+        propertySet.visible = true
         def cfg = ctx.centralConfig.mutableDescriptor
         try {
             cfg.addPropertySet(propertySet)

@@ -40,7 +40,6 @@ class PropertySetsConfigTest extends Specification {
             propertyType: 'SINGLE_SELECT']
         def json1 = [
             name: 'newpropset',
-            visible: true,
             properties: props]
         conn = new URL("$baseurl/addPropertySet").openConnection()
         conn.doOutput = true
@@ -66,7 +65,6 @@ class PropertySetsConfigTest extends Specification {
         conn.disconnect()
         // update the new property set
         def json2diff = [
-            visible: false,
             properties: [json1['properties'][0]]]
         def json2 = json1 + json2diff
         conn = new URL("$baseurl/updatePropertySet$params").openConnection()

@@ -28,7 +28,6 @@ given property set. The name of the requested property set is passed as the
 parameter `name`. The returned JSON string has the following fields:
 
 - `name`: The property set's unique ID name.
-- `visible`: Whether the property set is visible.
 - `properties`: A list of the properties in this set.
 
 Each property in the property set has the following fields:
@@ -49,7 +48,6 @@ For example:
 $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/getPropertySet?params=name=newpropset'
 {
     "name": "newpropset",
-    "visible": true,
     "properties": [
         {
             "name": "newprop1",
@@ -100,7 +98,6 @@ For example:
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "name": "newpropset",
-> "visible": true,
 > "properties": [{
 > "name": "newprop1",
 > "predefinedValues": [],
@@ -130,7 +127,6 @@ For example:
 
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
-> "visible": false,
 > "properties": [{
 > "name": "newprop1",
 > "predefinedValues": [],
