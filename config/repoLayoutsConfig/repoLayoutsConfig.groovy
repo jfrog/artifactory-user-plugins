@@ -39,6 +39,15 @@ def propList = ['name': [
         CharSequence.class, 'string',
         { c, v -> c.fileIntegrationRevisionRegExp = v ?: null }]]
 
+def validatePathPattern(pattern) {
+    if (!pattern.contains('[module]')) return false
+    if (!pattern.contains('[baseRev]')) return false
+    if (!pattern.contains('[org]') && !pattern.contains('[orgPath]')) {
+        return false
+    }
+    return true
+}
+
 executions {
     getLayoutsList(httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.repoLayouts
@@ -113,6 +122,38 @@ executions {
             status = 400
             return
         }
+        if (json['name'] =~ '[/\\:|?*"<>]') {
+            message = 'A layout name must not contain the characters /\\:|?*"<>'
+            status = 400
+            return
+        }
+        if (!json['artifactPathPattern'] ||
+            !validatePathPattern(json['artifactPathPattern'])) {
+            message = 'A valid artifact path pattern is required'
+            message += ' (must contain [module], [baseRev],'
+            message += ' and [org] or [orgPath], and must not be empty)'
+            status = 400
+            return
+        }
+        if (json['distinctiveDescriptorPathPattern'] &&
+            (!json['descriptorPathPattern'] ||
+            !validatePathPattern(json['descriptorPathPattern']))) {
+            message = 'The descriptor path pattern must be valid'
+            message += ' (must contain [module], [baseRev],'
+            message += ' and [org] or [orgPath])'
+            status = 400
+            return
+        }
+        if (!json['folderIntegrationRevisionRegExp']) {
+            message = 'A folder integration revision regexp is required'
+            status = 400
+            return
+        }
+        if (!json['fileIntegrationRevisionRegExp']) {
+            message = 'A file integration revision regexp is required'
+            status = 400
+            return
+        }
         def err = null
         def layout = new RepoLayout()
         propList.each { k, v ->
@@ -172,12 +213,48 @@ executions {
                 message = 'A layout name must not be empty'
                 status = 400
                 return
+            } else if (json['name'] =~ '[/\\:|?*"<>]') {
+                message = 'A layout name must not contain the characters '
+                message += '/\\:|?*"<>'
+                status = 400
+                return
             } else if (json['name'] != name
                        && cfg.isRepoLayoutExists(json['name'])) {
                 message = "Layout with name '${json['name']}' already exists"
                 status = 409
                 return
             }
+        }
+        if ('artifactPathPattern' in json.keySet() &&
+            (!json['artifactPathPattern'] ||
+             !validatePathPattern(json['artifactPathPattern']))) {
+            message = 'The artifact path pattern must be valid'
+            message += ' (must contain [module], [baseRev],'
+            message += ' and [org] or [orgPath])'
+            status = 400
+            return
+        }
+        if ('distinctiveDescriptorPathPattern' in json.keySet() &&
+            (json['distinctiveDescriptorPathPattern'] &&
+             (!json['descriptorPathPattern'] ||
+              !validatePathPattern(json['descriptorPathPattern'])))) {
+            message = 'The descriptor path pattern must be valid'
+            message += ' (must contain [module], [baseRev],'
+            message += ' and [org] or [orgPath])'
+            status = 400
+            return
+        }
+        if ('folderIntegrationRevisionRegExp' in json.keySet() &&
+            !json['folderIntegrationRevisionRegExp']) {
+            message = 'A folder integration revision regexp must not be empty'
+            status = 400
+            return
+        }
+        if ('fileIntegrationRevisionRegExp' in json.keySet() &&
+            !json['fileIntegrationRevisionRegExp']) {
+            message = 'A file integration revision regexp must not be empty'
+            status = 400
+            return
         }
         def err = null
         propList.each { k, v ->

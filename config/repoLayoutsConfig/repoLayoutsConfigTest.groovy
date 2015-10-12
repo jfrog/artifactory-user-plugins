@@ -53,7 +53,7 @@ class RepoLayoutsConfigTest extends Specification {
         conn.disconnect()
         // update the new layout
         def json2diff = [distinctiveDescriptorPathPattern: true,
-                         descriptorPathPattern: '[org].[module].[baserev].foo']
+                         descriptorPathPattern: '[org].[module].[baseRev].foo']
         def json2 = json1 + json2diff
         conn = new URL("$baseurl/updateLayout$params").openConnection()
         conn.doOutput = true
