@@ -131,6 +131,26 @@ executions {
             status = 400
             return
         }
+        if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+            message = 'A setting key may not contain special characters'
+            status = 400
+            return
+        }
+        if (!json['ldapUrl']) {
+            message = 'An LDAP URL is required'
+            status = 400
+            return
+        }
+        def rexlld = '[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
+        def rextld = '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
+        def rexdom = "($rexlld\\.)*$rextld"
+        def rexip = '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+'
+        def rexurl = "ldaps?://($rexdom|$rexip)(:[0-9]+)?.*"
+        if (!(json['ldapUrl'] ==~ rexurl)) {
+            message = 'The LDAP URL must be a valid LDAP URL'
+            status = 400
+            return
+        }
         def err = null
         def setting = new LdapSetting()
         setting.search = new SearchPattern()
@@ -191,10 +211,31 @@ executions {
                 message = 'A setting key must not be empty'
                 status = 400
                 return
+            } else if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+                message = 'A setting key may not contain special characters'
+                status = 400
+                return
             } else if (json['key'] != key
                        && cfg.security.isLdapExists(json['key'])) {
                 message = "Setting with key '${json['key']}' already exists"
                 status = 409
+                return
+            }
+        }
+        if ('ldapUrl' in json.keySet()) {
+            if (!json['ldapUrl']) {
+                message = 'An LDAP URL must not be empty'
+                status = 400
+                return
+            }
+            def rexlld = '[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
+            def rextld = '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
+            def rexdom = "($rexlld\\.)*$rextld"
+            def rexip = '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+'
+            def rexurl = "ldaps?://($rexdom|$rexip)(:[0-9]+)?.*"
+            if (!(json['ldapUrl'] ==~ rexurl)) {
+                message = 'The LDAP URL must be a valid LDAP URL'
+                status = 400
                 return
             }
         }

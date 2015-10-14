@@ -25,7 +25,7 @@ class LdapSettingsConfigTest extends Specification {
         def json1 = [
             key: 'newsetting',
             enabled: true,
-            ldapUrl: 'localhost',
+            ldapUrl: 'ldap://localhost',
             userDnPattern: null,
             searchFilter: null,
             searchBase: null,

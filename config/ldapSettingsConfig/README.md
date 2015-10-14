@@ -47,7 +47,7 @@ $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/
 {
     "key": "newsetting",
     "enabled": true,
-    "ldapUrl": "somehost",
+    "ldapUrl": "ldap://somehost",
     "userDnPattern": "uid={0}",
     "searchFilter": null,
     "searchBase": null,
@@ -84,7 +84,7 @@ For example:
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "key": "newsetting",
 > "enabled": true,
-> "ldapUrl": "somehost",
+> "ldapUrl": "ldap://somehost",
 > "userDnPattern": "uid={0}",
 > "searchFilter": null,
 > "searchBase": null,
@@ -109,7 +109,7 @@ For example:
 
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
-> "ldapUrl": "someotherhost",
+> "ldapUrl": "ldap://someotherhost",
 > "autoCreateUser": true
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/updateLdapSetting?params=key=newsetting'
 ```

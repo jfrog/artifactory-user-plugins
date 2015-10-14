@@ -101,6 +101,6 @@ For example:
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "distinctiveDescriptorPathPattern": true,
-> "descriptorPathPattern": "[org].[module].[baserev].foo"
+> "descriptorPathPattern": "[org].[module].[baseRev].foo"
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/updateLayout?params=name=newlayout'
 ```
