@@ -128,6 +128,36 @@ executions {
             status = 400
             return
         }
+        if (!json['groupMemberAttribute']) {
+            message = 'A group member attribute is required'
+            status = 400
+            return
+        }
+        if (!json['groupNameAttribute']) {
+            message = 'A group name attribute is required'
+            status = 400
+            return
+        }
+        if (!json['descriptionAttribute']) {
+            message = 'A description attribute is required'
+            status = 400
+            return
+        }
+        if (!json['filter']) {
+            message = 'A filter is required'
+            status = 400
+            return
+        }
+        def cfg = ctx.centralConfig.mutableDescriptor
+        if (json['enabledLdap']) {
+            def enabledLdap = cfg.security.getLdapSettings(json['enabledLdap'])
+            if (enabledLdap == null) {
+                message = "Setting with key '${json['enabledLdap']}' specified"
+                message += " by property 'enabledLdap' does not exist"
+                status = 409
+                return
+            }
+        }
         def strats = [
             'HIERARCHICAL': LdapGroupPopulatorStrategies.HIERARCHICAL,
             'STATIC': LdapGroupPopulatorStrategies.STATIC,
@@ -157,7 +187,6 @@ executions {
             status = 400
             return
         }
-        def cfg = ctx.centralConfig.mutableDescriptor
         try {
             cfg.security.addLdapGroup(group)
         } catch (AlreadyExistsException ex) {
@@ -205,6 +234,38 @@ executions {
             } else if (json['name'] != name
                        && cfg.security.getLdapGroupSettings(json['name'])) {
                 message = "Group with name '${json['name']}' already exists"
+                status = 409
+                return
+            }
+        }
+        if ('groupMemberAttribute' in json.keySet()
+            && !json['groupMemberAttribute']) {
+            message = 'A group member attribute must not be empty'
+            status = 400
+            return
+        }
+        if ('groupNameAttribute' in json.keySet()
+            && !json['groupNameAttribute']) {
+            message = 'A group name attribute must not be empty'
+            status = 400
+            return
+        }
+        if ('descriptionAttribute' in json.keySet()
+            && !json['descriptionAttribute']) {
+            message = 'A description attribute must not be empty'
+            status = 400
+            return
+        }
+        if ('filter' in json.keySet() && !json['filter']) {
+            message = 'A filter must not be empty'
+            status = 400
+            return
+        }
+        if ('enabledLdap' in json.keySet()) {
+            def enabledLdap = cfg.security.getLdapSettings(json['enabledLdap'])
+            if (enabledLdap == null) {
+                message = "Setting with key '${json['enabledLdap']}' specified"
+                message += " by property 'enabledLdap' does not exist"
                 status = 409
                 return
             }
