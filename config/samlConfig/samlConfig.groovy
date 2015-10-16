@@ -64,9 +64,36 @@ executions {
             return
         }
         if (!(json instanceof Map)) {
-            message = "Provided JSON value must be a JSON object"
+            message = 'Provided JSON value must be a JSON object'
             status = 400
             return
+        }
+        if ('enableIntegration' in json.keySet() &&
+            !json['enableIntegration']) {
+            json['loginUrl'] = null
+            json['logoutUrl'] = null
+            json['serviceProviderName'] = null
+            json['noAutoUserCreation'] = true
+            json['certificate'] = null
+        } else {
+            if ('serviceProviderName' in json.keySet() &&
+                !json['serviceProviderName']) {
+                message = "Property 'serviceProviderName' must not be empty"
+                status = 400
+                return
+            }
+            if ('loginUrl' in json.keySet() &&
+                !(json['loginUrl'] ==~ '^(ftp|https?)://.+$')) {
+                message = "Property 'loginUrl' must be a valid URL"
+                status = 400
+                return
+            }
+            if ('logoutUrl' in json.keySet() &&
+                !(json['logoutUrl'] ==~ '^(ftp|https?)://.+$')) {
+                message = "Property 'logoutUrl' must be a valid URL"
+                status = 400
+                return
+            }
         }
         def cfg = ctx.centralConfig.mutableDescriptor
         def saml = cfg.security.samlSettings

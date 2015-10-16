@@ -23,11 +23,11 @@ For example:
 $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/getSaml'
 {
     "enableIntegration": true,
-    "loginUrl": "admin",
-    "logoutUrl": "password",
+    "loginUrl": "http://mylogin",
+    "logoutUrl": "http://mylogout",
     "serviceProviderName": "my-service-provider",
     "noAutoUserCreation": true,
-    "certificate": "..."
+    "certificate": "my-certificate"
 }
 ```
 
@@ -43,10 +43,10 @@ For example:
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "enableIntegration": true,
-> "loginUrl": "admin",
-> "logoutUrl": "password",
+> "loginUrl": "http://mylogin",
+> "logoutUrl": "http://mylogout",
 > "serviceProviderName": "my-service-provider",
 > "noAutoUserCreation": true,
-> "certificate": "..."
+> "certificate": "my-certificate"
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/setSaml'
 ```

@@ -18,10 +18,10 @@ class SamlConfigTest extends Specification {
         when:
         def json1 = [
             enableIntegration: true,
-            loginUrl: 'http://foobarlogin', logoutUrl: 'http://foobarlogout',
-            serviceProviderName: 'foobarserviceprovidername',
+            loginUrl: 'http://mylogin', logoutUrl: 'http://mylogout',
+            serviceProviderName: 'my-service-provider',
             noAutoUserCreation: false,
-            certificate: 'foobarcertificate']
+            certificate: 'my-certificate']
         conn = new URL("$baseurl/setSaml").openConnection()
         conn.doOutput = true
         conn.requestMethod = 'POST'
@@ -42,11 +42,11 @@ class SamlConfigTest extends Specification {
 
         when:
         def json2 = [
-            enableIntegration: false,
-            loginUrl: 'http://barbazlogin', logoutUrl: 'http://barbazlogout',
-            serviceProviderName: 'barbazserviceprovidername',
+            enableIntegration: true,
+            loginUrl: 'http://mynewlogin', logoutUrl: 'http://mynewlogout',
+            serviceProviderName: 'my-new-service-provider',
             noAutoUserCreation: true,
-            certificate: 'barbazcertificate']
+            certificate: 'my-new-certificate']
         conn = new URL("$baseurl/setSaml").openConnection()
         conn.doOutput = true
         conn.requestMethod = 'POST'
