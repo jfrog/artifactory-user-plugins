@@ -56,7 +56,7 @@ class BackupsConfigTest extends Specification {
         def json1r = new JsonSlurper().parse(reader1r)
         conn.disconnect()
         // update the new backup
-        def json2diff = [cronExp: '0 0 0 0 0 ?', createArchive: true,
+        def json2diff = [cronExp: '* * * * * ?', createArchive: true,
                          excludedRepositories: ['libs-release-local']]
         def json2 = json1 + json2diff
         conn = new URL("$baseurl/updateBackup$params").openConnection()

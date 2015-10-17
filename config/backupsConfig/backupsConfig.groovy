@@ -127,6 +127,30 @@ executions {
             status = 400
             return
         }
+        if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+            message = 'A backup key may not contain special characters'
+            status = 400
+            return
+        }
+        if (!json['cronExp']) {
+            message = "Property 'cronExp' is required"
+            status = 400
+            return
+        }
+        try {
+            new org.quartz.CronExpression(json['cronExp'])
+        } catch (java.text.ParseException ex) {
+            message = "Property 'cronExp' must be a valid cron expression"
+            status = 400
+            return
+        }
+        if ('retentionPeriodHours' in json.keySet() &&
+            json['retentionPeriodHours'] instanceof Number &&
+            json['retentionPeriodHours'] < 0) {
+            message = "Property 'retentionPeriodHours' must not be negative"
+            status = 400
+            return
+        }
         def cfg = ctx.centralConfig.mutableDescriptor
         def exc = 'excludedRepositories'
         if (json[exc] && json[exc] instanceof Iterable) {
@@ -207,12 +231,37 @@ executions {
                 message = 'A backup key must not be empty'
                 status = 400
                 return
+            } else if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+                message = 'A backup key may not contain special characters'
+                status = 400
+                return
             } else if (json['key'] != key
                        && cfg.isBackupExists(json['key'])) {
                 message = "Backup with key '${json['key']}' already exists"
                 status = 409
                 return
             }
+        }
+        if ('cronExp' in json.keySet()) {
+            if (!json['cronExp']) {
+                message = "Property 'cronExp' is required"
+                status = 400
+                return
+            }
+            try {
+                new org.quartz.CronExpression(json['cronExp'])
+            } catch (java.text.ParseException ex) {
+                message = "Property 'cronExp' must be a valid cron expression"
+                status = 400
+                return
+            }
+        }
+        if ('retentionPeriodHours' in json.keySet() &&
+            json['retentionPeriodHours'] instanceof Number &&
+            json['retentionPeriodHours'] < 0) {
+            message = "Property 'retentionPeriodHours' must not be negative"
+            status = 400
+            return
         }
         def exc = 'excludedRepositories'
         if (json[exc] && json[exc] instanceof Iterable) {

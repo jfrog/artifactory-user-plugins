@@ -110,7 +110,7 @@ For example:
 
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
-> "cronExp": "0 0 0 0 0 ?",
+> "cronExp": "* * * * * ?",
 > "createArchive": true,
 > "excludedRepositories": ["libs-release-local"]
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/updateBackup?params=key=newbackup'
