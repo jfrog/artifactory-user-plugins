@@ -122,6 +122,26 @@ executions {
             status = 400
             return
         }
+        if (json['key'] =~ '[/\\:|?*"<>]') {
+            message = 'A proxy key must not contain the characters /\\:|?*"<>'
+            status = 400
+            return
+        }
+        if (!json['host']) {
+            message = 'A proxy host is required'
+            status = 400
+            return
+        }
+        if (!json['port']) {
+            message = 'A proxy port is required'
+            status = 400
+            return
+        } else if (json['port'] instanceof Number &&
+            (json['port'] < 1 || json['port'] > 65535)) {
+            message = "Property 'port' must be between 1 and 65535"
+            status = 400
+            return
+        }
         def err = null
         def proxy = new ProxyDescriptor()
         propList.each { k, v ->
@@ -181,9 +201,31 @@ executions {
                 message = 'A proxy key must not be empty'
                 status = 400
                 return
+            } else if (json['key'] =~ '[/\\:|?*"<>]') {
+                message = 'A proxy key must not contain the characters '
+                message += '/\\:|?*"<>'
+                status = 400
+                return
             } else if (json['key'] != key && cfg.isProxyExists(json['key'])) {
                 message = "Proxy with key '${json['key']}' already exists"
                 status = 409
+                return
+            }
+        }
+        if ('host' in json.keySet() && !json['host']) {
+            message = 'A proxy host must not be empty'
+            status = 400
+            return
+        }
+        if ('port' in json.keySet()) {
+            if (!json['port']) {
+                message = 'A proxy port must not be empty'
+                status = 400
+                return
+            } else if (json['port'] instanceof Number &&
+                (json['port'] < 1 || json['port'] > 65535)) {
+                message = "Property 'port' must be between 1 and 65535"
+                status = 400
                 return
             }
         }
