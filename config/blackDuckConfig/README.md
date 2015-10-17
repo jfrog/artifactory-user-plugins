@@ -23,11 +23,11 @@ For example:
 $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/getBlackDuck'
 {
     "enableIntegration": true,
-    "serverUri": "somehost",
+    "serverUri": "http://somehost",
     "username": "admin",
     "password": "password",
     "connectionTimeoutMillis": 5000,
-    "proxy": "someproxy"
+    "proxy": null
 }
 ```
 
@@ -43,10 +43,10 @@ For example:
 ```
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "enableIntegration": true,
-> "serverUri": "somehost",
+> "serverUri": "http://somehost",
 > "username": "admin",
 > "password": "password",
 > "connectionTimeoutMillis": 20000,
-> "proxy": "someproxy"
+> "proxy": null
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/setBlackDuck'
 ```

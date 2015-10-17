@@ -17,7 +17,7 @@ class BlackDuckConfigTest extends Specification {
 
         when:
         def json1 = [
-            enableIntegration: true, serverUri: 'somehost',
+            enableIntegration: true, serverUri: 'http://somehost',
             username: 'admin', password: 'password',
             connectionTimeoutMillis: 20000, proxy: null]
         conn = new URL("$baseurl/setBlackDuck").openConnection()
@@ -40,7 +40,7 @@ class BlackDuckConfigTest extends Specification {
 
         when:
         def json2 = [
-            enableIntegration: false, serverUri: 'someotherhost',
+            enableIntegration: true, serverUri: 'http://someotherhost',
             username: 'admin', password: 'password',
             connectionTimeoutMillis: 40000, proxy: null]
         conn = new URL("$baseurl/setBlackDuck").openConnection()

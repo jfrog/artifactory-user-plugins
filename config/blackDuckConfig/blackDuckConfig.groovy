@@ -70,6 +70,46 @@ executions {
             status = 400
             return
         }
+        if ('enableIntegration' in json.keySet() &&
+            !json['enableIntegration']) {
+            json['serverUri'] = null
+            json['username'] = null
+            json['password'] = null
+            json['connectionTimeoutMillis'] = 20000
+            json['proxy'] = null
+        } else {
+            if ('serverUri' in json.keySet() &&
+                !(json['serverUri'] ==~ '^(ftp|https?)://.+$')) {
+                message = "Property 'serverUri' must be a valid URL"
+                status = 400
+                return
+            }
+            if ('username' in json.keySet() && !json['username']) {
+                message = "Property 'username' must not be empty"
+                status = 400
+                return
+            }
+            if ('password' in json.keySet() && !json['password']) {
+                message = "Property 'password' must not be empty"
+                status = 400
+                return
+            }
+            if ('connectionTimeoutMillis' in json.keySet() &&
+                !(json['connectionTimeoutMillis'] instanceof Number) &&
+                !json['connectionTimeoutMillis']) {
+                message = "Property 'connectionTimeoutMillis' must not be empty"
+                status = 400
+                return
+            }
+            if ('connectionTimeoutMillis' in json.keySet() &&
+                json['connectionTimeoutMillis'] instanceof Number &&
+                json['connectionTimeoutMillis'] < 0) {
+                message = "Property 'connectionTimeoutMillis' must not"
+                message += " be negative"
+                status = 400
+                return
+            }
+        }
         def cfg = ctx.centralConfig.mutableDescriptor
         def proxy = cfg.getProxy(json['proxy'])
         if (json['proxy'] && !proxy) {
