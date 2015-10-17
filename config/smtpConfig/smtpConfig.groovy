@@ -84,6 +84,35 @@ executions {
             status = 400
             return
         }
+        if ('enabled' in json.keySet() && !json['enabled']) {
+            json['host'] = null
+            json['port'] = 25
+            json['username'] = null
+            json['password'] = null
+            json['from'] = null
+            json['subjectPrefix'] = null
+            json['tls'] = false
+            json['ssl'] = false
+            json['artifactoryUrl'] = null
+        } else {
+            if ('host' in json.keySet() && !json['host']) {
+                message = "Property 'host' must not be empty"
+                status = 400
+                return
+            }
+            if ('port' in json.keySet() && !(json['port'] instanceof Number) &&
+                !json['port']) {
+                message = "Property 'port' must not be empty"
+                status = 400
+                return
+            }
+            if ('port' in json.keySet() && json['port'] instanceof Number &&
+                (json['port'] < 1 || json['port'] > 65535)) {
+                message = "Property 'port' must be between 1 and 65535"
+                status = 400
+                return
+            }
+        }
         def cfg = ctx.centralConfig.mutableDescriptor
         def smtp = cfg.mailServer
         if (smtp == null) smtp = new MailServerDescriptor()

@@ -47,7 +47,7 @@ class SmtpConfigTest extends Specification {
 
         when:
         def json2 = [
-            enabled: false,
+            enabled: true,
             host: 'someotherhost',
             port: 8888,
             username: 'user',
