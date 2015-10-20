@@ -57,6 +57,11 @@ def validateDefaults(dflts) {
             err += " is instead '${new JsonBuilder(dflt).toString()}'"
             throw new RuntimeException(err)
         }
+        if (!(dflt['value'] ==~ '[^/\\:|?*"<>]+')) {
+            def err = "Provided property default '${dflt['value']}' must not"
+            err += " be blank or contain the characters /\\:|?*\"<>"
+            throw new RuntimeException(err)
+        }
         def dobj = new PredefinedValue()
         propDefaultList.each { k, v ->
             if (dflt[k] != null && !(v[0].isInstance(dflt[k]))) {
@@ -91,6 +96,12 @@ def validateProps(props) {
         if (!prop['name']) {
             def err = 'A property name is required for property'
             err += " '${new JsonBuilder(prop).toString()}'"
+            throw new RuntimeException(err)
+        }
+        if (!(prop['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
+            err = 'A property name must begin with a letter, and only'
+            err += ' contain letters, digits, and "-" and "_" characters,'
+            err += " for property '${prop['name']}'"
             throw new RuntimeException(err)
         }
         def pobj = new Property()
@@ -186,6 +197,12 @@ executions {
             status = 400
             return
         }
+        if (!(json['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
+            message = 'A property set name must begin with a letter, and only'
+            message += ' contain letters, digits, and "-" and "_" characters'
+            status = 400
+            return
+        }
         def err = null
         def propertySet = new PropertySet()
         propList.each { k, v ->
@@ -254,9 +271,16 @@ executions {
                 message = 'A property set name must not be empty'
                 status = 400
                 return
+            } else if (!(json['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
+                message = 'A property set name must begin with a letter, and'
+                message += ' only contain letters, digits, and "-" and "_"'
+                message += ' characters'
+                status = 400
+                return
             } else if (json['name'] != name
                        && cfg.isPropertySetExists(json['name'])) {
-                message = "Property set with name '${json['name']}' already exists"
+                message = "Property set with name '${json['name']}' already"
+                message += " exists"
                 status = 409
                 return
             }
