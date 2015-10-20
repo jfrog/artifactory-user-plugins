@@ -125,6 +125,6 @@ executions {
 
         // virtual repo needs to be cleaned
         def rootPath = RepoPathFactory.create(repoDescriptor.getKey(), "")
-        repositories.delete(rootPath)
+        repositories.deleteAtomic(rootPath)
     }
 }
