@@ -6,7 +6,7 @@ import java.security.MessageDigest
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import static org.jfrog.artifactory.client.model.impl.RemoteRepoChecksumPolicyTypeImpl.pass_thru
 
-class yumValidRemoteTest extends Specification {
+class YumValidRemoteTest extends Specification {
     def 'check valid yum remote test'() {
         setup:
         def builder = RepositoryBuildersImpl.create()
@@ -19,11 +19,13 @@ class yumValidRemoteTest extends Specification {
         remote.remoteRepoChecksumPolicyType(pass_thru)
         remote.username('admin').password('password')
         // create the new repos
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         artifactory.repositories().create(0, local.build())
         artifactory.repositories().create(0, remote.build())
         def localrepo = artifactory.repository('yum-local')
         def remoterepo = artifactory.repository('yum-remote')
+        def remoterepocache = artifactory.repository('yum-remote-cache')
 
         when:
         // upload some yum repo files
@@ -67,7 +69,7 @@ class yumValidRemoteTest extends Specification {
 
         when:
         localrepo.delete('repodata')
-        remoterepo.delete('repodata/repomd.xml')
+        remoterepocache.delete('repodata/repomd.xml')
         // upload some yum repo files
         repomd = new File('./src/test/groovy/yumValidRemoteTest/test2/repomd.xml')
         primary = new File('./src/test/groovy/yumValidRemoteTest/test2/primary.xml.gz')
