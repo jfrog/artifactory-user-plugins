@@ -127,8 +127,7 @@ executions {
             status = 400
             return
         }
-        if (!json['artifactPathPattern'] ||
-            !validatePathPattern(json['artifactPathPattern'])) {
+        if (!validatePathPattern(json['artifactPathPattern'].toString())) {
             message = 'A valid artifact path pattern is required'
             message += ' (must contain [module], [baseRev],'
             message += ' and [org] or [orgPath], and must not be empty)'
@@ -136,8 +135,7 @@ executions {
             return
         }
         if (json['distinctiveDescriptorPathPattern'] &&
-            (!json['descriptorPathPattern'] ||
-            !validatePathPattern(json['descriptorPathPattern']))) {
+            !validatePathPattern(json['descriptorPathPattern'].toString())) {
             message = 'The descriptor path pattern must be valid'
             message += ' (must contain [module], [baseRev],'
             message += ' and [org] or [orgPath])'
@@ -226,18 +224,18 @@ executions {
             }
         }
         if ('artifactPathPattern' in json.keySet() &&
-            (!json['artifactPathPattern'] ||
-             !validatePathPattern(json['artifactPathPattern']))) {
+            !validatePathPattern(json['artifactPathPattern'].toString())) {
             message = 'The artifact path pattern must be valid'
             message += ' (must contain [module], [baseRev],'
             message += ' and [org] or [orgPath])'
             status = 400
             return
         }
-        if ('distinctiveDescriptorPathPattern' in json.keySet() &&
-            (json['distinctiveDescriptorPathPattern'] &&
-             (!json['descriptorPathPattern'] ||
-              !validatePathPattern(json['descriptorPathPattern'])))) {
+        if ('descriptorPathPattern' in json.keySet() &&
+            ('distinctiveDescriptorPathPattern' in json.keySet() ?
+             json['distinctiveDescriptorPathPattern'] :
+             layout.isDistinctiveDescriptorPathPattern()) &&
+            !validatePathPattern(json['descriptorPathPattern'].toString())) {
             message = 'The descriptor path pattern must be valid'
             message += ' (must contain [module], [baseRev],'
             message += ' and [org] or [orgPath])'
