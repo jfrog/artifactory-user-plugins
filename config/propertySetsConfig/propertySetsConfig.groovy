@@ -57,9 +57,10 @@ def validateDefaults(dflts) {
             err += " is instead '${new JsonBuilder(dflt).toString()}'"
             throw new RuntimeException(err)
         }
-        if (!(dflt['value'] ==~ '[^/\\:|?*"<>]+')) {
+        if (!(dflt['value'] ==~ '[^\\s/\\\\:|?*"<>]+')) {
             def err = "Provided property default '${dflt['value']}' must not"
-            err += " be blank or contain the characters /\\:|?*\"<>"
+            err += " be blank or contain whitespace or the"
+            err += " characters /\\:|?*\"<>"
             throw new RuntimeException(err)
         }
         def dobj = new PredefinedValue()
