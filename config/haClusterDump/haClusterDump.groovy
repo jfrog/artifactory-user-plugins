@@ -24,7 +24,7 @@ import java.text.SimpleDateFormat
 executions {
     haClusterDump(httpMethod: 'GET') { params ->
         def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXX")
-        def sserv = ctx.beanForType(ArtifactoryServersCommonService.class)
+        ArtifactoryServersCommonService sserv = ctx.beanForType(ArtifactoryServersCommonService.class)
         def curr = sserv.currentMember
         def servers = sserv.allArtifactoryServers.findAll {
             it.artifactoryRunningMode.isHa()
@@ -34,7 +34,9 @@ executions {
              localMember: curr == it,
              address: "$it.contextUrl:$it.membershipPort",
              heartbeat: df.format(new Date(it.lastHeartbeat)),
-             serverState: it.serverState.name()]
+             serverState: it.serverState.name(),
+             serverRole: it.serverRole.prettyName,
+             artifactoryVersion: it.artifactoryVersion]
         }
         def addonsManager = ctx.beanForType(AddonsManager.class)
         def haAddon = addonsManager.addonByType(HaAddon.class)
