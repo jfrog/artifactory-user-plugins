@@ -122,8 +122,9 @@ executions {
             status = 400
             return
         }
-        if (json['name'] =~ '[/\\:|?*"<>]') {
-            message = 'A layout name must not contain the characters /\\:|?*"<>'
+        if (json['name'] =~ '[\\s/\\\\:|?*"<>]') {
+            message = 'A layout name must not contain whitespace or the'
+            message += ' characters /\\:|?*"<>'
             status = 400
             return
         }
@@ -211,9 +212,9 @@ executions {
                 message = 'A layout name must not be empty'
                 status = 400
                 return
-            } else if (json['name'] =~ '[/\\:|?*"<>]') {
-                message = 'A layout name must not contain the characters '
-                message += '/\\:|?*"<>'
+            } else if (json['name'] =~ '[\\s/\\\\:|?*"<>]') {
+                message = 'A layout name must not contain whitespace or the'
+                message += ' characters /\\:|?*"<>'
                 status = 400
                 return
             } else if (json['name'] != name

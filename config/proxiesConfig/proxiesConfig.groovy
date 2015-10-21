@@ -122,8 +122,9 @@ executions {
             status = 400
             return
         }
-        if (json['key'] =~ '[/\\:|?*"<>]') {
-            message = 'A proxy key must not contain the characters /\\:|?*"<>'
+        if (json['key'] =~ '[\\s/\\\\:|?*"<>]') {
+            message = 'A proxy key must not contain whitespace or the'
+            message += ' characters /\\:|?*"<>'
             status = 400
             return
         }
@@ -201,9 +202,9 @@ executions {
                 message = 'A proxy key must not be empty'
                 status = 400
                 return
-            } else if (json['key'] =~ '[/\\:|?*"<>]') {
-                message = 'A proxy key must not contain the characters '
-                message += '/\\:|?*"<>'
+            } else if (json['key'] =~ '[\\s/\\\\:|?*"<>]') {
+                message = 'A proxy key must not contain whitespace or the'
+                message += ' characters /\\:|?*"<>'
                 status = 400
                 return
             } else if (json['key'] != key && cfg.isProxyExists(json['key'])) {
