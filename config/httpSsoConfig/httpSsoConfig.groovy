@@ -31,7 +31,7 @@ def propList = ['httpSsoProxied': [
         { c, v -> c.remoteUserRequestVariable = v ?: null }]]
 
 executions {
-    getHttpSso(httpMethod: 'GET') { params ->
+    getHttpSso(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.httpSsoSettings
         if (cfg == null) cfg = new HttpSsoSettings()
         def json = [
@@ -42,7 +42,7 @@ executions {
         status = 200
     }
 
-    setHttpSso() { params, ResourceStreamHandle body ->
+    setHttpSso(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {

@@ -49,7 +49,7 @@ def validatePathPattern(pattern) {
 }
 
 executions {
-    getLayoutsList(httpMethod: 'GET') { params ->
+    getLayoutsList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.repoLayouts
         if (cfg == null) cfg = []
         def json = cfg.collect { it.name }
@@ -57,7 +57,7 @@ executions {
         status = 200
     }
 
-    getLayout(httpMethod: 'GET') { params ->
+    getLayout(version: '1.0', httpMethod: 'GET') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A layout name is required'
@@ -84,7 +84,7 @@ executions {
         status = 200
     }
 
-    deleteLayout(httpMethod: 'DELETE') { params ->
+    deleteLayout(version: '1.0', httpMethod: 'DELETE') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A layout name is required'
@@ -102,7 +102,7 @@ executions {
         status = 200
     }
 
-    addLayout() { params, ResourceStreamHandle body ->
+    addLayout(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -179,7 +179,7 @@ executions {
         status = 200
     }
 
-    updateLayout() { params, ResourceStreamHandle body ->
+    updateLayout(version: '1.0') { params, ResourceStreamHandle body ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A layout name is required'

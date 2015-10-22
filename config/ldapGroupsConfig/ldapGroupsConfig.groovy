@@ -50,7 +50,7 @@ def propList = ['name': [
         { c, v -> c.enabledLdap = v ?: null }]]
 
 executions {
-    getLdapGroupsList(httpMethod: 'GET') { params ->
+    getLdapGroupsList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.ldapGroupSettings
         if (cfg == null) cfg = []
         def json = cfg.collect { it.name }
@@ -58,7 +58,7 @@ executions {
         status = 200
     }
 
-    getLdapGroup(httpMethod: 'GET') { params ->
+    getLdapGroup(version: '1.0', httpMethod: 'GET') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A group name is required'
@@ -90,7 +90,7 @@ executions {
         status = 200
     }
 
-    deleteLdapGroup(httpMethod: 'DELETE') { params ->
+    deleteLdapGroup(version: '1.0', httpMethod: 'DELETE') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A group name is required'
@@ -108,7 +108,7 @@ executions {
         status = 200
     }
 
-    addLdapGroup() { params, ResourceStreamHandle body ->
+    addLdapGroup(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -198,7 +198,7 @@ executions {
         status = 200
     }
 
-    updateLdapGroup() { params, ResourceStreamHandle body ->
+    updateLdapGroup(version: '1.0') { params, ResourceStreamHandle body ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A group name is required'

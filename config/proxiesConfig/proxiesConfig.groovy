@@ -49,7 +49,7 @@ def propList = ['key': [
         { c, v -> c.redirectedToHosts = v?.join(',') ?: '' }]]
 
 executions {
-    getProxiesList(httpMethod: 'GET') { params ->
+    getProxiesList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.proxies
         if (cfg == null) cfg = []
         def json = cfg.collect { it.key }
@@ -57,7 +57,7 @@ executions {
         status = 200
     }
 
-    getProxy(httpMethod: 'GET') { params ->
+    getProxy(version: '1.0', httpMethod: 'GET') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A proxy key is required'
@@ -84,7 +84,7 @@ executions {
         status = 200
     }
 
-    deleteProxy(httpMethod: 'DELETE') { params ->
+    deleteProxy(version: '1.0', httpMethod: 'DELETE') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A proxy key is required'
@@ -102,7 +102,7 @@ executions {
         status = 200
     }
 
-    addProxy() { params, ResourceStreamHandle body ->
+    addProxy(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -169,7 +169,7 @@ executions {
         status = 200
     }
 
-    updateProxy() { params, ResourceStreamHandle body ->
+    updateProxy(version: '1.0') { params, ResourceStreamHandle body ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A proxy key is required'

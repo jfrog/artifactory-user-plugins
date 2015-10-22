@@ -40,7 +40,7 @@ def propList = ['enableIntegration': [
         { c, v -> c.proxy = v ?: null }]]
 
 executions {
-    getBlackDuck(httpMethod: 'GET') { params ->
+    getBlackDuck(version: '1.0', httpMethod: 'GET') { params ->
         def ext = ctx.centralConfig.descriptor.externalProvidersDescriptor
         def cfg = ext?.blackDuckSettingsDescriptor
         if (cfg == null) cfg = new BlackDuckSettingsDescriptor()
@@ -55,7 +55,7 @@ executions {
         status = 200
     }
 
-    setBlackDuck() { params, ResourceStreamHandle body ->
+    setBlackDuck(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {

@@ -120,7 +120,7 @@ def validateProps(props) {
 }
 
 executions {
-    getPropertySetsList(httpMethod: 'GET') { params ->
+    getPropertySetsList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.propertySets
         if (cfg == null) cfg = []
         def json = cfg.collect { it.name }
@@ -128,7 +128,7 @@ executions {
         status = 200
     }
 
-    getPropertySet(httpMethod: 'GET') { params ->
+    getPropertySet(version: '1.0', httpMethod: 'GET') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A property set name is required'
@@ -160,7 +160,7 @@ executions {
         status = 200
     }
 
-    deletePropertySet(httpMethod: 'DELETE') { params ->
+    deletePropertySet(version: '1.0', httpMethod: 'DELETE') { params ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A property set name is required'
@@ -178,7 +178,7 @@ executions {
         status = 200
     }
 
-    addPropertySet() { params, ResourceStreamHandle body ->
+    addPropertySet(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -237,7 +237,7 @@ executions {
         status = 200
     }
 
-    updatePropertySet() { params, ResourceStreamHandle body ->
+    updatePropertySet(version: '1.0') { params, ResourceStreamHandle body ->
         def name = params?.get('name')?.get(0) as String
         if (!name) {
             message = 'A property set name is required'

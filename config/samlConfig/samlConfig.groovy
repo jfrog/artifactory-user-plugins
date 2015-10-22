@@ -39,7 +39,7 @@ def propList = ['enableIntegration': [
         { c, v -> c.certificate = v ?: null }]]
 
 executions {
-    getSaml(httpMethod: 'GET') { params ->
+    getSaml(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.samlSettings
         if (cfg == null) cfg = new SamlSettings()
         def json = [
@@ -53,7 +53,7 @@ executions {
         status = 200
     }
 
-    setSaml() { params, ResourceStreamHandle body ->
+    setSaml(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {

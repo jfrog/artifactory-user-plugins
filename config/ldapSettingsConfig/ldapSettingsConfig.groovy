@@ -56,7 +56,7 @@ def propList = ['key': [
         { c, v -> c.emailAttribute = v ?: null }]]
 
 executions {
-    getLdapSettingsList(httpMethod: 'GET') { params ->
+    getLdapSettingsList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.security.ldapSettings
         if (cfg == null) cfg = []
         def json = cfg.collect { it.key }
@@ -64,7 +64,7 @@ executions {
         status = 200
     }
 
-    getLdapSetting(httpMethod: 'GET') { params ->
+    getLdapSetting(version: '1.0', httpMethod: 'GET') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A setting key is required'
@@ -93,7 +93,7 @@ executions {
         status = 200
     }
 
-    deleteLdapSetting(httpMethod: 'DELETE') { params ->
+    deleteLdapSetting(version: '1.0', httpMethod: 'DELETE') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A setting key is required'
@@ -111,7 +111,7 @@ executions {
         status = 200
     }
 
-    addLdapSetting() { params, ResourceStreamHandle body ->
+    addLdapSetting(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -178,7 +178,7 @@ executions {
         status = 200
     }
 
-    updateLdapSetting() { params, ResourceStreamHandle body ->
+    updateLdapSetting(version: '1.0') { params, ResourceStreamHandle body ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A setting key is required'

@@ -51,7 +51,7 @@ def propList = ['enabled': [
         { c, v -> c.artifactoryUrl = v ?: null }]]
 
 executions {
-    getSmtp(httpMethod: 'GET') { params ->
+    getSmtp(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.mailServer
         if (cfg == null) cfg = new MailServerDescriptor()
         def json = [
@@ -69,7 +69,7 @@ executions {
         status = 200
     }
 
-    setSmtp() { params, ResourceStreamHandle body ->
+    setSmtp(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {

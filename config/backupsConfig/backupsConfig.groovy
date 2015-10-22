@@ -52,7 +52,7 @@ def propList = ['key': [
         { c, v -> c.excludeNewRepositories = v ?: false }]]
 
 executions {
-    getBackupsList(httpMethod: 'GET') { params ->
+    getBackupsList(version: '1.0', httpMethod: 'GET') { params ->
         def cfg = ctx.centralConfig.descriptor.backups
         if (cfg == null) cfg = []
         def json = cfg.collect { it.key }
@@ -60,7 +60,7 @@ executions {
         status = 200
     }
 
-    getBackup(httpMethod: 'GET') { params ->
+    getBackup(version: '1.0', httpMethod: 'GET') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A backup key is required'
@@ -89,7 +89,7 @@ executions {
         status = 200
     }
 
-    deleteBackup(httpMethod: 'DELETE') { params ->
+    deleteBackup(version: '1.0', httpMethod: 'DELETE') { params ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A backup key is required'
@@ -107,7 +107,7 @@ executions {
         status = 200
     }
 
-    addBackup() { params, ResourceStreamHandle body ->
+    addBackup(version: '1.0') { params, ResourceStreamHandle body ->
         def reader = new InputStreamReader(body.inputStream, 'UTF-8')
         def json = null
         try {
@@ -198,7 +198,7 @@ executions {
         status = 200
     }
 
-    updateBackup() { params, ResourceStreamHandle body ->
+    updateBackup(version: '1.0') { params, ResourceStreamHandle body ->
         def key = params?.get('key')?.get(0) as String
         if (!key) {
             message = 'A backup key is required'
