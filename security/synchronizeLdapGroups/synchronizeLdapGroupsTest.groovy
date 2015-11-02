@@ -5,7 +5,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class SynchronizeLdapGroupsTest extends Specification {
     def 'test name'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
 
         // when:
 

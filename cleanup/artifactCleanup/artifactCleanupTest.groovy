@@ -6,7 +6,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class ArtifactCleanupTest extends Specification {
     def 'artifact cleanup test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def repo = artifactory.repository('libs-release-local')
         def file = new ByteArrayInputStream('test file'.bytes)
         repo.upload('test', file).doUpload()

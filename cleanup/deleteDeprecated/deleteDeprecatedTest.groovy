@@ -6,7 +6,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class DeleteDeprecatedTest extends Specification {
     def 'delete deprecated plugin test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         artifactory.repository('libs-release-local').upload('some/path1/file1', new ByteArrayInputStream('test1'.getBytes('utf-8'))).doUpload()
         artifactory.repository('libs-release-local').upload('some/path2/file2', new ByteArrayInputStream('test2'.getBytes('utf-8'))).doUpload()
         artifactory.repository('libs-release-local').file('some/path2/file2').properties().addProperty('analysis.deprecated', 'true').doSet()

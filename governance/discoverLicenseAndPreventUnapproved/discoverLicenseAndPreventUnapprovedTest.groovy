@@ -6,9 +6,9 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class DiscoverLicenseAndPreventUnapprovedTest extends Specification {
     def 'discover license and prevent unapproved test'() {
         setup:
-        def baseurl = "http://localhost:8088/artifactory"
+        def baseurl = 'http://localhost:8088/artifactory'
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
-        def artifactory = create(baseurl, "admin", "password")
+        def artifactory = create(baseurl, 'admin', 'password')
         def repo = artifactory.repository('libs-release-local')
 
         when:

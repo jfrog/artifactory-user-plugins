@@ -7,7 +7,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class Pom2ivyTest extends Specification {
     def 'simple pom to ivy plugin test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def builder = RepositoryBuildersImpl.create()
         artifactory.repository('ext-release-local').delete()
         def ivy = builder.localRepositoryBuilder().key('ext-release-local').repoLayoutRef('ivy-default').build()

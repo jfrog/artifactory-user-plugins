@@ -19,7 +19,8 @@ import org.jfrog.build.api.Build
 
 build {
     beforeSave { DetailedBuildRun buildRun ->
-        log.debug "Checking if ${buildRun.name} should be modified before saving!"
+        log.debug("Checking if ${buildRun.name} should be modified before" +
+                  " saving!")
         Build build = buildRun.build
         build.modules.each { m ->
             m.artifacts.each { a ->

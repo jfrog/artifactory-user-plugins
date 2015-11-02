@@ -8,7 +8,8 @@ class ChecksumsTest extends Specification {
         setup:
         def message = 'Lorem ipsum dolor sit amet'
         def checksum = DigestUtils.sha512Hex(message)
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def repo = artifactory.repository('libs-release-local')
         def data = new ByteArrayInputStream(message.bytes)
         repo.upload('testfile', data).doUpload()

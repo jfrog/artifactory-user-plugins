@@ -5,8 +5,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class PreventCCRejectedTest extends Specification {
     def 'prevent cc rejected test'() {
         setup:
-        def baseurl = "http://localhost:8088/artifactory"
-        def artifactory = create(baseurl, "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def repo = artifactory.repository('libs-release-local')
         def file = new ByteArrayInputStream('sample file'.bytes)
         repo.upload('sample', file).doUpload()

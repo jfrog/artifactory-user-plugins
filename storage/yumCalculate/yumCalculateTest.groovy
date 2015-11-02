@@ -7,7 +7,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class YumCalculateTest extends Specification {
     def 'simple yum calculate test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def builder = RepositoryBuildersImpl.create()
         def yum = builder.localRepositoryBuilder().key('yum').yumRootDepth(2).calculateYumMetadata(false).build()
         artifactory.repositories().create(0, yum)

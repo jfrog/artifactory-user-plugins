@@ -6,7 +6,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class DeleteEmptyDirsTest extends Specification {
     def 'delete empty dirs plugin test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         artifactory.repository('libs-release-local').upload('some/path/file', new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
         artifactory.repository('libs-release-local').folder('some/other/path').create()
 

@@ -7,7 +7,8 @@ class LayoutPropertiesTest extends Specification {
         setup:
         def repo = 'libs-release-local'
         def path = 'org/test/modname/1.0/modname-1.0.txt'
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
 
         when:
         def stream = new ByteArrayInputStream('test'.getBytes('utf-8'))

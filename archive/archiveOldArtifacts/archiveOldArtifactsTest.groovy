@@ -5,7 +5,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class ArchiveOldArtifactsTest extends Specification {
     def 'archive old artifacts plugin test'() {
         setup:
-        def artifactory = create("http://localhost:8088/artifactory", "admin", "password")
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
         def stream = new ByteArrayInputStream('test'.getBytes('utf-8'))
         artifactory.repository('libs-release-local').upload('foo.txt', stream).doUpload()
         artifactory.repository('libs-release-local').file('foo.txt').properties().addProperty('archive', 'yes').doSet()

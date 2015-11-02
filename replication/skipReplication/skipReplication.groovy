@@ -17,7 +17,8 @@
 replication {
     beforeFileReplication { localRepoPath ->
         if (!localRepoPath.getName().endsWith(".jar")) {
-            log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it is not a JAR file"
+            log.info("Skipping replication of a file: " +
+                     "${localRepoPath.getPath()} as it is not a JAR file")
             skip = true
         }
     }

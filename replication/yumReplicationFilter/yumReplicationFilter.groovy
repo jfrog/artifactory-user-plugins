@@ -16,8 +16,12 @@
 
 replication {
     beforeFileReplication { localRepoPath ->
-        if ((localRepoPath.getName().endsWith(".xml.gz") || localRepoPath.getName().equals("repomd.xml")) && (localRepoPath.getPath().contains("/repodata/") || localRepoPath.getPath().startsWith("repodata/"))) {
-            log.info "Skipping replication of a file: ${localRepoPath.getPath()} as it is a YUM metadata file"
+        if ((localRepoPath.getName().endsWith(".xml.gz") ||
+             localRepoPath.getName().equals("repomd.xml")) &&
+            (localRepoPath.getPath().contains("/repodata/") ||
+             localRepoPath.getPath().startsWith("repodata/"))) {
+            log.info("Skipping replication of a file:" +
+                     " ${localRepoPath.getPath()} as it is a YUM metadata file")
             skip = true
         }
     }

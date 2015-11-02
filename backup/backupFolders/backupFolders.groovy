@@ -1,19 +1,34 @@
+/*
+ * Copyright (C) 2015 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import groovy.json.JsonSlurper
+import org.artifactory.exception.CancelException
+import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
-import org.artifactory.fs.ItemInfo
 import org.artifactory.resource.ResourceStreamHandle
-import org.artifactory.exception.CancelException
 
 /**
  * Created by Alexei on 8/15/15.
  */
 
 /**
- * The command to trigget the execution:
+ * The command to trigger the execution:
  * curl -X POST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/backup" -T properties.json
- **/
-
+ */
 executions {
     backup { params, ResourceStreamHandle body ->
         assert body
@@ -30,10 +45,7 @@ executions {
             log.error("One of the parameters are missing or null")
         }
     }
-
-
 }
-
 
 jobs {
 
@@ -46,7 +58,6 @@ jobs {
      * Parameters:
      * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
      */
-
     backUpFolder(cron: "0 0/12 * 1/1 * ? *") {
         try {
             //getting the information from the properties file
@@ -67,7 +78,6 @@ jobs {
  * pathToFolder (String) -  The path to backup
  *
  */
-
 private void startBackup(String destinationFolder, String pathToFolder) {
     log.info("Starting backing up the folders")
 
@@ -119,7 +129,6 @@ private void startBackup(String destinationFolder, String pathToFolder) {
  * mainDirectory (File) -  The main directory where the files and the folders would be created
  *
  */
-
 private void createStructure(List<ItemInfo> children, int i, File mainDirectory) {
     // Retrieve the info and creates folder if the repo path is folder
     List<ItemInfo> insideChildren = getItemInfo(children.get(i).getRepoPath(), mainDirectory)
@@ -160,14 +169,12 @@ private void createStructure(List<ItemInfo> children, int i, File mainDirectory)
  * mainDirectory (File) -  The main directory where the files and the folders would be created
  *
  */
-
 private void createFolder(RepoPath repoPath, File mainDirectory) {
     log.debug("Repo Path inside Create Folder : " + repoPath.getPath())
     File directory = new File(mainDirectory.getAbsolutePath() + "/" + repoPath.getPath())
     if (!directory.exists()) {
         directory.mkdirs()
     }
-
 }
 
 /**
@@ -178,7 +185,6 @@ private void createFolder(RepoPath repoPath, File mainDirectory) {
  * mainDirectory (File) -  The main directory where the files and the folders would be created
  *
  */
-
 private List<ItemInfo> getItemInfo(RepoPath repoPath, File mainDirectory) {
     log.debug("repoPath Get Path info: " + repoPath.getPath())
     if (repoPath.isFolder()) {
@@ -200,7 +206,6 @@ private List<ItemInfo> getItemInfo(RepoPath repoPath, File mainDirectory) {
  * mainDirectory (File) -  The main directory where the files and the folders would be created
  *
  */
-
 private void downloadFileFromRoot(File mainDirectory, RepoPath repoPath) {
     byte[] data = new byte[1024];
 
@@ -238,4 +243,3 @@ private void downloadFileFromRoot(File mainDirectory, RepoPath repoPath) {
             fos.close()
     }
 }
-
