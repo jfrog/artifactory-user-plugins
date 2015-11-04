@@ -68,7 +68,6 @@ class HttpSsoConfigTest extends Specification {
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
         conn.outputStream.write(backup)
-        assert conn.responseCode == 200
         conn.disconnect()
     }
 }

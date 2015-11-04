@@ -19,7 +19,6 @@ import groovy.json.JsonSlurper
 import org.artifactory.descriptor.security.sso.HttpSsoSettings
 import org.artifactory.resource.ResourceStreamHandle
 
-
 def propList = ['httpSsoProxied': [
         Boolean.class, 'boolean',
         { c, v -> c.httpSsoProxied = v ?: false }
