@@ -1,3 +1,5 @@
+import org.artifactory.exception.CancelException
+
 storage {
 
 	beforeCreate { item ->
@@ -10,7 +12,10 @@ storage {
 			// If the item doesn't contain the Maven Layout structure, reject the upload 
 			if ( "${groupId}" == "null" || "${artifactId}" == "null" || "${versionId}" == "null")
 			{ 
-				throw new CancelException("Artifact create not permitted without Maven Layout", 403) 
+				status = 403
+				message = 'This artifact did not match the layout.'
+				log.warn "This artifact did not match the layout"
+				throw new CancelException("This artifact did not match the layout")
 			}
 
 		} 
