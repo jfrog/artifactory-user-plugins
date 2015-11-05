@@ -31,7 +31,11 @@ storage {
                 status = 403
                 message = 'This artifact did not match the layout.'
                 log.warn message
-                throw new CancelException(message)
+                throw new CancelException(message) {
+                    public Throwable fillInStackTrace() {
+                        return this;
+                    }
+                }
             }
         }
     }
