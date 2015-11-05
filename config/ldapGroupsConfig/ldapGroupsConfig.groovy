@@ -47,7 +47,7 @@ def propList = ['name': [
         { c, v -> c.strategy = v ?: LdapGroupPopulatorStrategies.STATIC }
     ], 'enabledLdap': [
         CharSequence.class, 'string',
-        { c, v -> c.enabledLdap = v ?: null }]]
+        { c, v -> c.enabledLdap = v ?: ' ' }]]
 
 executions {
     getLdapGroupsList(version: '1.0', httpMethod: 'GET') { params ->
@@ -86,6 +86,7 @@ executions {
             descriptionAttribute: group.descriptionAttribute ?: null,
             strategy: strats[group.strategy],
             enabledLdap: group.enabledLdap ?: null]
+        if (json['enabledLdap'] ==~ '\\s+') json['enabledLdap'] = null
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
