@@ -21,7 +21,7 @@ Each member has the following fields:
 - `serverState`: The current state of the server. Value can be `"UNKNOWN"`,
   `"OFFLINE"`, `"STARTING"`, `"RUNNING"`, `"STOPPING"`, `"STOPPED"`, or
   `"CONVERTING"`.
-- `serverRole`: Server role. Value can be `"STANDALONE"`, `"PRIMARY"`, `"MEMBER"`, `"COPY"`
+- `serverRole`: Server role. Value can be `"Standalone"`, `"Primary"`, `"Member"`, `"Copy"`
 - `artifactoryVersion`: server Artifactory version
 
 
