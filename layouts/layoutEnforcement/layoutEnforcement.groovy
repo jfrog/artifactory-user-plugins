@@ -33,7 +33,7 @@ storage {
                 log.warn message
                 throw new CancelException(message) {
                     public Throwable fillInStackTrace() {
-                        return this;
+                        return null;
                     }
                 }
             }
