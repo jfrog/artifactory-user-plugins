@@ -28,7 +28,7 @@ class ProxiesConfigTest extends Specification {
             username: null, password: null,
             ntHost: null, domain: null,
             defaultProxy: false,
-            redirectedToHosts: ['rehost']]
+            redirectedToHosts: 'rehost']
         conn = new URL("$baseurl/addProxy").openConnection()
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)

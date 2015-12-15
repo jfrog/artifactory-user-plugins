@@ -34,7 +34,7 @@ returned JSON string has the following fields:
 - `ntHost`: The NTLM hostname of this machine.
 - `domain`: The domain/realm name.
 - `defaultProxy`: Whether this proxy is the default.
-- `redirectedToHosts`: An optional list of hosts the proxy might redirect to.
+- `redirectedToHosts`: An optional list of host names (separated by newline or comma) to which the proxy may redirect requests. The credentials of the proxy are reused by requests redirected to any of these hosts.
 
 For example:
 
@@ -49,10 +49,7 @@ $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/
     "ntHost": null,
     "domain": null,
     "defaultProxy": false,
-    "redirectedToHosts": [
-        "host1",
-        "host2"
-    ]
+    "redirectedToHosts": "host1,host2"
 }
 ```
 
@@ -87,7 +84,7 @@ $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "ntHost": null,
 > "domain": null,
 > "defaultProxy": false,
-> "redirectedToHosts": ["host1", "host2"]
+> "redirectedToHosts": "host1,host2"
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/addProxy'
 ```
 

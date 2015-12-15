@@ -45,8 +45,8 @@ def propList = ['key': [
         Boolean.class, 'boolean',
         { c, v -> c.defaultProxy = v ?: false }
     ], 'redirectedToHosts': [
-        Iterable.class, 'list',
-        { c, v -> c.redirectedToHosts = v?.join(',') ?: '' }]]
+        CharSequence.class, 'string',
+        { c, v -> c.redirectedToHosts = v ?: null }]]
 
 executions {
     getProxiesList(version: '1.0', httpMethod: 'GET') { params ->
@@ -79,7 +79,7 @@ executions {
             ntHost: proxy.ntHost ?: null,
             domain: proxy.domain ?: null,
             defaultProxy: proxy.defaultProxy ?: false,
-            redirectedToHosts: proxy.redirectedToHostsList]
+            redirectedToHosts: proxy.redirectedToHosts]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
