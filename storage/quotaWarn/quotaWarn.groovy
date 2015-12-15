@@ -34,9 +34,9 @@ def quotaCheck() {
     StorageService storageService = ContextHelper.get().beanForType(StorageService)
     MailService mailService = ContextHelper.get().beanForType(MailService)
     def storageQuotaInfo = storageService.getStorageQuotaInfo(0)
-    if (storageQuotaInfo.isLimitReached()) {
+    if (storageQuotaInfo?.isLimitReached()) {
         trySendMail(mailService, "[ERROR] ARTIFACTORY STORAGE QUOTA", storageQuotaInfo.getErrorMessage())
-    } else if (storageQuotaInfo.isWarningLimitReached()) {
+    } else if (storageQuotaInfo?.isWarningLimitReached()) {
         trySendMail(mailService, "[WARN] ARTIFACTORY STORAGE QUOTA", storageQuotaInfo.getWarningMessage())
     } else {
         sendingMailStrategy.reset()

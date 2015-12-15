@@ -1,5 +1,9 @@
 import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetup
+import org.jfrog.artifactory.client.ArtifactoryRequest
+import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
+import org.jfrog.artifactory.client.model.User
+import org.jfrog.artifactory.client.model.builder.UserBuilder
 
 import javax.mail.Address
 import javax.mail.internet.InternetAddress
@@ -18,25 +22,83 @@ import spock.lang.Specification
  */
 class QuotaWarnTest extends Specification {
 
+    Artifactory artifactory
+    String smtpHost = "localhost"
+    Integer smtpPort = 3025
+    String artUrl = "http://localhost:8088/artifactory"
+
     def 'test log sending quota warn emails'() {
         setup:
-        Artifactory artifactory = create("http://localhost:8088/artifactory", "admin", "password")
-        ServerSetup setup = new ServerSetup(3025, "localhost", "smtp");
+        artifactory = create(artUrl, "admin", "password")
+        ServerSetup setup = new ServerSetup(smtpPort, smtpHost, "smtp");
         GreenMail greenMail = new GreenMail(setup)
         greenMail.start()
-        // TODO : configure artifactory with the right quota and smtp server localhost:3025 and an admin email of admin@test.local
+
+        Integer pctUsedInt = getPctUsed()
+        String savedConfig = artifactory.system().configuration()
+        updateConfigurationWithMailAndQuota(savedConfig, pctUsedInt)
+        updateAdminEmail()
 
         when:
         greenMail.waitForIncomingEmail(15000, 1)
 
         then:
         def messages = greenMail.getReceivedMessages()
-        MimeMessage message = messages.find { MimeMessage message -> message.subject.contains('[WARN] ARTIFACTORY STORAGE QUOTA') }
+        MimeMessage message = messages.find { MimeMessage message ->
+            message.subject.contains('[WARN] ARTIFACTORY STORAGE QUOTA')
+        }
         assert message
         assert message.allRecipients.each { InternetAddress addr -> assert addr.address == 'admin@test.local' }
 
         cleanup:
-        greenMail.stop()
+        if (savedConfig) {
+            artifactory.system().configuration(savedConfig)
+        }
+        greenMail?.stop()
+    }
+
+    private void updateAdminEmail() {
+        UserBuilder userBuilder = artifactory.security().builders().userBuilder();
+        User user = userBuilder.name('admin').password('password').email("admin@test.local").admin(true).build();
+        artifactory.security().createOrUpdate(user);
+    }
+
+    private void updateConfigurationWithMailAndQuota(String savedConfig, int pctUsedInt) {
+        String conf = savedConfig.replace('</addons>',
+                """
+            </addons>
+            <mailServer>
+                <enabled>true</enabled>
+                <host>${smtpHost}</host>
+                <port>${smtpPort}</port>
+                <subjectPrefix>[Artifactory]</subjectPrefix>
+                <tls>false</tls>
+                <ssl>false</ssl>
+                <artifactoryUrl>${artUrl}</artifactoryUrl>
+            </mailServer>
+            """).replace('</virtualCacheCleanupConfig>',
+                """
+            </virtualCacheCleanupConfig>
+            <quotaConfig>
+                <enabled>true</enabled>
+                <diskSpaceLimitPercentage>90</diskSpaceLimitPercentage>
+                <diskSpaceWarningPercentage>${pctUsedInt}</diskSpaceWarningPercentage>
+            </quotaConfig>
+            """)
+        artifactory.system().configuration(conf)
+    }
+
+    private Integer getPctUsed() {
+        // TODO : when artifactory-java-client-services 1.2 is released, use artifactory.storage() instead of this call
+        ArtifactoryRequest storageRequest = new ArtifactoryRequestImpl()
+                .apiUrl("api/storageinfo")
+                .responseType(ArtifactoryRequest.ContentType.JSON)
+                .method(ArtifactoryRequest.Method.GET)
+        Map<String, Object> result = artifactory.restCall(storageRequest)
+        String pctUsedFullStr = result.fileStoreSummary.usedSpace
+        def pctUsed = pctUsedFullStr[pctUsedFullStr.indexOf('(') + 1..pctUsedFullStr.indexOf(',') - 1]
+        def pctUsedInt = (pctUsed as Integer) - 1
+        return pctUsedInt
     }
 
     def 'test sending mail limit strategy'() {
