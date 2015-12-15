@@ -15,7 +15,11 @@
  */
 
 import groovy.json.JsonBuilder
-import org.artifactory.storage.service.InternalStorageService
+import groovy.lang.MissingPropertyException
+// depending on the Artifactory version, InternalStorageService might be in
+// either of these locations
+import org.artifactory.storage.service.*
+import org.artifactory.storage.*
 
 import static org.artifactory.api.storage.StorageUnit.toReadableString
 import static org.artifactory.util.NumberFormatter.formatLong
@@ -47,10 +51,18 @@ executions {
         binSummary['artifactsCount'] = filet
         def storageType = fileStoreInfo.binariesStorageType.toString()
         fstoreSummary['storageType'] = storageType
-        def binariesFolders = fileStoreInfo.binariesFolders
-        def storageDirLabel = 'Filesystem storage is not used'
-        if (binariesFolders != null && !binariesFolders.isEmpty()) {
-            storageDirLabel = binariesFolders*.absolutePath.join(', ')
+        def storageDirLabel = null
+        try {
+            def binariesFolders = fileStoreInfo.binariesFolders
+            storageDirLabel = 'Filesystem storage is not used'
+            if (binariesFolders != null && !binariesFolders.isEmpty()) {
+                storageDirLabel = binariesFolders*.absolutePath.join(', ')
+            }
+        } catch (MissingPropertyException ex) {
+            def binariesFolder = fileStoreInfo.binariesFolder
+            if (binariesFolder != null) {
+                storageDirLabel = binariesFolder.absolutePath
+            }
         }
         fstoreSummary['storageDirectory'] = storageDirLabel
         fstoreSummary['totalSpace'] = totsp
@@ -65,7 +77,11 @@ executions {
             result['filesCount'] = repo.filesCount
             result['usedSpace'] = toReadableString(repo.usedSpace)
             result['itemsCount'] = repo.itemsCount
-            result['packageType'] = repo.type
+            try {
+                result['packageType'] = repo.type
+            } catch (MissingPropertyException ex) {
+                result['packageType'] = "Generic"
+            }
             def perc = Double.longBitsToDouble(repo.usedSpace) / totalSize
             result['percentage'] = formatPercentage(perc)
             repoSummaries += result
