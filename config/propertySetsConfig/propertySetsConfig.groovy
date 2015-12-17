@@ -113,8 +113,13 @@ def validateProps(props) {
                 throw new RuntimeException(err)
             } else v[2](pobj, prop[k])
         }
-        def valct = 0, defct = 0
+        def vallist = [:], valct = 0, defct = 0
         for (value in pobj.predefinedValues) {
+            if (vallist[value.value]) {
+                def err = "Property '${prop['name']}' cannot have more than one"
+                err += " predefined value with name '${value.value}'"
+                throw new RuntimeException(err)
+            } else vallist[value.value] = true
             if (value.isDefaultValue()) defct += 1
             valct += 1
         }
