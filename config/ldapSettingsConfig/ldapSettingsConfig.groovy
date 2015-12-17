@@ -21,6 +21,15 @@ import org.artifactory.descriptor.security.ldap.SearchPattern
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.util.AlreadyExistsException
 
+def rexurl = '^(?:(?:[lL][dD][aA][pP][sS]?)://)(?:\\S+(?::\\S*)?@)?(?:(?!10(' +
+    '?:\\.\\d{1,3}){3})(?!127(?:\\.\\d{1,3}){3})(?!169\\.254(?:\\.\\d{1,3}){' +
+    '2})(?!192\\.168(?:\\.\\d{1,3}){2})(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.' +
+    '\\d{1,3}){2})(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|' +
+    '2[0-4]\\d|25[0-5])){2}(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?' +
+    ':(?:[a-zA-Z\\u00a1-\\uffff0-9]+-?)*[a-zA-Z\\u00a1-\\uffff0-9]+)(?:\\.(?' +
+    ':[a-zA-Z\\u00a1-\\uffff0-9]+-?)*[a-zA-Z\\u00a1-\\uffff0-9]+)*(?:.(?:[a-' +
+    'zA-Z\\u00a1-\\uffff]{0,})))(?::\\d{2,5})?(?:/[^\\s]*)?$'
+
 def propList = ['key': [
         CharSequence.class, 'string',
         { c, v -> c.key = v ?: null }
@@ -141,11 +150,6 @@ executions {
             status = 400
             return
         }
-        def rexlld = '[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
-        def rextld = '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
-        def rexdom = "($rexlld\\.)*$rextld"
-        def rexip = '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+'
-        def rexurl = "ldaps?://($rexdom|$rexip)(:[0-9]+)?.*"
         if (!(json['ldapUrl'] ==~ rexurl)) {
             message = 'The LDAP URL must be a valid LDAP URL'
             status = 400
@@ -228,11 +232,6 @@ executions {
                 status = 400
                 return
             }
-            def rexlld = '[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
-            def rextld = '[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?'
-            def rexdom = "($rexlld\\.)*$rextld"
-            def rexip = '[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+'
-            def rexurl = "ldaps?://($rexdom|$rexip)(:[0-9]+)?.*"
             if (!(json['ldapUrl'] ==~ rexurl)) {
                 message = 'The LDAP URL must be a valid LDAP URL'
                 status = 400

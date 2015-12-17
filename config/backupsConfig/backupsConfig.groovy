@@ -19,6 +19,7 @@ import groovy.json.JsonSlurper
 import org.artifactory.descriptor.backup.BackupDescriptor
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.util.AlreadyExistsException
+import org.quartz.CronExpression
 
 def propList = ['key': [
         CharSequence.class, 'string',
@@ -50,6 +51,16 @@ def propList = ['key': [
     ], 'excludeNewRepositories': [
         Boolean.class, 'boolean',
         { c, v -> c.excludeNewRepositories = v ?: false }]]
+
+def validateCron(expr) {
+    if (!CronExpression.isValidExpression(expr)) return false
+    def date = new Date(System.currentTimeMillis())
+    try {
+        return new CronExpression(expr).getNextValidTimeAfter(date) != null
+    } catch (java.text.ParseException ex) {
+        return false
+    }
+}
 
 executions {
     getBackupsList(version: '1.0', httpMethod: 'GET') { params ->
@@ -127,7 +138,7 @@ executions {
             status = 400
             return
         }
-        if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+        if (!(json['key'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
             message = 'A backup key may not contain special characters'
             status = 400
             return
@@ -137,9 +148,7 @@ executions {
             status = 400
             return
         }
-        try {
-            new org.quartz.CronExpression(json['cronExp'])
-        } catch (java.text.ParseException ex) {
+        if (!validateCron(json['cronExp'])) {
             message = "Property 'cronExp' must be a valid cron expression"
             status = 400
             return
@@ -231,7 +240,7 @@ executions {
                 message = 'A backup key must not be empty'
                 status = 400
                 return
-            } else if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
+            } else if (!(json['key'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
                 message = 'A backup key may not contain special characters'
                 status = 400
                 return
@@ -248,9 +257,7 @@ executions {
                 status = 400
                 return
             }
-            try {
-                new org.quartz.CronExpression(json['cronExp'])
-            } catch (java.text.ParseException ex) {
+            if (!validateCron(json['cronExp'])) {
                 message = "Property 'cronExp' must be a valid cron expression"
                 status = 400
                 return

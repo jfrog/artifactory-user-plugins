@@ -57,10 +57,10 @@ def validateDefaults(dflts) {
             err += " is instead '${new JsonBuilder(dflt).toString()}'"
             throw new RuntimeException(err)
         }
-        if (!(dflt['value'] ==~ '[^\\s/\\\\:|?*"<>]+')) {
+        if (dflt['value'] ==~ '\\.\\.?|&|\\s*' ||
+            !(dflt['value'] ==~ '[^/\\\\:|?*"<>]+')) {
             def err = "Provided property default '${dflt['value']}' must not"
-            err += " be blank or contain whitespace or the"
-            err += " characters /\\:|?*\"<>"
+            err += ' be blank, or contain the characters /\\:|?*"<>'
             throw new RuntimeException(err)
         }
         def dobj = new PredefinedValue()
@@ -99,10 +99,9 @@ def validateProps(props) {
             err += " '${new JsonBuilder(prop).toString()}'"
             throw new RuntimeException(err)
         }
-        if (!(prop['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
-            err = 'A property name must begin with a letter, and only'
-            err += ' contain letters, digits, and "-" and "_" characters,'
-            err += " for property '${prop['name']}'"
+        if (!(prop['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
+            def err = 'A property name may not contain special characters, for'
+            err += " property '${prop['name']}'"
             throw new RuntimeException(err)
         }
         def pobj = new Property()
@@ -113,6 +112,21 @@ def validateProps(props) {
                 err += " should be a ${v[1]}"
                 throw new RuntimeException(err)
             } else v[2](pobj, prop[k])
+        }
+        def valct = 0, defct = 0
+        for (value in pobj.predefinedValues) {
+            if (value.isDefaultValue()) defct += 1
+            valct += 1
+        }
+        if (valct < 1 && pobj.isClosedPredefinedValues()) {
+            def err = "Property '${prop['name']}' must have at least one"
+            err += ' predefined value'
+            throw new RuntimeException(err)
+        }
+        if (defct > 1 && !pobj.isMultipleChoice()) {
+            def err = "Property '${prop['name']}' must not have more than one"
+            err += ' default predefined value'
+            throw new RuntimeException(err)
         }
         plist << pobj
     }
@@ -198,9 +212,8 @@ executions {
             status = 400
             return
         }
-        if (!(json['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
-            message = 'A property set name must begin with a letter, and only'
-            message += ' contain letters, digits, and "-" and "_" characters'
+        if (!(json['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
+            message = 'A property set name may not contain special characters'
             status = 400
             return
         }
@@ -272,9 +285,8 @@ executions {
                 message = 'A property set name must not be empty'
                 status = 400
                 return
-            } else if (!(json['name'] ==~ '[a-zA-Z][-_a-zA-Z0-9]*')) {
-                message = 'A property set name must begin with a letter, and'
-                message += ' only contain letters, digits, and "-" and "_"'
+            } else if (!(json['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
+                message = 'A property set name may not contain special'
                 message += ' characters'
                 status = 400
                 return
