@@ -242,6 +242,15 @@ executions {
             status = 400
             return
         }
+        def proplist = [:]
+        for (prop in propertySet.properties) {
+            if (proplist[prop.name]) {
+                message = "A property set cannot have more than one property"
+                message += " with name '${prop.name}'"
+                status = 400
+                return
+            } else proplist[prop.name] = true
+        }
         propertySet.visible = true
         def cfg = ctx.centralConfig.mutableDescriptor
         try {
@@ -323,6 +332,15 @@ executions {
             message = err
             status = 400
             return
+        }
+        def proplist = [:]
+        for (prop in propertySet.properties) {
+            if (proplist[prop.name]) {
+                message = "A property set cannot have more than one property"
+                message += " with name '${prop.name}'"
+                status = 400
+                return
+            } else proplist[prop.name] = true
         }
         ctx.centralConfig.descriptor = cfg
         status = 200
