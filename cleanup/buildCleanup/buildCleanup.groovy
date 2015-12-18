@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// curl -f -XPOST -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50&dryRun=1"
+// curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50|dryRun"
 
 executions {
     cleanBuilds() { params ->
