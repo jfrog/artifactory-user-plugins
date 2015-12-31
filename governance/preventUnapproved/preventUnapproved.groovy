@@ -18,14 +18,15 @@
  *
  * @author jbaruch
  * @since 20/08/12
+ * Modified 30-Dec-2015 by @markgalpin to use workflow.status property and to require all artifacts be passed through the workflow
  */
 
 download {
     altResponse { request, responseRepoPath ->
-        def artifactStatus = repositories.getProperties(responseRepoPath).getFirst('approver.status')
-        if (artifactStatus && artifactStatus != 'approved') {
+        def artifactStatus = repositories.getProperties(responseRepoPath).getFirst('workflow.status')
+        if (artifactStatus != 'PASSED') {
             status = 403
-            message = 'This artifact wasn\'t approved yet, please use the Approver application.'
+            message = 'This artifact wasn\'t approved yet, please use an approver status application.'
             log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!"
         }
     }

@@ -17,6 +17,8 @@
 import org.artifactory.exception.CancelException
 import org.artifactory.repo.*
 
+//modified so that only workflow.status being set to PASSED is protected
+
 storage {
     beforePropertyCreate { item, name, values ->
         checkPropChangeAuthorization(item, name, values)
@@ -28,11 +30,18 @@ storage {
 
 def checkPropChangeAuthorization(item, name, values) {
     def userName = 'admin'
+    def protectedProperty = 'workflow.status'
+    def protectedValue = 'PASSED'
+    log.error("name: "+name+ ";;; values: "+values)
     // the only user that can edit/delete existing properties is admin.
-    if (security.currentUsername != userName &&
-        repositories.hasProperty(item.repoPath, name)) {
-        log.info("User ${security.currentUsername} try to set the property" +
-                 " $name with value $values which is already set => Forbidden")
-        throw new CancelException("Property overloading of $name is forbidden")
-    }
+    if (name==protectedProperty) {
+    if (values[0] == protectedValue) {
+        if(security.currentUsername != userName) {
+            status = 403
+            log.error("User ${security.currentUsername} try to set the property" +
+                     " $name with value $values which is already set => Forbidden")
+            throw new CancelException("Property overloading of $name is forbidden",status)
+        } else log.error("valid user test")
+    } else log.error("unaffected value test")
+    } else log.error("unaffected property test")
 }
