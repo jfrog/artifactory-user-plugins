@@ -32,16 +32,15 @@ def checkPropChangeAuthorization(item, name, values) {
     def userName = 'admin'
     def protectedProperty = 'workflow.status'
     def protectedValue = 'PASSED'
-    log.error("name: "+name+ ";;; values: "+values)
     // the only user that can edit/delete existing properties is admin.
     if (name==protectedProperty) {
     if (values[0] == protectedValue) {
         if(security.currentUsername != userName) {
             status = 403
-            log.error("User ${security.currentUsername} try to set the property" +
+            log.info("User ${security.currentUsername} try to set the property" +
                      " $name with value $values which is already set => Forbidden")
             throw new CancelException("Property overloading of $name is forbidden",status)
-        } else log.error("valid user test")
-    } else log.error("unaffected value test")
-    } else log.error("unaffected property test")
+        } else log.debug("valid user test")
+    } else log.debug("unaffected value test")
+    } else log.debug("unaffected property test")
 }
