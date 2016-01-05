@@ -18,10 +18,10 @@ import org.artifactory.common.StatusHolder
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
-@Grapes(@Grab(group = 'org.bouncycastle', module = 'bcpg-jdk16', version = '1.46'))
 import org.bouncycastle.bcpg.ArmoredOutputStream
 import org.bouncycastle.bcpg.BCPGOutputStream
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.openpgp.operator.bc.*
 import org.bouncycastle.openpgp.*
 
 import java.io.ByteArrayOutputStream
@@ -159,15 +159,19 @@ class SimplePGPUtil {
 
             // as advertised, the .key file must have one and only one secret key within due
             // to the opinionated nature of the following call chain.
-            PGPSecretKey pgpSec = ((PGPSecretKey) ((PGPSecretKeyRing) new PGPSecretKeyRingCollection(
-                PGPUtil.getDecoderStream(secretKeyIn)).getKeyRings().next()).getSecretKeys().next())
+            def decodeStream = PGPUtil.getDecoderStream(secretKeyIn)
+            def keyringColl = new PGPSecretKeyRingCollection(decodeStream, new BcKeyFingerprintCalculator())
+            def pgpSec = keyringColl.getKeyRings().next().getSecretKeys().next()
 
-            PGPPrivateKey pgpPrivKey = pgpSec.extractPrivateKey(passphrase, "BC")
+            def digestCalc = new BcPGPDigestCalculatorProvider()
+            def descBuilder = new BcPBESecretKeyDecryptorBuilder(digestCalc).build(passphrase)
+            def pgpPrivKey = pgpSec.extractPrivateKey(descBuilder)
 
-            PGPSignatureGenerator signatureGenerator = new PGPSignatureGenerator(
-                pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC")
+            def algorithm = pgpSec.getPublicKey().getAlgorithm()
+            def signerBuilder = new BcPGPContentSignerBuilder(algorithm, PGPUtil.SHA1)
+            def signatureGenerator = new PGPSignatureGenerator(signerBuilder)
 
-            signatureGenerator.initSign(PGPSignature.BINARY_DOCUMENT, pgpPrivKey)
+            signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey)
 
             bcpgOut = new BCPGOutputStream(signatureFileOut)
 
