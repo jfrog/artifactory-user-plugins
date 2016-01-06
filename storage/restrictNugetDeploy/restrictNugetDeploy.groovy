@@ -1,15 +1,40 @@
+/*
+ * Copyright (C) 2015 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import com.sun.jersey.core.util.MultivaluedMapImpl
-import org.artifactory.addon.nuget.repomd.NuGetArtifactoryService
-import org.artifactory.addon.nuget.repomd.NuGetPackageWorkContext
 import org.artifactory.addon.nuget.rest.NuGetRequestContext
 import org.artifactory.addon.nuget.search.delegate.id.FindPackagesByIdFeedRequestDelegate
 import org.artifactory.exception.CancelException
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.repo.service.InternalRepositoryService
-import org.jfrog.repomd.nuget.rest.handler.NuGetLocalRepoHandler
-import org.jfrog.repomd.nuget.rest.request.NuGetSearchParameters
+import org.springframework.util.LinkedMultiValueMap
 
 import javax.ws.rs.core.*
+
+def ngsps3 = null, ngsps4 = null, nglrh = null, ngpwc = null, ngas = null
+try {
+    ngsps4 = org.jfrog.repomd.nuget.rest.request.NuGetSearchParameters.class
+} catch (MissingPropertyException ex) {
+    ngsps3 = org.artifactory.addon.nuget.search.NuGetSearchParameters.class
+}
+try {
+    nglrh = org.jfrog.repomd.nuget.rest.handler.NuGetLocalRepoHandler.class
+    ngpwc = org.artifactory.addon.nuget.repomd.NuGetPackageWorkContext.class
+    ngas = org.artifactory.addon.nuget.repomd.NuGetArtifactoryService.class
+} catch (MissingPropertyException ex) {}
 
 class FakeUriInfo implements UriInfo {
     MultivaluedMap<String,String> ps;
@@ -45,25 +70,40 @@ storage {
         def repoConf = repositories.getRepositoryConfiguration(item.repoKey)
         if (!repoConf.isEnableNuGetSupport()) return
         def layout = repositories.getLayoutInfo(item.repoPath)
-        def id  = null
+        def id = null
         if (layout.isValid()) id = layout.module
         else id = (item.name =~ '^(?:\\D[^.]*\\.)+')[0] - ~'\\.$'
         def repoService = ctx.beanForType(InternalRepositoryService.class)
-        def ps = new MultivaluedMapImpl()
-        ps.add('id', "'$id'")
+        def ps3 = new LinkedMultiValueMap()
+        def ps4 = new MultivaluedMapImpl()
+        ps3.add('id', "'$id'" as String)
+        ps4.add('id', "'$id'" as String)
         def context = new NuGetRequestContext()
-        context.uriInfo = new FakeUriInfo(ps)
-        context.nuGetSearchParameters = new NuGetSearchParameters(ps)
+        try {
+            context.uriInfo = new FakeUriInfo(ps)
+        } catch (MissingPropertyException ex) {}
+        if (ngsps4 != null) {
+            def params = [ps4] as Object[]
+            context.nuGetSearchParameters = ngsps4.newInstance(params)
+        } else {
+            def params = [ps3, ''] as Object[]
+            context.nuGetSearchParameters = ngsps3.newInstance(params)
+        }
         def delegate = new FindPackagesByIdFeedRequestDelegate(context)
         for (repoKey in repoKeys) {
             def response = null
             def repo = repoService.repositoryByKey(repoKey)
-            if (repo.isReal() && repo.isLocal()) {
+            if (repo.isReal() && repo.isLocal() && nglrh == null) {
+                response = delegate.handleRequestForLocalOrCache(repo)
+            } else if (repo.isReal() && repo.isLocal()) {
                 def repoPath = RepoPathFactory.create(repoKey)
-                def workContext = new NuGetPackageWorkContext(repoPath)
-                def newRepo = new NuGetArtifactoryService(workContext, repoKey)
+                def wcparams = [repoPath] as Object[]
+                def workContext = ngpwc.newInstance(wcparams)
+                def nrparams = [workContext, repoKey] as Object[]
+                def newRepo = ngas.newInstance(nrparams)
                 def uri = context.uriInfo
-                def localHandler = new NuGetLocalRepoHandler(newRepo, uri, null)
+                def lhparams = [newRepo, uri, null] as Object[]
+                def localHandler = nglrh.newInstance(lhparams)
                 response = localHandler.findPackagesById()
             } else if (repo.isReal()) {
                 response = delegate.handleRequestForRemote(repo)
