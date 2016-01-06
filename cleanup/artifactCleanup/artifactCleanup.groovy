@@ -40,7 +40,7 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
 
     long bytesFound = 0
     def artifactsCleanedUp =
-        searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos).
+        searches.artifactsNotDownloadedSince(monthsUntil, Calendar.getInstance(), repos).
             each {
                 bytesFound += repositories.getItemInfo(it)?.getSize()
                 if (dryRun) {
