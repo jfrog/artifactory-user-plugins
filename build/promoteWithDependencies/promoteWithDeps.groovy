@@ -72,8 +72,6 @@ executions {
         buildStartTime = getStringProperty(params, 'buildStartTime', false)
 
         bodyJson = new JsonSlurper().parse(body.inputStream)
-        promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
-                bodyJson.targetRepo, bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
 
         List<BuildRun> buildsRun = builds.getBuilds(buildName, buildNumber, buildStartTime)
         if (buildsRun.size() > 1) cancelPromotion('Found two matching build to promote, please provide build start time', null, 409)
@@ -90,30 +88,32 @@ executions {
                 depBuildName = buildDependencies.get(i).name
                 depBuildNumber = buildDependencies.get(i).number
                 depBuildStartTime = buildDependencies.get(i).started
+
+                promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
+                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, true, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
+
                 List<BuildRun> depBuildRun = builds.getBuilds(depBuildName, depBuildNumber, depBuildStartTime)
                 if (depBuildRun.size() > 1) cancelPromotion('Found two matching build to promote, please provide build start time', null, 409)
-                if (depBuildRun == null) cancelPromotion("Build $depBuildName/$depBuildNumber was not found, canceling promotion", null, 409)
+                if (depBuildRun == null || depBuildRun.size() == 0) cancelPromotion("Build $depBuildName/$depBuildNumber was not found, canceling promotion", null, 409)
                 DetailedBuildRun depStageBuild = builds.getDetailedBuild(depBuildRun)
                 try {
                     buildService.promoteBuild(depStageBuild, promotion)
-                } catch (IllegalStateException e) {
-                    info.log "error is promotiong build $depBuildName/$depBuildNumber"
-                    StatusHolder status = builds.deleteBuild(depStageBuild)
-                    if (status.error) {
-                        log.error "Rollback failed! Failed to delete $depStageBuild, error is $status.statusMsg", status.exception
-                    }
-                    cancelPromotion('Rolling back build promotion', "msg", 500)
+                } catch (Exception e) {
+                    log.info "error is promotiong build $depBuildName/$depBuildNumber"
+                    cancelPromotion("Rolling back build promotion", null, 500)
+
                 }
             }
         }
+
+
+        promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
+                getTargetRepo(bodyJson.targetRepo, buildName), bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
+
         try {
             buildService.promoteBuild(stageBuild, promotion)
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             info.log "error is promotiong build $depBuildName/$depBuildNumber"
-            StatusHolder status = builds.deleteBuild(depStageBuild)
-            if (status.error) {
-                log.error "Rollback failed! Failed to delete $releaseBuild, error is $status.statusMsg", status.exception
-            }
             cancelPromotion('Rolling back build promotion', cause, statusCode)
         }
         message = " Build  $buildName/$buildNumber has been successfully promoted"
@@ -134,3 +134,10 @@ def cancelPromotion(String message, Throwable cause, int errorLevel) {
     throw new CancelException(message, cause, errorLevel)
 }
 
+private String getTargetRepo(targetRepo, buildName) {
+    if (targetRepo instanceof String || targetRepo == null) {
+        return targetRepo
+    } else {
+        return targetRepo[buildName] ?: targetRepo.values()[0]
+    }
+}
