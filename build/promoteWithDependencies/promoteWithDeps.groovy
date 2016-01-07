@@ -4,6 +4,7 @@ import org.jfrog.build.api.release.Promotion
 import groovy.json.JsonSlurper
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.api.build.BuildService
+import org.artifactory.common.StatusHolder
 
 
 import java.lang.reflect.Array
@@ -90,11 +91,31 @@ executions {
                 depBuildNumber = buildDependencies.get(i).number
                 depBuildStartTime = buildDependencies.get(i).started
                 List<BuildRun> depBuildRun = builds.getBuilds(depBuildName, depBuildNumber, depBuildStartTime)
+                if (depBuildRun.size() > 1) cancelPromotion('Found two matching build to promote, please provide build start time', null, 409)
+                if (depBuildRun == null) cancelPromotion("Build $depBuildName/$depBuildNumber was not found, canceling promotion", null, 409)
                 DetailedBuildRun depStageBuild = builds.getDetailedBuild(depBuildRun)
-                buildService.promoteBuild(depStageBuild, promotion)
+                try {
+                    buildService.promoteBuild(depStageBuild, promotion)
+                } catch (IllegalStateException e) {
+                    info.log "error is promotiong build $depBuildName/$depBuildNumber"
+                    StatusHolder status = builds.deleteBuild(depStageBuild)
+                    if (status.error) {
+                        log.error "Rollback failed! Failed to delete $depStageBuild, error is $status.statusMsg", status.exception
+                    }
+                    cancelPromotion('Rolling back build promotion', "msg", 500)
+                }
             }
         }
-        buildService.promoteBuild(stageBuild, promotion)
+        try {
+            buildService.promoteBuild(stageBuild, promotion)
+        } catch (IllegalStateException e) {
+            info.log "error is promotiong build $depBuildName/$depBuildNumber"
+            StatusHolder status = builds.deleteBuild(depStageBuild)
+            if (status.error) {
+                log.error "Rollback failed! Failed to delete $releaseBuild, error is $status.statusMsg", status.exception
+            }
+            cancelPromotion('Rolling back build promotion', cause, statusCode)
+        }
         message = " Build  $buildName/$buildNumber has been successfully promoted"
         log.info message
         status = 200
@@ -112,3 +133,4 @@ def cancelPromotion(String message, Throwable cause, int errorLevel) {
     log.warn message
     throw new CancelException(message, cause, errorLevel)
 }
+
