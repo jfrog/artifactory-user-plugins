@@ -39,7 +39,8 @@ curl -X POST -uadmin:password http://localhost:8080/artifactory/api/plugins/exec
 ```
 
 ReqBody:
-```{
+```
+{
   "status": "Staged",
   "comment": "Tested on all target platforms.",
   "ciUser": "admin",
