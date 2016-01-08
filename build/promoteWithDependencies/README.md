@@ -12,6 +12,7 @@ buildNumber - Number of build to promote.
 buildStartTime - StartTime of build to promote (optional - in case you have mutliple version of same build.)
 
 ReqBody
+```
 {
  "status": "staged" // new build status (any string)
  "comment" : "Tested on all target platforms." // An optional comment describing the reason for promotion. Default: ""
@@ -29,13 +30,16 @@ ReqBody
  }
  "failFast": true // fail and abort the operation upon receiving an error. Default: true
 }
+```
 
 For example:
 
+```
 curl -X POST -uadmin:password http://localhost:8080/artifactory/api/plugins/execute/promoteWithDeps?params=buildName=maven-example|buildNumber=1
+```
 
 ReqBody:
-{
+```{
   "status": "Staged",
   "comment": "Tested on all target platforms.",
   "ciUser": "admin",
@@ -51,7 +55,7 @@ ReqBody:
   "dependencies": false,
   "failFast": true
 }
-
+```
 
 
 
