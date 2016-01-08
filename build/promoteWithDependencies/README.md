@@ -35,7 +35,7 @@ ReqBody
 For example:
 
 ```
-curl -X POST -uadmin:password http://localhost:8080/artifactory/api/plugins/execute/promoteWithDeps?params=buildName=maven-example|buildNumber=1
+curl -H "Content-Type:application/json" -X POST -d '{"status": "jms","comment": "Tested on all target platforms.",   "ciUser":"admin", "dryRun": false, "targetRepo": { "maven-example": "maven-demo", "Generic": "maven-demo-local",     "maven-example-bintray-info": "maven-example-bintray-info-local", "multi-module": "multi-module-local" }, "copy": true,   "artifacts": true,   "dependencies": false,   "failFast": true }' -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/promoteWithDeps?params=buildName=Generic|buildNumber=28"
 ```
 
 ReqBody:
