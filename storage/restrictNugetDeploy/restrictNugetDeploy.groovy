@@ -21,6 +21,7 @@ import org.artifactory.exception.CancelException
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.repo.service.InternalRepositoryService
 import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.util.UriComponentsBuilder
 
 import javax.ws.rs.core.*
 
@@ -80,7 +81,12 @@ storage {
         ps4.add('id', "'$id'" as String)
         def context = new NuGetRequestContext()
         try {
-            context.uriInfo = new FakeUriInfo(ps)
+            context.uriInfo = new FakeUriInfo(ps4)
+        } catch (MissingPropertyException ex) {}
+        try {
+            def compBuilder = UriComponentsBuilder.newInstance()
+            compBuilder.pathSegment('x')
+            context.uriComponents = compBuilder.build()
         } catch (MissingPropertyException ex) {}
         if (ngsps4 != null) {
             def params = [ps4] as Object[]
