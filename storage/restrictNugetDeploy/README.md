@@ -14,4 +14,5 @@ specified in an accompanying properties file.
 Properties
 ----------
 
-- `repos`: A list of repositories to check.
+- `filteredRepos`: A list of repositories that trigger a check on deploy.
+- `checkedRepos`: A list of repositories to check.

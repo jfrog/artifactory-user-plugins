@@ -66,8 +66,10 @@ storage {
         def cpath = "plugins/restrictNugetDeploy.properties"
         def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
         def config = new ConfigSlurper().parse(cfile.toURL())
-        def repoKeys = config.repos as String[]
-        if (!item || item.isFolder() || !item.name.endsWith('.nupkg')) return
+        def repoKeys = config.checkedRepos as String[]
+        def filtKeys = config.filteredRepos as String[]
+        if (!item || !(item.repoKey in filtKeys)) return
+        if (item.isFolder() || !item.name.endsWith('.nupkg')) return
         def repoConf = repositories.getRepositoryConfiguration(item.repoKey)
         if (!repoConf.isEnableNuGetSupport()) return
         def layout = repositories.getLayoutInfo(item.repoPath)
