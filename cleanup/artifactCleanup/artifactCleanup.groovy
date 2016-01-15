@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
+
 // curl command example for running this plugin.
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun=true"
 executions {
@@ -42,12 +44,16 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
     def artifactsCleanedUp =
         searches.artifactsNotDownloadedSince(monthsUntil, Calendar.getInstance(), repos).
             each {
-                bytesFound += repositories.getItemInfo(it)?.getSize()
-                if (dryRun) {
-                    log.info "Found $it"
-                } else {
-                    log.info "Deleting $it"
-                    repositories.delete it
+                try {
+                    bytesFound += repositories.getItemInfo(it)?.getSize()
+                    if (dryRun) {
+                        log.info "Found $it"
+                    } else {
+                        log.info "Deleting $it"
+                        repositories.delete it
+                    }
+                } catch (ItemNotFoundRuntimeException ex) {
+                    log.info "Item $it not found, may have already been deleted"
                 }
             }
 
