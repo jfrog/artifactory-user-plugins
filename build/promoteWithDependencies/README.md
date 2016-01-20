@@ -3,7 +3,7 @@ A REST executable build promotion.
 
 This plugin promotes a build and it's dependent builds. It does the following:
 
-First It will get list of dependent builds. Then It will promote all dependent builds one by one using Promote API of artifactory. After successfully promoting all dependent build it will promote master build itslef.
+First It will get list of dependent builds. Then It will promote all dependent builds one by one using Promote API of artifactory. After successfully promoting all dependent build it will promote master build itself.
 Notes: Requires Artifactory Pro.
 
 Parameters:
