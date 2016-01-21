@@ -58,6 +58,8 @@ ReqBody:
 }
 ```
 
+Note: This plugin is only supported in Artifactory version 4.0 or Later.
+
 
 
 
