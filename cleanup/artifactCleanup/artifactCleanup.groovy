@@ -42,8 +42,10 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
 
     long bytesFound = 0
     def artifactsCleanedUp =
-        searches.artifactsNotDownloadedSince(monthsUntil, Calendar.getInstance(), repos).
-            each {
+        searches.artifactsNotDownloadedSince(monthsUntil, Calendar.getInstance(), repos). each {
+            def created = Calendar.getInstance()
+            created.setTimeInMillis(repositories.getItemInfo(it)?.created)
+            if (monthsUntil.after(created)) {
                 try {
                     bytesFound += repositories.getItemInfo(it)?.getSize()
                     if (dryRun) {
@@ -56,6 +58,7 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
                     log.info "Item $it not found, may have already been deleted"
                 }
             }
+        }
 
     if (dryRun) {
         log.info "Dry run - nothing deleted. found $artifactsCleanedUp.size artifacts consuming $bytesFound bytes"
