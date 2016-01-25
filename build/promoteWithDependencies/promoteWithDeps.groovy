@@ -92,6 +92,7 @@ executions {
 
                 def jsonSlurper = new JsonSlurper()
                 def properties = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}")
+                properties.properties.putAll(bodyJson.properties);
 
                 promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
                         getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, true, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, properties.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
