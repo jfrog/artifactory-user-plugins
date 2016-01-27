@@ -120,7 +120,7 @@ executions {
             return
         }
         cfg.mailServer = smtp
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }

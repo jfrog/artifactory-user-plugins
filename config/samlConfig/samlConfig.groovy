@@ -105,7 +105,7 @@ executions {
             return
         }
         cfg.security.samlSettings = saml
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }

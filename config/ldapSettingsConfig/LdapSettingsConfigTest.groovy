@@ -27,13 +27,13 @@ class LdapSettingsConfigTest extends Specification {
             enabled: true,
             ldapUrl: 'ldap://localhost',
             userDnPattern: null,
-            searchFilter: null,
+            searchFilter: 'uid={0}',
             searchBase: null,
             searchSubTree: false,
             managerDn: null,
             managerPassword: null,
             autoCreateUser: false,
-            emailAttribute: null]
+            emailAttribute: 'mail']
         conn = new URL("$baseurl/addLdapSetting").openConnection()
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)

@@ -116,7 +116,7 @@ executions {
             status = 404
             return
         }
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 
@@ -155,6 +155,12 @@ executions {
             status = 400
             return
         }
+        if (!json['userDnPattern'] && !json['searchFilter']) {
+            message = 'LDAP settings should provide a userDnPattern'
+            message += ' or a searchFilter (or both)'
+            status = 400
+            return
+        }
         def err = null
         def setting = new LdapSetting()
         setting.search = new SearchPattern()
@@ -178,7 +184,7 @@ executions {
             status = 409
             return
         }
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 
@@ -254,7 +260,7 @@ executions {
             return
         }
         cfg.security.ldapSettingChanged(setting)
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }

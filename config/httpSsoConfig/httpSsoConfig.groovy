@@ -75,7 +75,7 @@ executions {
             return
         }
         cfg.security.httpSsoSettings = httpSso
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }

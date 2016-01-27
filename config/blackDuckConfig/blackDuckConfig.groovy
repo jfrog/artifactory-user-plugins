@@ -129,7 +129,7 @@ executions {
         }
         cfg.externalProvidersDescriptor = ext
         cfg.externalProvidersDescriptor.blackDuckSettingsDescriptor = bd
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }

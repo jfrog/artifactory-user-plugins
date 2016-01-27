@@ -98,7 +98,7 @@ executions {
             status = 404
             return
         }
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 
@@ -174,7 +174,7 @@ executions {
             status = 409
             return
         }
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 
@@ -268,7 +268,7 @@ executions {
             status = 400
             return
         }
-        ctx.centralConfig.descriptor = cfg
+        ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }
 }
