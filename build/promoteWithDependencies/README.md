@@ -59,6 +59,14 @@ ReqBody:
 ```
 
 Note: This plugin is only supported in Artifactory version 4.0 or Later.
+By default this plugin will add following two properties to all artifacts of child builds:
+```
+parent.buildName
+parent.buildNumber
+```
+which will help to search all artifacts promoted by parent build.
+
+
 
 
 
