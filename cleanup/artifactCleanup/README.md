@@ -44,6 +44,8 @@ Operation
 ---------
 
 - `stop`: When detected, the loop deleting artifacts is exited and the script ends.
+- `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest
+- `resume`: Resume normal execution
 - `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value.
 
 To control the plugin:
