@@ -141,7 +141,8 @@ executions {
             return
         }
         if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
-            message = 'A setting key may not contain special characters'
+            message = 'Name cannot be blank or contain spaces & special'
+            message += ' characters'
             status = 400
             return
         }
@@ -222,7 +223,8 @@ executions {
                 status = 400
                 return
             } else if (!(json['key'] ==~ '[_:a-zA-Z][-._:a-zA-Z0-9]*')) {
-                message = 'A setting key may not contain special characters'
+                message = 'Name cannot be blank or contain spaces & special'
+                message += ' characters'
                 status = 400
                 return
             } else if (json['key'] != key

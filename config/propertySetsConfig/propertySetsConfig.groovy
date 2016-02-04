@@ -100,8 +100,9 @@ def validateProps(props) {
             throw new RuntimeException(err)
         }
         if (!(prop['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
-            def err = 'A property name may not contain special characters, for'
-            err += " property '${prop['name']}'"
+            def err = "Property name '${prop['name']}' should start with a"
+            err += " letter and contain only letters, digits, '-' and '_'."
+            err += ' no spaces allowed.'
             throw new RuntimeException(err)
         }
         def pobj = new Property()
@@ -218,7 +219,8 @@ executions {
             return
         }
         if (!(json['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
-            message = 'A property set name may not contain special characters'
+            message = 'Property set name should start with a letter and contain'
+            message += " only letters, digits, '-' and '_'. no spaces allowed."
             status = 400
             return
         }
@@ -300,8 +302,9 @@ executions {
                 status = 400
                 return
             } else if (!(json['name'] ==~ '[_a-zA-Z][-_.a-zA-Z0-9]*')) {
-                message = 'A property set name may not contain special'
-                message += ' characters'
+                message = 'Property set name should start with a letter and'
+                message += " contain only letters, digits, '-' and '_'. no"
+                message += ' spaces allowed.'
                 status = 400
                 return
             } else if (json['name'] != name
