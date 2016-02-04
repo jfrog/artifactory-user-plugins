@@ -17,11 +17,21 @@
 replication {
     beforeFileReplication { localRepoPath ->
         if ((localRepoPath.getName().endsWith(".xml.gz") ||
-             localRepoPath.getName().equals("repomd.xml")) &&
-            (localRepoPath.getPath().contains("/repodata/") ||
-             localRepoPath.getPath().startsWith("repodata/"))) {
+                localRepoPath.getName().equals("repomd.xml")) &&
+                (localRepoPath.getPath().contains("/repodata/") ||
+                        localRepoPath.getPath().startsWith("repodata/"))) {
             log.info("Skipping replication of a file:" +
-                     " ${localRepoPath.getPath()} as it is a YUM metadata file")
+                    " ${localRepoPath.getPath()} as it is a YUM metadata file")
+            skip = true
+        }
+    }
+    beforeDeleteReplication { localRepoPath ->
+        if ((localRepoPath.getName().endsWith(".xml.gz") ||
+                localRepoPath.getName().equals("repomd.xml")) &&
+                (localRepoPath.getPath().contains("/repodata/") ||
+                        localRepoPath.getPath().startsWith("repodata/"))) {
+            log.info("Skipping replication of delete a file:" +
+                    " ${localRepoPath.getPath()} as it is a YUM metadata file")
             skip = true
         }
     }
