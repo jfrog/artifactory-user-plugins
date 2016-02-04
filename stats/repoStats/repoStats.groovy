@@ -42,7 +42,7 @@ executions {
                             repoPath: path,
                             count   : repositories.getArtifactsCount(repoPath),
                             size    : repositories.getArtifactsSize(repoPath),
-			    sizeUnit: "bytes"
+                            sizeUnit: "bytes"
                         ]
                     } else {
                         log.warn("The path $path does not exist")

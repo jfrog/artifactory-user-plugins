@@ -26,12 +26,12 @@ class RepoStatsTest extends Specification {
         then:
         json.stats[0].repoPath == 'libs-release-local/dir/path1'
         json.stats[0].count == 2
-        json.stats[0].size == '21'
-		json.stats[0].sizeUnit == "bytes"
+        json.stats[0].size == 21
+        json.stats[0].sizeUnit == "bytes"
         json.stats[1].repoPath == 'libs-release-local/dir/path2'
         json.stats[1].count == 1
-        json.stats[1].size == '10'
-		json.stats[1].sizeUnit == "bytes"
+        json.stats[1].size == 10
+        json.stats[1].sizeUnit == "bytes"
 
         cleanup:
         repo.delete('dir')
