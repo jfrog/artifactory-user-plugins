@@ -22,8 +22,12 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.BasicResponseHandler
 import org.artifactory.api.context.ContextHelper
 import org.artifactory.common.ArtifactoryHome
+import org.artifactory.rest.resource.system.SystemResource
+import org.artifactory.rest.resource.system.VersionResource
+import org.artifactory.rest.resource.task.TasksResource
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.util.HttpClientConfigurator
+import org.codehaus.jackson.map.ObjectMapper
 
 executions {
     routedGet(httpMethod: 'GET') { params ->
@@ -78,10 +82,7 @@ def genericRoutedGet(String serverId, String apiEndpoint) {
             targetServer = sserv.currentMember;
         }
     } else {
-        // TODO: get a URL of current server
-        //targetServer = this;
-        log.error("TODO: non-ha support is not implemented yet")
-        return
+        return getLocalResource(apiEndpoint)
     }
 
     StringBuilder url = new StringBuilder(targetServer.contextUrl);
@@ -135,4 +136,27 @@ private HttpClient createHttpClient(String host) {
                 .retry(0, false)
                 .getClient()
     }
+}
+
+def getLocalResource(resource) {
+    if (resource == "/api/system/info") {
+        def sys = ContextHelper.get().beanForType(SystemResource.class)
+        def resp = sys.systemInfo
+        def json = new ObjectMapper().writeValueAsString(resp.entity)
+        return [json, resp.status]
+    } else if (resource == "/api/system/license") {
+        def sys = ContextHelper.get().beanForType(SystemResource.class)
+        def resp = sys.licenseResource.licenseInfo
+        def json = new ObjectMapper().writeValueAsString(resp.entity)
+        return [json, resp.status]
+    } else if (resource == "/api/system/version") {
+        def sys = ContextHelper.get().beanForType(VersionResource.class)
+        def json = new ObjectMapper().writeValueAsString(sys.artifactoryVersion)
+        return [json, 200]
+    } else if (resource == "/api/tasks") {
+        def sys = ContextHelper.get().beanForType(TasksResource.class)
+        def json = new ObjectMapper().writeValueAsString(sys.activeTasks)
+        return [json, 200]
+    }
+    return ["Given resource '$resource' is not supported for non-HA.", 400]
 }
