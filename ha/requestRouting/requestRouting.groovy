@@ -24,7 +24,6 @@ import org.artifactory.api.context.ContextHelper
 import org.artifactory.common.ArtifactoryHome
 import org.artifactory.rest.resource.system.SystemResource
 import org.artifactory.rest.resource.system.VersionResource
-import org.artifactory.rest.resource.task.TasksResource
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.util.HttpClientConfigurator
 import org.codehaus.jackson.map.ObjectMapper
@@ -60,7 +59,7 @@ executions {
 }
 
 def genericRoutedGet(String serverId, String apiEndpoint) {
-    log.error("serverId: $serverId; apiEndpoint: $apiEndpoint")
+    log.debug("serverId: $serverId; apiEndpoint: $apiEndpoint")
 
     ArtifactoryServersCommonService sserv = ctx.beanForType(ArtifactoryServersCommonService.class)
     def server = sserv.allArtifactoryServers.find {
@@ -91,7 +90,7 @@ def genericRoutedGet(String serverId, String apiEndpoint) {
     }
 
     url.append(apiEndpoint);
-    log.error("Target URL: " + url.toString())
+    log.debug("Target URL: " + url.toString())
 
     HttpClient client = createHttpClient(url.toString())
     if (client == null) {
@@ -113,10 +112,10 @@ def genericRoutedGet(String serverId, String apiEndpoint) {
         ResponseHandler<String> handler = new BasicResponseHandler()
         String responseBody = handler.handleResponse(response)
 
-        log.error("Target Server response body: $responseBody")
+        log.debug("Target Server response body: $responseBody")
         return [responseBody, response.getStatusLine().getStatusCode()]
     } catch (HttpResponseException e) {
-        log.error("Target Server response body: $e.message")
+        log.debug("Target Server response body: $e.message")
         return [e.getMessage(), response.getStatusLine().getStatusCode()]
     }
 }
@@ -154,9 +153,15 @@ def getLocalResource(resource) {
         def json = new ObjectMapper().writeValueAsString(sys.artifactoryVersion)
         return [json, 200]
     } else if (resource == "/api/tasks") {
-        def sys = ContextHelper.get().beanForType(TasksResource.class)
-        def json = new ObjectMapper().writeValueAsString(sys.activeTasks)
-        return [json, 200]
+        try {
+            Class resourceClass = Class.forName("org.artifactory.rest.resource.task.TasksResource");
+            def sys = ContextHelper.get().beanForType(resourceClass)
+            def json = new ObjectMapper().writeValueAsString(sys.activeTasks)
+            return [json, 200]
+        } catch(ClassNotFoundException e) {
+            return ["Given resource '$resource' is not supported for this Artifactory version", 400]
+        }
+
     }
     return ["Given resource '$resource' is not supported for non-HA.", 400]
 }
