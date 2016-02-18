@@ -21,14 +21,53 @@ import org.artifactory.repo.RepoPathFactory
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor
 
 // usage: curl -X POST -u admin:password http://localhost:8088/artifactory/api/plugins/execute/yumCalculateAsync?params=path=yum-repository/path/to/dir
+// usage: curl -X POST -u admin:password http://localhost:8088/artifactory/api/plugins/execute/yumCalculateQuery?params=uid=1234
 
-def workerThread = ctx.beanForType(CachedThreadPoolTaskExecutor)
-def pmap = new HashMap()
-def umap = new HashMap()
-int nextUid = 0
+// a thread pool, for spawning threaded tasks
+def threadPool = ctx.beanForType(CachedThreadPoolTaskExecutor.class)
+// a global hash map, mapping paths to run uids
+// "repo-name/path/to/dir" -> [curr: "running uid", next: "enqueued uid"|null]
+// also used as the mutex controlling access to both pathMap and uidMap
+def pathMap = new HashMap()
+// a global hash map, mapping run uids to status and path values
+// "uid" -> [status: "current run status", path: "repo-name/path/to/dir"]
+def uidMap = new HashMap()
 
 executions {
     yumCalculateAsync(groups: ['indexers']) { params ->
+        // open a new thread, and run calculation for a uid, as well as any
+        // other uids that are queued for the same path
+        def beginCalc = { uid ->
+            threadPool.submit {
+                def myuid = uid
+                while (myuid != null) {
+                    def mypath = uidMap[myuid]['path']
+                    asSystem {
+                        def yumBean = ctx.beanForType(InternalYumAddon.class)
+                        def path = RepoPathFactory.create(mypath)
+                        yumBean.calculateYumMetadata(path)
+                    }
+                    // used for testing
+                    // try {
+                    //     Thread.sleep(10000)
+                    // } catch (InterruptedException ex) {
+                    //     Thread.currentThread().interrupt()
+                    // }
+                    synchronized (pathMap) {
+                        uidMap[myuid]['status'] = 'done'
+                        if (pathMap[mypath]['next'] == null) {
+                            pathMap.remove(mypath)
+                            myuid = null
+                        } else {
+                            myuid = pathMap[mypath]['next']
+                            pathMap[mypath]['next'] = null
+                            pathMap[mypath]['curr'] = myuid
+                            uidMap[myuid]['status'] = 'processing'
+                        }
+                    }
+                }
+            }
+        }
         String repPath = params?.get('path')?.get(0) as String
         if (!repPath) {
             status = 400
@@ -38,102 +77,70 @@ executions {
         def repoPath = RepoPathFactory.create(repPath)
         if (!repositories.exists(repoPath)) {
             status = 404
-            message = "Folder $repoPath.id to index YUM does not exist"
+            message = "Directory $repoPath.id does not exist"
             return
         }
         def dirDepth = repoPath.path.empty ? 0 : repoPath.path.split('/').length
         LocalRepositoryConfiguration repoConf
         repoConf = repositories.getRepositoryConfiguration(repoPath.repoKey)
+        if (repoConf.packageType != 'yum') {
+            status = 400
+            message = "Given repository $repoPath.repoKey not a YUM repository"
+            return
+        }
         if (repoConf.yumRootDepth != dirDepth) {
-            status = 403
+            status = 400
             message = "Given directory $repoPath.path not at YUM repository's"
             message += " configured depth"
             return
         }
         if (repoConf.calculateYumMetadata) {
-            status = 403
+            status = 400
             message = "YUM metadata is set to calculate automatically"
             return
         }
         def uid = null, startThread = false
         def rpath = repoPath.toPath()
-        synchronized (pmap) {
-            if (rpath in pmap && pmap[rpath]['next'] != null) {
-                uid = pmap[rpath]['next']
+        synchronized (pathMap) {
+            if (rpath in pathMap && pathMap[rpath]['next'] != null) {
+                uid = pathMap[rpath]['next']
             } else {
-                uid = (nextUid++)
-                while (uid in umap) {
-                    uid = (nextUid++)
-                }
-                umap[uid] = [done: false, path: rpath]
-                if (rpath in pmap) {
-                    pmap[rpath]['next'] = uid
+                uid = UUID.randomUUID()
+                if (rpath in pathMap) {
+                    uidMap[uid] = [status: 'enqueued', path: rpath]
+                    pathMap[rpath]['next'] = uid
                 } else {
-                    pmap[rpath] = [curr: uid, next: null]
-                    startThread = true
-                }
-            }
-        }
-        if (startThread) {
-            workerThread.submit {
-                def myuid = uid
-                while (myuid != null) {
-                    def mypath = umap[myuid]['path']
-                    asSystem {
-                        def yumBean = ctx.beanForType(InternalYumAddon.class)
-                        def path = RepoPathFactory.create(mypath)
-                        yumBean.calculateYumMetadata(path)
-                    }
-                    try {
-                        Thread.sleep(10000)
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt()
-                    }
-                    synchronized (pmap) {
-                        umap[myuid]['done'] = true
-                        if (pmap[mypath]['next'] == null) {
-                            pmap.remove(mypath)
-                            myuid = null
-                        } else {
-                            myuid = pmap[mypath]['next']
-                            pmap[mypath]['next'] = null
-                            pmap[mypath]['curr'] = myuid
-                        }
-                    }
+                    uidMap[uid] = [status: 'processing', path: rpath]
+                    pathMap[rpath] = [curr: uid, next: null]
+                    beginCalc(uid)
                 }
             }
         }
         status = 200
-        message = "{\"uid\":\"${Integer.toHexString(uid)}\"}"
+        message = "{\"uid\":\"$uid\"}"
     }
 
     yumCalculateQuery(groups: ['indexers']) { params ->
-        long luid = 0
         String uidstr = params?.get('uid')?.get(0) as String
         if (!uidstr) {
             status = 400
             message = "Need a uid parameter to check YUM metadata calculation"
             return
         }
+        def uid = null
         try {
-            luid = Long.parseLong(uidstr, 16)
-        } catch (NumberFormatException ex) {
+            uid = UUID.fromString(uidstr)
+        } catch (IllegalArgumentException ex) {
             status = 400
             message = "Given uid parameter is not a valid uid"
             return
         }
-        if (luid != (luid & (((long) 1 << Integer.SIZE) - 1))) {
-            status = 400
-            message = "Given uid is not a valid uid"
-            return
-        }
-        int uid = (int) luid
         def ret = null
-        synchronized (pmap) {
-            if (uid in umap) {
-                ret = umap[uid]['done']
-                if (ret == true) {
-                    umap.remove(uid)
+        synchronized (pathMap) {
+            if (uid in uidMap) {
+                ret = uidMap[uid]['status']
+                if (ret == 'done') {
+                    uidMap.remove(uid)
                 }
             }
         }
@@ -143,6 +150,10 @@ executions {
             return
         }
         status = 200
-        message = "{\"status\":\"${ret ? 'done' : 'pending'}\"}"
+        message = "{\"status\":\"$ret\"}"
+        if (ret == 'enqueued') {
+            def proc = pathMap[uidMap[uid]['path']]['curr']
+            message = "{\"status\":\"$ret\",\"processing\":\"$proc\"}"
+        }
     }
 }
