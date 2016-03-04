@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
+import groovy.json.JsonSlurper
+import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
 import org.apache.http.client.HttpResponseException
-import org.apache.http.client.ResponseHandler
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.BasicResponseHandler
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.HttpRequestBase
+import org.apache.http.entity.StringEntity
+import org.apache.http.util.EntityUtils
 import org.artifactory.api.context.ContextHelper
 import org.artifactory.common.ArtifactoryHome
+import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.rest.resource.system.SystemResource
 import org.artifactory.rest.resource.system.VersionResource
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
@@ -40,25 +45,39 @@ executions {
         (message, status) = genericRoutedGet(serverId, "/api/system/info")
     }
 
-    getTasks(httpMethod: 'GET') { params ->
-        def serverId = params?.get('serverId')?.get(0) as String
-        (message, status) = genericRoutedGet(serverId, "/api/tasks")
-    }
-
     getLicense(httpMethod: 'GET') { params ->
         def serverId = params?.get('serverId')?.get(0) as String
         (message, status) = genericRoutedGet(serverId, "/api/system/license")
     }
-
 
     getVersion(httpMethod: 'GET') { params ->
         def serverId = params?.get('serverId')?.get(0) as String
         (message, status) = genericRoutedGet(serverId, "/api/system/version")
     }
 
+    updateLicense(version: '1.0') { params, ResourceStreamHandle body ->
+        def bodyText = body.inputStream.text
+        def serverId = params?.get('serverId')?.get(0) as String
+        (message, status) = genericRoutedPost(serverId, "/api/system/license", bodyText)
+    }
+
 }
 
 def genericRoutedGet(String serverId, String apiEndpoint) {
+    genericRoutedCall(serverId, apiEndpoint, new HttpGet())
+}
+
+def genericRoutedPost(String serverId, String apiEndpoint, String body) {
+    def entity = new StringEntity(body)
+    entity.setContentType("application/json");
+
+    def post = new HttpPost()
+    post.setEntity(entity)
+
+    genericRoutedCall(serverId, apiEndpoint, post)
+}
+
+def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base) {
     log.debug("serverId: $serverId; apiEndpoint: $apiEndpoint")
 
     ArtifactoryServersCommonService sserv = ctx.beanForType(ArtifactoryServersCommonService.class)
@@ -97,34 +116,32 @@ def genericRoutedGet(String serverId, String apiEndpoint) {
         return
     }
 
-    HttpGet method = new HttpGet(url.toString());
-
+    base.setURI(URI.create(url.toString()));
     def headerValue = org.artifactory.request.RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("authorization")
     if (headerValue == null) {
         return;
     }
 
-    method.addHeader("authorization", headerValue);
-
-    HttpResponse response = client.execute(method);
+    base.addHeader("authorization", headerValue);
 
     try {
-        ResponseHandler<String> handler = new BasicResponseHandler()
-        String responseBody = handler.handleResponse(response)
-
+        HttpResponse response = client.execute(base);
+        String responseBody = EntityUtils.toString(response.getEntity())
+        if(response.getStatusLine().statusCode == 400) {
+            log.error("Target Server error response: $responseBody")
+            message = new JsonSlurper().parseText(responseBody).message
+            return [message, response.getStatusLine().getStatusCode()]
+        }
         log.debug("Target Server response body: $responseBody")
         return [responseBody, response.getStatusLine().getStatusCode()]
-    } catch (HttpResponseException e) {
-        log.debug("Target Server response body: $e.message")
-        return [e.getMessage(), response.getStatusLine().getStatusCode()]
+    } catch (IOException ioe) {
+        log.error("Target Server error respons: $ioe.message")
+        return [ioe.getMessage(), 500]
     }
 }
 
 private HttpClient createHttpClient(String host) {
-
     org.artifactory.api.security.UserGroupService userGroupService = ContextHelper.get().beanForType(org.artifactory.api.security.UserGroupService.class)
-
-    String currentUsername = userGroupService.currentUsername();
 
     def user = userGroupService.currentUser()
     if (user != null) {
@@ -152,16 +169,6 @@ def getLocalResource(resource) {
         def sys = ContextHelper.get().beanForType(VersionResource.class)
         def json = new ObjectMapper().writeValueAsString(sys.artifactoryVersion)
         return [json, 200]
-    } else if (resource == "/api/tasks") {
-        try {
-            Class resourceClass = Class.forName("org.artifactory.rest.resource.task.TasksResource");
-            def sys = ContextHelper.get().beanForType(resourceClass)
-            def json = new ObjectMapper().writeValueAsString(sys.activeTasks)
-            return [json, 200]
-        } catch(ClassNotFoundException e) {
-            return ["Given resource '$resource' is not supported for this Artifactory version", 400]
-        }
-
     }
     return ["Given resource '$resource' is not supported for non-HA.", 400]
 }
