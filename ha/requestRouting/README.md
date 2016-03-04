@@ -33,3 +33,18 @@ For example:
 $ curl -u admin:password \
  'http://localhost:8081/artifactory/api/plugins/execute/routedGet?params=serverId=ha_artifactory_1_1|apiEndpoint=api/plugins/execute/haClusterDump'
 ```
+
+
+Update licence for node
+-----
+Updates licence for specified node in HA cluster.
+
+The `serverId` parameter is optional. If it is not specified,
+the request is not redirected, i.e. it's handled by current server.
+
+Usage:
+
+```
+$ curl -X POST -u admin:password \
+ -d '{"licenseKey":"licence key here"}' 'http://localhost:8081/artifactory/api/plugins/execute/updateLicense?params=serverId=ha_artifactory_1_2'
+```
