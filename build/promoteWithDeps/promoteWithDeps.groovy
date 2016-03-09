@@ -95,7 +95,7 @@ executions {
                 properties.properties.putAll(bodyJson.properties);
 
                 promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
-                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, true, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, properties.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
+                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, bodyJson.copy, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, properties.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
 
                 List<BuildRun> depBuildRun = builds.getBuilds(depBuildName, depBuildNumber, depBuildStartTime)
                 if (depBuildRun.size() > 1) cancelPromotion('Found two matching build to promote, please provide build start time', null, 409)
@@ -139,10 +139,12 @@ def cancelPromotion(String message, Throwable cause, int errorLevel) {
     throw new CancelException(message, cause, errorLevel)
 }
 
-private String getTargetRepo(targetRepo, buildName) {
+private String getTargetRepo(def targetRepo, String depBuildName) {
     if (targetRepo instanceof String || targetRepo == null) {
         return targetRepo
     } else {
-        return targetRepo[buildName] ?: targetRepo.values()[0]
+        def depTargetRepo = targetRepo[depBuildName]
+	log.warn "Found target repo $depTargetRepo for build $depBuildName"
+	return depTargetRepo 
     }
 }
