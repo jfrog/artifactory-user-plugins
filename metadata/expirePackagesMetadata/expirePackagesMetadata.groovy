@@ -30,7 +30,7 @@ class CacheConstants {
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
-            if (repoPath.path.endsWith("PACKAGES.gz")){
+            if (repoPath.path.endsWith("PACKAGES.gz") || repoPath.path.endsWith("Packages.gz")){
                 log.warn 'DEBUG: Expiring PACKAGES.gz'
                 expired = true
             } else {
