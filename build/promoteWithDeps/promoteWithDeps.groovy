@@ -89,13 +89,12 @@ executions {
                 depBuildName = buildDependencies.get(i).name
                 depBuildNumber = buildDependencies.get(i).number
                 depBuildStartTime = buildDependencies.get(i).started
-
                 def jsonSlurper = new JsonSlurper()
-                def properties = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}")
-                properties.properties.putAll(bodyJson.properties);
+                def props = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}");
+                bodyJson.putAll(props);
 
                 promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
-                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, bodyJson.copy, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, properties.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
+                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, bodyJson.copy, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
 
                 List<BuildRun> depBuildRun = builds.getBuilds(depBuildName, depBuildNumber, depBuildStartTime)
                 if (depBuildRun.size() > 1) cancelPromotion('Found two matching build to promote, please provide build start time', null, 409)
