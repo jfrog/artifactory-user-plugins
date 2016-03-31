@@ -100,9 +100,9 @@ executions {
                 depBuildName = buildDependencies.get(i).name
                 depBuildNumber = buildDependencies.get(i).number
                 depBuildStartTime = buildDependencies.get(i).started
-                def jsonSlurper = new JsonSlurper()
-                def props = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}");
-                bodyJson.putAll(props);
+//                def jsonSlurper = new JsonSlurper()
+//                def props = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}");
+//                bodyJson.putAll(props);
 
 //                promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
 //                        getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, bodyJson.copy == null ? false : bodyJson.copy, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
@@ -140,24 +140,24 @@ executions {
                 def version = layoutinfo.getBaseRevision()
                 def artifactId = layoutinfo.getModule()
                 def fileversion = layoutinfo.getFileIntegrationRevision()
-                if(fileversion != null && fileversion.length() > 0) version += "-" + fileversion
-                def AGV = ["groupId": groupId, "artifactId": artifactId, "version": fileversion]
+                if(fileversion != null && fileversion.length() > 0) {
+                    version += "-" + fileversion}
+                def AGV = ["groupId": groupId, "artifactId": artifactId, "version": version]
                 artifactListAGV.addAll(AGV)
             }
         }
 
         def builder = new groovy.json.JsonBuilder(artifactListAGV)
-                        log.info "value is  $builder"
                         new File('buildinfo.json').withWriter('utf-8') {
                             writer -> writer.append("$builder")
                         }
 
 
-        promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
-                getTargetRepo(bodyJson.targetRepo, buildName), bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
+//        promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
+//                getTargetRepo(bodyJson.targetRepo, buildName), bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
 
         try {
-            buildService.promoteBuild(stageBuild, promotion)
+//            buildService.promoteBuild(stageBuild, promotion)
         } catch (Exception e) {
             info.log "error is promotiong build $depBuildName/$depBuildNumber"
             cancelPromotion('Rolling back build promotion', cause, statusCode)
