@@ -1,0 +1,5 @@
+com/jfrog/maven/plugins/pomwithdeps/utils/HttpUtil$PreemptiveAuth.class
+com/jfrog/maven/plugins/pomwithdeps/Dependency.class
+com/jfrog/maven/plugins/pomwithdeps/utils/HttpUtil.class
+com/jfrog/maven/plugins/pomwithdeps/utils/URI.class
+com/jfrog/maven/plugins/pomwithdeps/PomWithDepsMojo.class
