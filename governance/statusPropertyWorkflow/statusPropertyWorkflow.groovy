@@ -21,7 +21,7 @@ import org.artifactory.addon.blackduck.service.BlackDuckService
 import org.artifactory.addon.blackduck.service.impl.BlackDuckRequestInfo
 import org.artifactory.addon.blackduck.service.impl.BlackDuckUpdateResult
 import org.artifactory.addon.blackduck.service.impl.BlackDuckUtils
-import org.artifactory.addon.wicket.BlackDuckWebAddon
+import org.artifactory.addon.blackduck.BlackDuckAddon
 import org.artifactory.api.license.LicenseInfo
 import org.artifactory.api.module.ModuleInfo
 import org.artifactory.api.repo.RepositoryService
@@ -144,8 +144,8 @@ jobs {
     // Create the pending CC requests for all NEW artifacts
     createCodeCenterRequests(interval: 300000, delay: 300000) {
         AddonsManager addonsManager = ctx.beanForType(AddonsManager.class)
-        BlackDuckWebAddon blackDuckWebAddon = addonsManager.addonByType(BlackDuckWebAddon.class)
-        if (!blackDuckWebAddon.isEnableIntegration()) {
+        BlackDuckAddon blackDuckAddon = addonsManager.addonByType(BlackDuckAddon.class)
+        if (!blackDuckAddon.isEnableIntegration()) {
             log.error "Blackduck integration configuration not done!"
             return
         }
