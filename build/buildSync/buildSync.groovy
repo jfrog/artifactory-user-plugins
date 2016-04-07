@@ -163,8 +163,8 @@ executions {
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PullConfig pullConf = baseConf.pullConfigs[confKey]
             def res = doSync(
-                new RemoteBuildService(pullConf.source, log),
-                new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins),
+                new RemoteBuildService(pullConf.source, log, baseConf.ignoreStartDate),
+                new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins, baseConf.ignoreStartDate),
                 pullConf.buildNames,
                 pullConf.delete, max, force
             )
@@ -199,13 +199,13 @@ executions {
                 return
             }
             PushConfig pushConf = baseConf.pushConfigs[confKey]
-            def localBuildService = new LocalBuildService(ctx, log, false, false)
+            def localBuildService = new LocalBuildService(ctx, log, false, false, baseConf.ignoreStartDate)
 
             List<String> res = []
             pushConf.destinations.each { destServer ->
                 res.addAll(doSync(
                     localBuildService,
-                    new RemoteBuildService(destServer, log),
+                    new RemoteBuildService(destServer, log, baseConf.ignoreStartDate),
                     pushConf.buildNames,
                     pushConf.delete, 0, false
                 ))
@@ -234,14 +234,14 @@ build {
         if (!baseConfHolder.errors) {
             baseConf.eventPushConfigs.each { PushConfig pushConf ->
                 pushConf.buildNames.each { String buildNameFilter ->
-                    pushIfMatch(buildRun as DetailedBuildRunImpl, pushConf, buildNameFilter)
+                    pushIfMatch(buildRun as DetailedBuildRunImpl, pushConf, buildNameFilter, baseConf.ignoreStartDate)
                 }
             }
         }
     }
 }
 
-def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String buildNameFilter) {
+def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String buildNameFilter, ignoreStartDate) {
     String buildName = buildRun.name
     log.debug "Checking if ${buildRun.name} match $buildNameFilter"
     boolean match
@@ -254,7 +254,7 @@ def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String build
         pushConf.destinations.each { Server server ->
             try {
                 log.debug "Pushing ${buildRun.name}:${buildRun.number} to ${server.url}"
-                def rbs = new RemoteBuildService(server, log)
+                def rbs = new RemoteBuildService(server, log, ignoreStartDate)
                 rbs.addBuild(buildRun.build)
             } catch (Exception e) {
                 log.error(
@@ -306,9 +306,12 @@ abstract class BuildListBase {
     def comparator = new Comparator<BuildRun>() {
         @Override
         int compare(BuildRun o1, BuildRun o2) {
-            int i = o1.getStartedDate().compareTo(o2.getStartedDate())
-            if (i != 0) {
-                return i
+            int i
+            if (!ignoreStartDate) {
+                i = o1.getStartedDate().compareTo(o2.getStartedDate())
+                if (i != 0) {
+                    return i
+                }
             }
             i = o1.getName().compareTo(o2.getName())
             if (i != 0) {
@@ -318,9 +321,13 @@ abstract class BuildListBase {
         }
     }
     def log
+    boolean ignoreStartDate = false
     private NavigableSet<BuildRun> _allLatestBuilds = null
 
-    BuildListBase(log) { this.log = log }
+    BuildListBase(log, ignoreStartDate) {
+        this.log = log
+        this.ignoreStartDate = ignoreStartDate as boolean
+    }
 
     NavigableSet<BuildRun> getAllLatestBuilds() {
         if (_allLatestBuilds == null) {
@@ -331,6 +338,22 @@ abstract class BuildListBase {
 
     abstract NavigableSet<BuildRun> loadAllBuilds()
 
+    protected BuildRun createBuildRunFromJson(String name, String number, String started) {
+        if (ignoreStartDate && number != "LATEST") {
+            new BuildRunImpl(name, number, "");
+        } else {
+            new BuildRunImpl(name, number, started);
+        }
+    }
+
+    protected BuildRun createBuildRunFromDetailed(BuildRun br) {
+        if (ignoreStartDate) {
+            new BuildRunImpl(br.getName(), br.getNumber(), "");
+        } else {
+            new BuildRunImpl(br.getName(), br.getNumber(), br.getStarted());
+        }
+    }
+
     NavigableSet<BuildRun> filterBuildNames(List<String> buildNames) {
         NavigableSet<BuildRun> result = new TreeSet<>(comparator)
         buildNames.each { String buildName ->
@@ -339,7 +362,7 @@ abstract class BuildListBase {
             } else {
                 BuildRun found = getAllLatestBuilds().find { it.name == buildName }
                 if (!found) {
-                    found = new BuildRunImpl(buildName, "", "")
+                    found = createBuildRunFromJson(buildName, "", "")
                 }
                 result << found
             }
@@ -366,8 +389,8 @@ class RemoteBuildService extends BuildListBase {
     StatusLine lastFailure = null
     int majorVersion, minorVersion
 
-    RemoteBuildService(Server server, log) {
-        super(log)
+    RemoteBuildService(Server server, log, ignoreStartDate) {
+        super(log, ignoreStartDate)
         this.server = server
         http = new HTTPBuilder(server.url)
         // http.auth.basic(server.user, server.password)
@@ -407,10 +430,10 @@ class RemoteBuildService extends BuildListBase {
         log.info "Getting all builds from ${server.url}api/build"
         http.get(contentType: JSON, path: 'api/build') { resp, json ->
             json.builds.each { b ->
-                result << new BuildRunImpl(
-                    HttpUtils.decodeUri(b.uri.substring(1)),
+                result << createBuildRunFromJson(
+                    HttpUtils.decodeUri(b.uri.substring(1)) as String,
                     "LATEST",
-                    b.lastStarted)
+                    b.lastStarted as String)
             }
         }
         if (lastFailure != null) {
@@ -433,9 +456,9 @@ class RemoteBuildService extends BuildListBase {
         log.info "Getting all build numbers from ${server.url}api/build/$buildName"
         http.get(contentType: JSON, path: "api/build/$buildName") { resp, json ->
             json.buildsNumbers.each { b ->
-                result << new BuildRunImpl(buildName,
+                result << createBuildRunFromJson(buildName,
                     HttpUtils.decodeUri(b.uri.substring(1)),
-                    b.started)
+                    b.started as String)
             }
         }
         if (lastFailure != null) {
@@ -518,8 +541,8 @@ class LocalBuildService extends BuildListBase {
     boolean reinsert
     boolean activatePlugins
 
-    LocalBuildService(ctx, log, reinsert, activatePlugins) {
-        super(log)
+    LocalBuildService(ctx, log, reinsert, activatePlugins, ignoreStartDate) {
+        super(log, ignoreStartDate)
         dbService = ctx.beanForType(DbService.class)
         addonsManager = ctx.beanForType(AddonsManager.class)
         pluginsAddon = addonsManager.addonByType(PluginsAddon.class)
@@ -533,7 +556,7 @@ class LocalBuildService extends BuildListBase {
     NavigableSet<BuildRun> loadAllBuilds() {
         def res = new TreeSet<BuildRun>(comparator)
         res.addAll(buildStoreService.getLatestBuildsByName().collect {
-            new BuildRunImpl(it.name, "LATEST", it.started)
+            createBuildRunFromJson(it.name, "LATEST", it.started)
         })
         log.info "Found ${res.size()} builds locally"
         res
@@ -542,7 +565,7 @@ class LocalBuildService extends BuildListBase {
     @Override
     NavigableSet<BuildRun> getBuildNumbers(String buildName) {
         def res = new TreeSet<BuildRun>(comparator)
-        res.addAll(buildStoreService.findBuildsByName(buildName).collect { new BuildRunImpl(it) })
+        res.addAll(buildStoreService.findBuildsByName(buildName).collect { createBuildRunFromDetailed(it) })
         log.info "Found ${res.size()} local builds named $buildName"
         res
     }
@@ -645,6 +668,7 @@ class BaseConfigurationHolder {
 }
 
 class BaseConfiguration {
+    boolean ignoreStartDate = false
     Map<String, Server> servers = [:]
     Map<String, PullConfig> pullConfigs = [:]
     Map<String, PushConfig> pushConfigs = [:]
@@ -655,6 +679,7 @@ class BaseConfiguration {
         try {
             reader = new FileReader(confFile)
             def slurper = new JsonSlurper().parse(reader)
+            ignoreStartDate = slurper.ignoreStartDate as boolean
             slurper.servers.each {
                 def s = new Server(it)
                 log.info "Adding Server ${s.key} : ${s.url}"
