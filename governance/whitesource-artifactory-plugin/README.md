@@ -43,3 +43,13 @@ Examples:
 "0 42 10 * * ?" - Build a trigger that will fire daily at 10:42 am.
 "0 0/2 8-17 * * ?" - Build a trigger that will fire every other minute, 
 between 8am and 5pm, every day. 
+
+Properties File:
+================
+1. checkPolicies parameter - whether or not to send the check policies 
+   request to WhiteSource (true/false).
+2. apiKey - unique identifier of the organization, can be retrieved from 
+   the admin page in your WhiteSource account.
+3. repoKeys - The list of the repositories names to scan.
+4. wssUrl - URL to send the request, defaults to 
+   "https://www.whitesourcesoftware.com/agent".
