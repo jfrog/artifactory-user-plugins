@@ -1,101 +1,40 @@
 {
+    "ignoreStartDate": true,
     "servers": [
         {
             "key": "local-1",
-            "url": "http://localhost:8080/artifactory",
-            "user": "admin",
-            "password": "password"
-        },
-        {
-            "key": "local-2",
             "url": "http://localhost:8081/artifactory",
-            "user": "admin",
-            "password": "password"
+            "user": "sync",
+            "password": "AKCp2UNCd8uK7hQoxZnszftnogpgLcjo2EVFaFE4PGtRHnAcBHr43H7nJmWb4JhVUqBwa2iwX"
         },
         {
-            "key": "local-3",
-            "url": "http://localhost:8082/artifactory",
-            "user": "admin",
-            "password": "password"
+            "key": "art-us",
+            "url": "https://artifactory-us.jfrog.info/artifactory",
+            "user": "sync",
+            "password": "AKCp2UNCd7wqJLNMF7teKBWL7MeWRBuXLQRWQ2cxrCw6WbEHZrjVXYP6HyDoLYHTxqiSgbirQ"
         },
         {
-            "key": "us-east",
-            "url": "http://us-east.acme.com/artifactory",
-            "user": "buildSynchronizer",
-            "password": "XXXXXXX"
-        },
-        {
-            "key": "us-west",
-            "url": "http://us-west.acme.com/artifactory",
-            "user": "buildSynchronizer",
-            "password": "XXXXXXX"
-        },
-        {
-            "key": "eu-west",
-            "url": "http://eu-west.acme.com/artifactory",
-            "user": "buildSynchronizer",
-            "password": "XXXXXXX"
-        },
-        {
-            "key": "asia-east",
-            "url": "http://asia-east.acme.com/artifactory",
-            "user": "buildSynchronizer",
-            "password": "XXXXXXX"
+            "key": "gcart-us",
+            "url": "https://gcartifactory-us.jfrog.info/artifactory",
+            "user": "sync",
+            "password": "AKCp2UNCd7xAH5guHik92Ctdtdxw4utwkfsdcTPxxNNiD1UwdB8ft44yHwk4AmpHdM7uVkYzy"
         }
     ],
     "pullConfigs": [
         {
-            "key": "TychoFrom2",
-            "source": "local-2",
-            "buildNames": ["Tycho.*"],
+            "key": "GCMaven",
+            "source": "gcart-us",
+            "buildNames": ["[Mm]aven.*"],
             "delete": false,
             "activatePlugins": true,
             "reinsert": false
-        },
-        {
-            "key": "AllFrom2",
-            "source": "local-2",
-            "buildNames": [".*"],
-            "delete": true
-        },
-        {
-            "key": "AllFrom3",
-            "source": "local-3",
-            "buildNames": [".*"],
-            "delete": false
-        },
-        {
-            "key": "ABRelease",
-            "source": "us-east",
-            "buildNames": ["productA :: nightly-release", "productB :: nightly-release"],
-            "delete": true
-        },
-        {
-            "key": "AllTest",
-            "source": "asia-east",
-            "buildNames": [".*"],
-            "delete": false
         }
     ],
     "pushConfigs": [
         {
-            "key": "PushAllTo3",
-            "destinations": ["local-3"],
+            "key": "PushAllTo8080",
+            "destinations": ["local-1"],
             "buildNames": [".*"],
-            "delete": true,
-            "activateOnSave": true
-        },
-        {
-            "key": "ABPush",
-            "destinations": ["us-west", "eu-west"],
-            "buildNames": ["productA :: nightly-release", "productB :: nightly-release"],
-            "delete": true,
-            "activateOnSave": true
-        },
-        {
-            "key": "NiglthlyPush",
-            "destinations": ["us-east", "asia-east"],
-            "buildNames": [".*nightly-release"],
             "delete": false,
             "activateOnSave": false
         }

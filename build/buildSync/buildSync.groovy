@@ -16,6 +16,7 @@
 
 import groovy.json.JsonSlurper
 import groovyx.net.http.HTTPBuilder
+import org.apache.commons.lang.StringUtils
 import org.apache.http.HttpRequestInterceptor
 import org.apache.http.StatusLine
 import org.artifactory.addon.AddonsManager
@@ -24,12 +25,12 @@ import org.artifactory.addon.plugin.build.AfterBuildSaveAction
 import org.artifactory.addon.plugin.build.BeforeBuildSaveAction
 import org.artifactory.api.jackson.JacksonReader
 import org.artifactory.api.rest.build.BuildInfo
+import org.artifactory.build.BuildInfoUtils
 import org.artifactory.build.BuildRun
 import org.artifactory.build.Builds
 import org.artifactory.build.DetailedBuildRun
 import org.artifactory.build.DetailedBuildRunImpl
 import org.artifactory.exception.CancelException
-import org.artifactory.rest.resource.ha.BuildRunImpl
 import org.artifactory.storage.build.service.BuildStoreService
 import org.artifactory.storage.db.DbService
 import org.artifactory.util.HttpUtils
@@ -198,6 +199,8 @@ executions {
                 message = "buildSyncPushConfig needs a key params part of ${baseConf.pushConfigs.keySet()}"
                 return
             }
+            def forceS = params?.get('force')?.get(0) as String
+            boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PushConfig pushConf = baseConf.pushConfigs[confKey]
             def localBuildService = new LocalBuildService(ctx, log, false, false, baseConf.ignoreStartDate)
 
@@ -207,7 +210,7 @@ executions {
                     localBuildService,
                     new RemoteBuildService(destServer, log, baseConf.ignoreStartDate),
                     pushConf.buildNames,
-                    pushConf.delete, 0, false
+                    pushConf.delete, 0, force
                 ))
             }
             if (!res) {
@@ -303,23 +306,6 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
 }
 
 abstract class BuildListBase {
-    def comparator = new Comparator<BuildRun>() {
-        @Override
-        int compare(BuildRun o1, BuildRun o2) {
-            int i
-            if (!ignoreStartDate) {
-                i = o1.getStartedDate().compareTo(o2.getStartedDate())
-                if (i != 0) {
-                    return i
-                }
-            }
-            i = o1.getName().compareTo(o2.getName())
-            if (i != 0) {
-                return i
-            }
-            return o1.getNumber().compareTo(o2.getNumber())
-        }
-    }
     def log
     boolean ignoreStartDate = false
     private NavigableSet<BuildRun> _allLatestBuilds = null
@@ -339,23 +325,15 @@ abstract class BuildListBase {
     abstract NavigableSet<BuildRun> loadAllBuilds()
 
     protected BuildRun createBuildRunFromJson(String name, String number, String started) {
-        if (ignoreStartDate && number != "LATEST") {
-            new BuildRunImpl(name, number, "");
-        } else {
-            new BuildRunImpl(name, number, started);
-        }
+        new BuildRunImpl(name, number, started, ignoreStartDate)
     }
 
     protected BuildRun createBuildRunFromDetailed(BuildRun br) {
-        if (ignoreStartDate) {
-            new BuildRunImpl(br.getName(), br.getNumber(), "");
-        } else {
-            new BuildRunImpl(br.getName(), br.getNumber(), br.getStarted());
-        }
+        new BuildRunImpl(br.getName(), br.getNumber(), br.getStarted(), ignoreStartDate)
     }
 
     NavigableSet<BuildRun> filterBuildNames(List<String> buildNames) {
-        NavigableSet<BuildRun> result = new TreeSet<>(comparator)
+        NavigableSet<BuildRun> result = new TreeSet<>()
         buildNames.each { String buildName ->
             if (buildName.contains('*')) {
                 result.addAll(getAllLatestBuilds().findAll { it.name.matches(buildName) })
@@ -367,6 +345,7 @@ abstract class BuildListBase {
                 result << found
             }
         }
+        log.debug "After filter got ${result.size()} builds"
         result
     }
 
@@ -426,12 +405,12 @@ class RemoteBuildService extends BuildListBase {
     @Override
     NavigableSet<BuildRun> loadAllBuilds() {
         lastFailure = null
-        Set<BuildRun> result = new TreeSet<>(comparator)
+        Set<BuildRun> result = new TreeSet<>()
         log.info "Getting all builds from ${server.url}api/build"
         http.get(contentType: JSON, path: 'api/build') { resp, json ->
             json.builds.each { b ->
                 result << createBuildRunFromJson(
-                    HttpUtils.decodeUri(b.uri.substring(1)) as String,
+                    HttpUtils.decodeUri(b.uri.substring(1)),
                     "LATEST",
                     b.lastStarted as String)
             }
@@ -452,7 +431,7 @@ class RemoteBuildService extends BuildListBase {
     @Override
     NavigableSet<BuildRun> getBuildNumbers(String buildName) {
         lastFailure = null
-        Set<BuildRun> result = new TreeSet<>(comparator)
+        Set<BuildRun> result = new TreeSet<>()
         log.info "Getting all build numbers from ${server.url}api/build/$buildName"
         http.get(contentType: JSON, path: "api/build/$buildName") { resp, json ->
             json.buildsNumbers.each { b ->
@@ -554,7 +533,7 @@ class LocalBuildService extends BuildListBase {
 
     @Override
     NavigableSet<BuildRun> loadAllBuilds() {
-        def res = new TreeSet<BuildRun>(comparator)
+        def res = new TreeSet<BuildRun>()
         res.addAll(buildStoreService.getLatestBuildsByName().collect {
             createBuildRunFromJson(it.name, "LATEST", it.started)
         })
@@ -564,7 +543,7 @@ class LocalBuildService extends BuildListBase {
 
     @Override
     NavigableSet<BuildRun> getBuildNumbers(String buildName) {
-        def res = new TreeSet<BuildRun>(comparator)
+        def res = new TreeSet<BuildRun>()
         res.addAll(buildStoreService.findBuildsByName(buildName).collect { createBuildRunFromDetailed(it) })
         log.info "Found ${res.size()} local builds named $buildName"
         res
@@ -809,5 +788,100 @@ class PushConfig {
         } else {
             ""
         }
+    }
+}
+
+class BuildRunImpl implements BuildRun, Comparable<BuildRun> {
+    private final boolean ignoreStartDate;
+    private final String name;
+    private final String number;
+    private final String started;
+
+    BuildRunImpl(String name, String number, String started, boolean ignoreStartDate) {
+        this.ignoreStartDate = ignoreStartDate;
+        this.name = name;
+        this.number = number;
+        if (StringUtils.isNotBlank(started)) {
+            this.started = BuildInfoUtils.formatBuildTime(BuildInfoUtils.parseBuildTime(started));
+        } else {
+            this.started = "";
+        }
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getNumber() {
+        return number;
+    }
+
+    @Override
+    public String getStarted() {
+        return started;
+    }
+
+    @Override
+    public Date getStartedDate() {
+        return new Date(BuildInfoUtils.parseBuildTime(started));
+    }
+
+    @Override
+    public String getCiUrl() {
+        return null;
+    }
+
+    @Override
+    public String getReleaseStatus() {
+        return null;
+    }
+
+    @Override
+    int compareTo(BuildRun o) {
+        int i
+        if (!ignoreStartDate) {
+            i = getStartedDate().compareTo(o.getStartedDate())
+            if (i != 0) {
+                return i
+            }
+        }
+        i = name.compareTo(o.getName())
+        if (i != 0) {
+            return i
+        }
+        return number.compareTo(o.getNumber())
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        BuildRun buildRun = (BuildRun) o;
+
+        if (!ignoreStartDate && !started.equals(buildRun.started)) {
+            return false;
+        }
+        if (!name.equals(buildRun.name)) {
+            return false;
+        }
+        if (!number.equals(buildRun.number)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + number.hashCode();
+        if (!ignoreStartDate)
+            result = 31 * result + started.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "" + name + ':' + number + ':' + started;
     }
 }
