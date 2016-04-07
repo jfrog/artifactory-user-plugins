@@ -604,7 +604,7 @@ class BaseConfigurationHolder {
 
     BaseConfigurationHolder(ctx, log) {
         this.log = log
-        this.confFile = new File("$ctx.artifactoryHome.etcDir/plugins", "buildSync.json")
+        this.confFile = new File("${ctx.artifactoryHome.getHaAwareEtcDir()}/plugins", "buildSync.json")
     }
 
     BaseConfiguration getCurrent() {
