@@ -187,7 +187,7 @@ storage {
         // Set details
         List<DependencyInfo> dependencies = new ArrayList<DependencyInfo>()
         for (String key : sha1ToItemMap.keySet()) {
-            DependencyInfo dependencyInfo = new DependencyInfo(repositories.getFileInfo(sha1ToItemMap.get(key).getRepoPath()).getChecksumsInfo().getSha1())
+            DependencyInfo dependencyInfo = new DependencyInfo(key)
             dependencyInfo.setArtifactId(sha1ToItemMap.get(key).getName());
             dependencies.add(dependencyInfo)
         }
@@ -206,28 +206,4 @@ storage {
             checkPolicies(checkPoliciesResult.getExistingProjects(), sha1ToItemMap)
             log.info("Finished updating policies for repo")
         }
-    }
-
-    private String getIncludesExcludesRegex(String [] includesExcludes){
-        String includesExcludesRegex = BLANK
-        if (includesExcludes.size() == 0){
-            return null
-        }
-        for (String includeExclude : includesExcludes) {
-            includesExcludesRegex = includesExcludesRegex + OR + includeExclude
-        }
-        return includesExcludesRegex.substring(1)
-    }
-
-    private boolean checkItem(def config, ItemInfo item){
-        boolean check = true
-        String includes = getIncludesExcludesRegex(config.includes as String[])
-        String excludes = getIncludesExcludesRegex(config.excludes as String[])
-        if (includes != null && !"".equals(includes)) {
-            check = item.getName().matches(includes)
-        }
-        if (excludes != null && !"".equals(excludes)){
-            check = !item.getName().matches(excludes)
-        }
-        return check
     }
