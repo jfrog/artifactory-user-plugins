@@ -18,13 +18,11 @@ import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.blackduck.generic.model.ExternalComponentInfo
 import org.artifactory.addon.blackduck.service.BlackDuckApplicationService
 import org.artifactory.addon.blackduck.service.BlackDuckService
+import org.artifactory.addon.blackduck.service.impl.BlackDuckComponentCoordinatesService
 import org.artifactory.addon.blackduck.service.impl.BlackDuckRequestInfo
 import org.artifactory.addon.blackduck.service.impl.BlackDuckUpdateResult
-import org.artifactory.addon.blackduck.service.impl.BlackDuckUtils
 import org.artifactory.addon.blackduck.BlackDuckAddon
 import org.artifactory.api.license.LicenseInfo
-import org.artifactory.api.module.ModuleInfo
-import org.artifactory.api.repo.RepositoryService
 import org.artifactory.fs.ItemInfo
 import org.artifactory.mime.MavenNaming
 import org.artifactory.repo.RepoPath
@@ -152,8 +150,8 @@ jobs {
         log.debug "Finding NEW artifacts that needs BlackDuck approval"
         // Here in how to get the CC connection API object
         BlackDuckApplicationService bdAppService = ctx.beanForType(BlackDuckApplicationService.class)
+        BlackDuckComponentCoordinatesService bdCoordService = ctx.beanForType(BlackDuckComponentCoordinatesService.class)
         BlackDuckService bdService = ctx.beanForType(BlackDuckService.class)
-        RepositoryService repoService = ctx.beanForType(RepositoryService.class)
         def filter = [:]
         filter.put(STATUS_PROP_NAME, GeneralStatuses.NEW.name())
         List<RepoPath> paths = searches.itemsByProperties(forMap(filter))
@@ -161,15 +159,15 @@ jobs {
         paths.each { RepoPath newArtifact ->
             // Be careful that all POM and JARS for the same GAV are retrieved here
             log.debug "Found new artifact ${newArtifact.getId()} that needs approval!"
-            ModuleInfo moduleInfo = repoService.getItemModuleInfo(newArtifact)
-            String gav = BlackDuckUtils.getGav(moduleInfo)
+            def coords = bdCoordService.getComponentCoordinates(newArtifact)
+            String gav = coords.coordinates
             if (!requestsByGav.containsKey(gav)) {
                 ExternalComponentInfo eci = bdService.getExternalComponentInfo(newArtifact)
                 def req = new BlackDuckRequestInfo()
                 req.published = false
                 req.repoPath = newArtifact
                 req.license = LicenseInfo.UNKNOWN.getName()
-                req.gav = gav
+                req.componentCoordinates = coords
                 req.componentName = moduleInfo.getModule()
                 req.componentVersion = moduleInfo.getBaseRevision()
                 if (eci?.componentId) {
