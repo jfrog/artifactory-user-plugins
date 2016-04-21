@@ -163,13 +163,14 @@ jobs {
             String gav = coords.coordinates
             if (!requestsByGav.containsKey(gav)) {
                 ExternalComponentInfo eci = bdService.getExternalComponentInfo(newArtifact)
-                def req = new BlackDuckRequestInfo()
+                def layoutInfo = repositories.getLayoutInfo(newArtifact)
+				def req = new BlackDuckRequestInfo()
                 req.published = false
                 req.repoPath = newArtifact
-                req.license = LicenseInfo.UNKNOWN.getName()
-                req.componentCoordinates = coords
-                req.componentName = moduleInfo.getModule()
-                req.componentVersion = moduleInfo.getBaseRevision()
+		        req.license = "Unknown"
+                req.componentCoordinates = coords	
+                req.componentName = layoutInfo.getModule()
+                req.componentVersion = layoutInfo.getBaseRevision()
                 if (eci?.componentId) {
                     req.componentId = eci.componentId
                     req.componentName = eci.name
