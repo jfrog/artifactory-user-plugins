@@ -167,7 +167,7 @@ jobs {
 				def req = new BlackDuckRequestInfo()
                 req.published = false
                 req.repoPath = newArtifact
-		        req.license = "Unknown"
+		req.license = "Unknown"
                 req.componentCoordinates = coords	
                 req.componentName = layoutInfo.getModule()
                 req.componentVersion = layoutInfo.getBaseRevision()
