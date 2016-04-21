@@ -164,7 +164,7 @@ jobs {
             if (!requestsByGav.containsKey(gav)) {
                 ExternalComponentInfo eci = bdService.getExternalComponentInfo(newArtifact)
                 def layoutInfo = repositories.getLayoutInfo(newArtifact)
-				def req = new BlackDuckRequestInfo()
+		def req = new BlackDuckRequestInfo()
                 req.published = false
                 req.repoPath = newArtifact
 		req.license = "Unknown"
