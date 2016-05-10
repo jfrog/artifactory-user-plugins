@@ -28,7 +28,7 @@ realms {
         authenticate { username, credentials ->
             def settings = new LdapGroupsSettings()
             // 'il-users' is an existing Ldap Group Setting Name in Artifactory
-            // All of it's groups will be fetched and attached to the user
+            // All the permissions given to the group will be inherited by the user
             settings.ldapGroupSettingsName = 'il-users'
             groups += security.getCurrentUserGroupNames(settings)
             return true
