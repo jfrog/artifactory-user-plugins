@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+@Grapes([
+    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
+          module = 'http-builder', version = '0.7.2')
+])
+
 import groovy.json.JsonSlurper
 import groovyx.net.http.HTTPBuilder
 import org.apache.commons.lang.StringUtils
