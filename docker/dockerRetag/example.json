@@ -1,0 +1,6 @@
+{
+        "sourceRepo"    : "docker-local2",    
+        "dockerImage"   : "artdocker/artifactory-pro",    
+        "sourceTag"     : "11",       
+        "destTag"       : "latest"           
+}
