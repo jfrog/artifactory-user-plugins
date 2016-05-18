@@ -13,7 +13,7 @@ import static org.artifactory.repo.RepoPathFactory.create
 
 executions {
 
-    dockerRetag(httpMethod: 'POST', users: ["admin"], groups: []) {ResourceStreamHandle body ->
+    dockerRetag(httpMethod: 'POST', users: [], groups: []) {ResourceStreamHandle body ->
     	log.info "entering dockerRetag"
         bodyJson = new JsonSlurper().parse(body.inputStream)
 	sourceTagPath = createTagPath(bodyJson.dockerImage, bodyJson.sourceTag)
@@ -72,9 +72,3 @@ private String tagToManifest(String dockerTag) {
     return dockerTag + "manifest.json"
 }
 
-private String getStringProperty(params, pName, mandatory) {
-    def key = params[pName]
-    def val = key == null ? null : key[0].toString()
-    if (mandatory && val == null) cancelPromotion("$pName is mandatory paramater", null, 400)
-    return val
-}
