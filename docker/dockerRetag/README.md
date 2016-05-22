@@ -1,6 +1,7 @@
 This user plugin makes a copy of an existing tag in the current repository with a new tag name.  If the new tag name already exists, it is DELETED.
 
 To Install:
+
 	copy dockerRetag.groovy into $ARTIFACTORY_HOME/etc/plugins/
 
 To Execute:
