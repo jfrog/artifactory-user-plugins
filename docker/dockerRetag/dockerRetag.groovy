@@ -20,7 +20,8 @@ executions {
 	rpf = new RepoPathFactory()
         sourcePath = rpf.create(bodyJson.sourceRepo, sourceTagPath)
         if(!repositories.exists(sourcePath)) {
-	    log.error("sourceTag does not exist!")
+	    message = "sourceTag: "+sourcePath.toPath()+" does not exist!"
+	    log.error message
 	    status = 422
 	    return
 	    }
