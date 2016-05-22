@@ -59,7 +59,7 @@ executions {
                 return
             }
 	repositories.setProperty(newManifest, "docker.manifest", bodyJson.destTag)
-	message = "dockerRetag Successfully created tag" + destPath.toPath()
+	message = "dockerRetag Successfully created tag " + destPath.toPath()+"!\n"
 	log.info message
 	status = 200        
    }
