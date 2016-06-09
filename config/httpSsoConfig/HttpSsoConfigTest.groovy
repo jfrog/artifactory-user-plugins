@@ -19,6 +19,7 @@ class HttpSsoConfigTest extends Specification {
         def json1 = [
             httpSsoProxied: false,
             noAutoUserCreation: true,
+            allowUserToAccessProfile: true,
             remoteUserRequestVariable: 'REMOTE_USER']
         conn = new URL("$baseurl/setHttpSso").openConnection()
         conn.doOutput = true
@@ -42,6 +43,7 @@ class HttpSsoConfigTest extends Specification {
         def json2 = [
             httpSsoProxied: true,
             noAutoUserCreation: false,
+            allowUserToAccessProfile: false,
             remoteUserRequestVariable: 'LOCAL_USER']
         conn = new URL("$baseurl/setHttpSso").openConnection()
         conn.doOutput = true

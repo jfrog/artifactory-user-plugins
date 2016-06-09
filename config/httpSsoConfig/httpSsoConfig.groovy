@@ -25,6 +25,9 @@ def propList = ['httpSsoProxied': [
     ], 'noAutoUserCreation': [
         Boolean.class, 'boolean',
         { c, v -> c.noAutoUserCreation = v ?: false }
+    ], 'allowUserToAccessProfile': [
+        Boolean.class, 'boolean',
+        { c, v -> c.allowUserToAccessProfile = v ?: false }
     ], 'remoteUserRequestVariable': [
         CharSequence.class, 'string',
         { c, v -> c.remoteUserRequestVariable = v ?: null }]]
@@ -36,6 +39,7 @@ executions {
         def json = [
             httpSsoProxied: cfg.isHttpSsoProxied() ?: false,
             noAutoUserCreation: cfg.isNoAutoUserCreation() ?: false,
+            allowUserToAccessProfile: cfg.isAllowUserToAccessProfile() ?: false,
             remoteUserRequestVariable: cfg.remoteUserRequestVariable ?: null]
         message = new JsonBuilder(json).toPrettyString()
         status = 200

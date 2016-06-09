@@ -13,6 +13,8 @@ configuration. The returned JSON string has the following fields:
 - `httpSsoProxied`: Whether Artifactory is proxied by a secure HTTP server.
 - `noAutoUserCreation`: Whether users who log in via HTTP SSO are created
   automatically by Artifactory.
+- `allowUserToAccessProfile`: Whether users created automatically by HTTP SSO
+  are allowed to access their profile page, generate API keys, etc.
 - `remoteUserRequestVariable`: The name of the HTTP request variable to use to
   extract the user identity.
 
@@ -23,6 +25,7 @@ $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/
 {
     "httpSsoProxied": false,
     "noAutoUserCreation": false,
+    "allowUserToAccessProfile": false,
     "remoteUserRequestVariable": "REMOTE_USER"
 }
 ```
@@ -40,6 +43,7 @@ For example:
 $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 > "httpSsoProxied": false,
 > "noAutoUserCreation": true,
+> "allowUserToAccessProfile": true,
 > "remoteUserRequestVariable": "REMOTE_USER"
 > }' 'http://localhost:8081/artifactory/api/plugins/execute/setHttpSso'
 ```
