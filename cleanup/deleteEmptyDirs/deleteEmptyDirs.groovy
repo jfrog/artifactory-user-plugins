@@ -32,7 +32,6 @@ executions {
     // The expected (and mandatory) parameter is comma separated list of paths from which empty folders will be searched.
     // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirsPlugin?params=paths=repo,otherRepo/some/path"
     deleteEmptyDirsPlugin(version: '1.1', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
-        def rootPaths = 0
         def totalDeletedDirs = 0
         if (!params || !params.paths) {
             def errorMessage = 'Paths parameter is mandatory, please supply it.'
@@ -45,7 +44,6 @@ executions {
                 def deletedDirs = deleteEmptyDirsRecursively create(it)
                 log.info "Deleted($deletedDirs) empty directories for given path($it)"
                 totalDeletedDirs += deletedDirs
-                rootPaths +=1
             }
             log.info "Finished deleting total($totalDeletedDirs) directories"
         }
