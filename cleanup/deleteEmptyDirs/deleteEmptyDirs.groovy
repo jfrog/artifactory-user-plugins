@@ -31,7 +31,8 @@ executions {
     // map parameters provide extra information about this execution, such as version, description, users that allowed to call this plugin, etc.
     // The expected (and mandatory) parameter is comma separated list of paths from which empty folders will be searched.
     // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirsPlugin?params=paths=repo,otherRepo/some/path"
-    deleteEmptyDirsPlugin(version: '1.0', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
+    deleteEmptyDirsPlugin(version: '1.1', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
+        def totalDeletedDirs = 0
         if (!params || !params.paths) {
             def errorMessage = 'Paths parameter is mandatory, please supply it.'
             log.error errorMessage
@@ -39,25 +40,34 @@ executions {
             message = errorMessage
         } else {
             params.paths.each {
-                deleteEmptyDirsRecursively create(it)
+                log.info "Beginning deleting empty directories for path($it)"
+                def deletedDirs = deleteEmptyDirsRecursively create(it)
+                log.info "Deleted($deletedDirs) empty directories for given path($it)"
+                totalDeletedDirs += deletedDirs
             }
+            log.info "Finished deleting total($totalDeletedDirs) directories"
         }
     }
 }
 
 def deleteEmptyDirsRecursively(RepoPath path) {
+    def deletedDirs = 0
     // let's let other threads to do something.
     sleep 50
     // if not folder - we're done, nothing to do here
     if (repositories.getItemInfo(path).folder) {
         def children = repositories.getChildren path
         children.each {
-            deleteEmptyDirsRecursively it.repoPath
+            deletedDirs += deleteEmptyDirsRecursively it.repoPath
         }
         // now let's check again
         if (repositories.getChildren(path).empty) {
             // it is folder, and no children - delete!
+            log.info "Deleting empty directory($path)"
             repositories.delete path
+            deletedDirs += 1
         }
     }
+
+    return deletedDirs
 }
