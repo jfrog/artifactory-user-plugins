@@ -36,12 +36,12 @@ executions {
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
-        artifactCleanup(months, repos, log, dryRun)
+        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun)
     }
-    
+
     cleanupCtl() { params ->
         def command = params['command'] ? params['command'][0] as String : ''
-  
+
         switch ( command ) {
         case "stop":
             Global.stopCleaning = true
@@ -66,25 +66,26 @@ executions {
     }
 }
 
-jobs {
-    scheduledCleanup(cron: "0 0 5 ? * 1") {
-        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/artifactCleanup.properties").toURL())
-        log.info "Schedule job policy list: $config.policies"
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/${this.class.name}.properties").toURL())
+log.info "Schedule job policy list: $config.policies"
 
-        config.policies.each{ policySettings ->
-            def repos = policySettings[ 0 ] ? policySettings[ 0 ] as String[] : ["__none__"]
-            def months = policySettings[ 1 ] ? policySettings[ 1 ] as int : 6
-            Global.paceTimeMS = policySettings[ 2 ] ? policySettings[ 2 ] as int : 0
-            def dryRun = policySettings[ 3 ] ? policySettings[ 3 ] as Boolean : false
-            
-            log.info "Policy settings for scheduled run: repo list($repos), months($months), paceTimeMS($Global.paceTimeMS) dryrun($dryRun)"
-            artifactCleanup( months, repos, log, dryRun )
+config.policies.each{ policySettings ->
+    def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
+    def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+    def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
+    def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
+    def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
+
+    jobs {
+        "scheduledCleanup_$cron"(cron: cron) {
+            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun)"
+            artifactCleanup( months, repos, log, paceTimeMS, dryRun )
         }
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
-    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $Global.paceTimeMS ms dryrun: $dryRun"
+private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false) {
+    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms dryrun: $dryRun"
 
     def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
@@ -104,7 +105,7 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
                 log.info "Stopping by request, ending loop"
                 return true
             }
-            
+
             bytesFound += repositories.getItemInfo(it)?.getSize()
             foundArtifacts++
             if (dryRun) {
@@ -113,9 +114,10 @@ private def artifactCleanup(int months, String[] repos, log, dryRun = false) {
                 log.info "Deleting $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                 repositories.delete it
             }
-            
-            if (Global.paceTimeMS > 0) {
-                sleep( Global.paceTimeMS )
+
+            def sleepTime = (Global.paceTimeMS > 0) ? Global.paceTimeMS : paceTimeMS
+            if (sleepTime > 0) {
+                sleep( sleepTime )
             }
 
             return false
