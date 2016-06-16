@@ -1,25 +1,17 @@
 /*
- * Copyright (C) 2014 JFrog Ltd.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2016 JFrog Ltd. All rights reserved.
+ * JFROG PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-import groovy.transform.Field
+
 @Grapes([
     @Grab(group = 'org.codehaus.groovy.modules.http-builder',
           module = 'http-builder', version = '0.7.2')
 ])
 @GrabExclude('commons-codec:commons-codec')
+
+import groovy.transform.Field
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
@@ -63,6 +55,7 @@ realms {
                         currentUser.publicKey = json.publicKey
                         currentUser.email = json.email
                         currentUser.groups = json.groups
+                        currentUser.setUserProperty("basictoken", json?.userProperties?.basictoken)
                         log.info "User ${currentUser.username} was successfully synchronize"
                         passed = true
                     }
