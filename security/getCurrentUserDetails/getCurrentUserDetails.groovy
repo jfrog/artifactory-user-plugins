@@ -15,6 +15,7 @@
  */
 
 import groovy.json.JsonBuilder
+import org.artifactory.security.User
 
 /**
  *
@@ -23,9 +24,11 @@ import groovy.json.JsonBuilder
  */
 
 executions {
-    getCurrentUserDetails(httpMethod: 'GET', groups: ['readers']) {
+    getCurrentUserDetails(httpMethod: 'GET', groups:['readers']) {
         log.info "Requesting user details for ${security.currentUsername()}"
-        JsonBuilder builder = new JsonBuilder(security.currentUser())
+        User user = security.currentUser()
+        security.populateUserProperties(user)
+        JsonBuilder builder = new JsonBuilder(user)
         message = builder.toPrettyString()
         log.debug "Returning User Details: ${message}"
         status = 200
