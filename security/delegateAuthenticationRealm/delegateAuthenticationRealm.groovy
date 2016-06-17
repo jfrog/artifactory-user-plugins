@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-import groovy.transform.Field
+
 @Grapes([
     @Grab(group = 'org.codehaus.groovy.modules.http-builder',
           module = 'http-builder', version = '0.7.2')
 ])
 @GrabExclude('commons-codec:commons-codec')
+
+import groovy.transform.Field
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
@@ -63,6 +65,7 @@ realms {
                         currentUser.publicKey = json.publicKey
                         currentUser.email = json.email
                         currentUser.groups = json.groups
+                        currentUser.setUserProperty("basictoken", json?.userProperties?.basictoken)
                         log.info "User ${currentUser.username} was successfully synchronize"
                         passed = true
                     }
