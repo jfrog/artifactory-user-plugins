@@ -39,7 +39,7 @@ This will prevent override in the entire "libs-release-local" repository and for
 In the logs:
 -------------
 
-The following is written in the logs:
+The following can be seen in the logs:
 
 ```XML
 [INFO ] (o.a.e.UploadServiceImpl:457) Deploy to 'ForTest:prevent/override/test.txt' Content-Length: 54
