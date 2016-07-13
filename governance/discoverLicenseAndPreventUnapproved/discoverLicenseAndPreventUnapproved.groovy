@@ -64,7 +64,10 @@ storage {
                     else props.put(key, v)
                 }
             }
-            def licenses = licensesService.getLicensesForRepoPath(repoPath, true, true, null, props)*.getLicense()
+            def licenseGroup = licensesService.getLicensesForRepoPath(repoPath, false, true, null, props)
+            def licenses = licenseGroup*.getLicense() + licenseGroup*.getExtractedLicense()
+            licenses.unique()
+            if (licenses.size() > 1) licenses.removeAll { it.isNotFound() }
 
             // set the regular licenses properties
             def licensesPropName
