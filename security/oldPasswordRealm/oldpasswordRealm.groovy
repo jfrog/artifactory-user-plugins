@@ -15,56 +15,22 @@
  */
 
 
-@Grapes([
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder',
-                module = 'http-builder', version = '0.7.2')
-])
-@GrabExclude('commons-codec:commons-codec')
+import groovy.json.JsonSlurper
+import org.slf4j.Logger
 
-import groovy.transform.Field
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
-import groovy.json.JsonSlurper
-import org.artifactory.security.User
-import groovyx.net.http.HTTPBuilder
-import org.apache.commons.lang.StringUtils
-import org.apache.http.HttpRequestInterceptor
-import org.apache.http.StatusLine
-import org.artifactory.addon.AddonsManager
-import org.artifactory.addon.plugin.PluginsAddon
-import org.artifactory.addon.plugin.build.AfterBuildSaveAction
-import org.artifactory.addon.plugin.build.BeforeBuildSaveAction
-import org.artifactory.api.jackson.JacksonReader
-import org.artifactory.api.rest.build.BuildInfo
-import org.artifactory.build.BuildInfoUtils
-import org.artifactory.build.BuildRun
-import org.artifactory.build.Builds
-import org.artifactory.build.DetailedBuildRun
-import org.artifactory.build.DetailedBuildRunImpl
-import org.artifactory.exception.CancelException
-import org.artifactory.storage.build.service.BuildStoreService
-import org.artifactory.storage.db.DbService
-import org.artifactory.util.HttpUtils
-import org.jfrog.build.api.Build
-import org.slf4j.Logger
-import org.artifactory.security.User
-import org.slf4j.Logger
-import groovy.json.JsonSlurper
 /**
  *
  * @author Naren Yadav
  * @since 08/24/16
  */
 
-
+def userConfHolder = new UserPwdConfigurationHolder(ctx, log)
 
 realms {
     oldpasswordRealm(autoCreateUsers: false) {
         authenticate { username, credentials ->
             log.debug "Authenticating '${username}'"
 //           log.info "credentials '${credentials}'"
-            def userConfHolder = new UserPwdConfigurationHolder(ctx, log)
             try {
 
                 def userConf = userConfHolder.getCurrent()
