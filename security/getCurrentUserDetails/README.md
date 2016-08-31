@@ -1,15 +1,51 @@
-Artifactory Get Current Users details Plugin
+Artifactory Get Current User Details User Plugin
+================================================
 
+This plugin allows a user to retrieve their own detailed user information via a
+REST call. This information includes the user's public and private keys, Bintray
+authentication info, and user properties, on top of all the data provided by the
+[get user details][] REST endpoint.
 
-This plugin provides you the ability to get all users information from one artifactory instance to another artifactory instance. This plugin is required to use with security/delegateAuthenticationRealm/delegateAuthenticationRealm.groovy plugin.
+This plugin is a dependency of the [delegateAuthenticationRealm][] user plugin.
 
-This user plugin need to install on an instance with the users themselves (delegating to the first instance), which will connect to artifactory using delegateAuthenticationRealm plugin.
+Installation
+------------
 
-For example, We have two artifactory instances artifactory-1 (port:8093) and artifactory-2 (port:8094). artifactory-1 is the instance where all users and passwords exist and we would like those user to use same credentials to login into artifactory-2. You will install getCurrentUserDetails plugin on artifactory-1 and install delegateAuthenticationRealm on artifactory-2. Once all users exist in artifactory-1 then you can use the same users credentials to login into artifactory-2. Once a user log into artifactory-2 then those users will be created in artifactory-2.
+To install this plugin, place the `getCurrentUserDetails.groovy` file in your
+`${ARTIFACTORY_HOME}/etc/plugins` directory.
 
-Adding to Artifactory
+Usage
+-----
 
+This plugin exposes the execution `getCurrentUserDetails`, which returns a JSON
+representation of the user details. For example:
 
-This plugin need to be added to the $ARTIFACTORY_HOME/etc/plugins directory.
+```
+$ curl -u developer:password 'http://localhost:8081/artifactory/api/plugins/execute/getCurrentUserDetails'
+{
+    "lastLoginClientIp": "0:0:0:0:0:0:0:1",
+    "transientUser": false,
+    "privateKey": "...Lo4M9...",
+    "username": "developer",
+    "anonymous": false,
+    "lastLoginTimeMillis": 1472672914756,
+    "bintrayAuth": null,
+    "realm": "internal",
+    "publicKey": "...aPJUt...",
+    "updatableProfile": true,
+    "groups": [
+        "readers"
+    ],
+    "userProperties": {
+        "sshPublicKey": "ssh-rsa ...kE3pD...",
+        "passwordCreated": "1472672902316",
+        "apiKey": "...X7UAG..."
+    },
+    "enabled": true,
+    "email": "developer@company.net",
+    "admin": false
+}
+```
 
-
+[get user details]: https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-GetUserDetails
+[delegateAuthenticationRealm]: https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/delegateAuthenticationRealm

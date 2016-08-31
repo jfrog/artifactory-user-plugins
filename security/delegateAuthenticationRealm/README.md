@@ -1,13 +1,35 @@
-Artifactory Get Current Users details Plugin
+Artifactory Delegate Authentication Realm User Plugin
+=====================================================
 
+This plugin allows authentication to be delegated from one Artifactory instance
+to another, and for user information to be synchronized between the instances.
+Synchronization is one-way only. A possible configuration would be to specify
+a 'central' instance, where the authoritative user details are stored, and one
+or more other instances, which pull user information from the central. In this
+setup, always make user account changes directly to the central instance, since
+otherwise, the changes are likely to revert.
 
-This plugin provides you the ability to get all users information from one artifactory instance to another artifactory instance. This plugin is required to use with security/getCurrentUserDetails/getCurrentUserDetails.groovy plugin.
+This plugin depends on the [getCurrentUserDetails][] user plugin.
 
-This user plugin need to install on an instance, , which need to request user details from the second instance by providing artifactory connection details in this plugin.
+Installation
+------------
 
-For example, We have two artifactory instances artifactory-1 (port:8093) and artifactory-2 (port:8094). artifactory-1 is the instance where all users and passwords exist and we would like those user to use same credentials to login into artifactory-2. You will install getCurrentUserDetails plugin on artifactory-1 and install delegateAuthenticationRealm on artifactory-2. Once all users exist in artifactory-1 then you can use the same users credentials to login into artifactory-2. Once a user log into artifactory-2 then those users will be created in artifactory-2.
+Before installing, be sure to choose an instance to designate as the 'central',
+from which user details can be queried by the other instances.
 
-Adding to Artifactory
+To install this plugin:
+1. On the central instance, place the `getCurrentUserDetails.groovy` file (from
+   the [getCurrentUserDetails][] user plugin) in the
+   `${ARTIFACTORY_HOME}/etc/plugins` directory.
+2. Edit the `delegateAuthenticationRealm.groovy` file: the
+   `centralAuthenticatorArtifactory` variable must be set to the URL of the
+   central instance.
+3. On any non-central instances, place the modified
+   `delegateAuthenticationRealm.groovy` file in the
+   `${ARTIFACTORY_HOME}/etc/plugins` directory.
 
+Now, each time a user logs into a non-central instance, Artifactory will attempt
+to delegate the login to the central instance, and update the user's details as
+well.
 
-This plugin need to be added to the $ARTIFACTORY_HOME/etc/plugins directory.
+[getCurrentUserDetails]: https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/getCurrentUserDetails
