@@ -18,6 +18,7 @@ Before installing, be sure to choose an instance to designate as the 'central',
 from which user details can be queried by the other instances.
 
 To install this plugin:
+
 1. On the central instance, place the `getCurrentUserDetails.groovy` file (from
    the [getCurrentUserDetails][] user plugin) in the
    `${ARTIFACTORY_HOME}/etc/plugins` directory.
