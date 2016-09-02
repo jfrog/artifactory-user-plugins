@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
+
 class Global {
     static Boolean stopCleaning = false;
     static Boolean pauseCleaning = false;
@@ -94,8 +96,8 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     int foundArtifacts = 0
     long bytesFound = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
-    artifactsCleanedUp.
-        find {
+    artifactsCleanedUp.find {
+        try {
             while ( Global.pauseCleaning ) {
                 log.info "Pausing by request"
                 sleep( 60000 )
@@ -114,14 +116,17 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 log.info "Deleting $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                 repositories.delete it
             }
-
-            def sleepTime = (Global.paceTimeMS > 0) ? Global.paceTimeMS : paceTimeMS
-            if (sleepTime > 0) {
-                sleep( sleepTime )
-            }
-
-            return false
+        } catch (ItemNotFoundRuntimeException ex) {
+            log.info "Failed to find $it, skipping"
         }
+
+        def sleepTime = (Global.paceTimeMS > 0) ? Global.paceTimeMS : paceTimeMS
+        if (sleepTime > 0) {
+            sleep( sleepTime )
+        }
+
+        return false
+    }
 
     if (dryRun) {
         log.info "Dry run - nothing deleted. found $foundArtifacts artifacts consuming $bytesFound bytes"
