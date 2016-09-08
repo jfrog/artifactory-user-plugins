@@ -219,7 +219,7 @@ executions {
     // Iterate over all given repositories, and ensure that they are indexable
     for (reponame in repos) {
       def (repo, idxer) = getRealRepoAndIndexer(reponame)
-      if (!repo || !isRepoIndexed(reponame)) {
+      if (!repo || !isRepoIndexed(repo.key)) {
         log.warn("Repository $reponame does not exist or cannot be indexed.")
         status = 400
         message = "Repository $reponame does not exist or cannot be indexed."
@@ -826,7 +826,7 @@ def validateXrayConfig(json) {
 
 // Check if the given repository is configured for indexing by Xray.
 def isRepoIndexed(repokey) {
-  def repo = repositories.getRepositoryConfiguration(repokey)
+  def repo = getRealRepoAndIndexer(repokey)?.getAt(0)
   def obj = ["name": repo?.key]
   obj["pkgType"] = repo?.packageType
   obj["type"] = repo?.type
@@ -851,9 +851,10 @@ def canItemIndex(item) {
 // list of indexable file patterns. If the repository is not indexable, return
 // null for both values.
 def getRealRepoAndIndexer(repokey) {
-  def repo = repositories.getRepositoryConfiguration(repokey)
+  def repo = repositories.getRepositoryConfiguration(repokey - ~'-cache$')
+  if (!repo) repo = repositories.getRepositoryConfiguration(repokey)
   def idxer = xrayIndexers[repo?.packageType]
-  if (repo?.type != 'local' && repo?.type != 'remote' || !idxer) return []
+  if (!idxer || repo?.type != 'local' && repo?.type != 'remote') return []
   if (repo?.type == 'remote' && !repo?.isStoreArtifactsLocally()) return []
   return [repo, idxer]
 }
