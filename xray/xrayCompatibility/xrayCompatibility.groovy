@@ -27,6 +27,10 @@ import groovy.json.JsonSlurper
 import java.io.IOException
 import java.util.UUID
 
+// The version of this plugin. When this file is updated, this number should be
+// changed as well.
+version = '1.0'
+
 // Artifactory's thread pool, allowing for Xray events to run as background
 // tasks.
 threadPool = ctx.beanForType(CachedThreadPoolTaskExecutor)
@@ -195,6 +199,12 @@ def tryMigrateConfig() {
 }
 
 executions {
+  // Return the version of this plugin.
+  xrayCompatibilityVersion(httpMethod: 'GET', users: ['anonymous']) { params ->
+    status = 200
+    message = version
+  }
+
   // Given a list of repos, index all artifacts in all of those repos. This is
   // used in the onboarding stage.
   xrayIndex(httpMethod: 'POST') { params ->
