@@ -1,3 +1,5 @@
+NOTE:  This plugin is deprecated as of Artifactory v4.10.  Instead you should use the built-in [docker promote rest API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-PromoteDockerImage) to re-tag images.
+
 This user plugin makes a copy of an existing tag in the current repository with a new tag name.  If the new tag name already exists, it is DELETED.
 
 To Install:
