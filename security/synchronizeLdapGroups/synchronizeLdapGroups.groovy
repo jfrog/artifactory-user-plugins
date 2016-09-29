@@ -24,14 +24,19 @@ import org.artifactory.security.groups.LdapGroupsSettings
  */
 
 realms {
-    myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.SUFFICIENT]) {
+    myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.ADDITIVE]) {
         authenticate { username, credentials ->
+            if (security.findUser(username).realm == 'internal') return false
             def settings = new LdapGroupsSettings()
             // 'il-users' is an existing Ldap Group Setting Name in Artifactory
             // All the permissions given to the group will be inherited by the user
             settings.ldapGroupSettingsName = 'il-users'
             groups += security.getCurrentUserGroupNames(settings)
             return true
+        }
+
+        userExists { username ->
+            return security.findUser(username).realm != 'internal'
         }
     }
 }
