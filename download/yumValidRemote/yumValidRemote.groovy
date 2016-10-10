@@ -98,27 +98,29 @@ download {
         downloads.each { download ->
             threadPool.submit {
                 try {
-                    def (path, newname, match) = download
-                    // download the new file
-                    log.info("Repodata file '{}' not cached, downloading", newname)
-                    def opath = RepoPathFactory.create(repoPath.repoKey, path)
-                    def ctx = new NullRequestContext(opath)
-                    def res = repo.getInfo(ctx)
-                    repo.getResourceStreamHandle(ctx, res)?.close()
-                    // move the file to the appropriate location
-                    def cachekey = repo.localCacheRepo.key
-                    def truesha = repositories.getFileInfo(opath).checksumsInfo.sha1
-                    def truename = "${match[0][1]}$truesha-${match[0][2]}"
-                    def truepath = RepoPathFactory.create(cachekey, pathpre + truename)
-                    def oldpath = RepoPathFactory.create(cachekey, path)
-                    def status = new MoveMultiStatusHolder()
-                    def config = new MoverConfigBuilder(oldpath, truepath)
-                    config.failFast(true).atomic(true)
-                    def mover = new DefaultRepoPathMover(status, config.build())
-                    def mvsrc = repo.localCacheRepo.getImmutableFsItem(oldpath)
-                    def mvdst = repoService.getRepoRepoPath(truepath)
-                    mover.moveOrCopyMultiTx(mvsrc, mvdst)
-                    log.info("Completed download of '{}'", pathpre + truename)
+                    asSystem {
+                        def (path, newname, match) = download
+                        // download the new file
+                        log.info("Repodata file '{}' not cached, downloading", newname)
+                        def opath = RepoPathFactory.create(repoPath.repoKey, path)
+                        def ctx = new NullRequestContext(opath)
+                        def res = repo.getInfo(ctx)
+                        repo.getResourceStreamHandle(ctx, res)?.close()
+                        // move the file to the appropriate location
+                        def cachekey = repo.localCacheRepo.key
+                        def truesha = repositories.getFileInfo(opath).checksumsInfo.sha1
+                        def truename = "${match[0][1]}$truesha-${match[0][2]}"
+                        def truepath = RepoPathFactory.create(cachekey, pathpre + truename)
+                        def oldpath = RepoPathFactory.create(cachekey, path)
+                        def status = new MoveMultiStatusHolder()
+                        def config = new MoverConfigBuilder(oldpath, truepath)
+                        config.failFast(true).atomic(true)
+                        def mover = new DefaultRepoPathMover(status, config.build())
+                        def mvsrc = repo.localCacheRepo.getImmutableFsItem(oldpath)
+                        def mvdst = repoService.getRepoRepoPath(truepath)
+                        mover.moveOrCopyMultiTx(mvsrc, mvdst)
+                        log.info("Completed download of '{}'", pathpre + truename)
+                    }
                 } finally {
                     synchronized (downloadMutex) {
                         downloadQueue.remove(repo.key + ':' + path)
