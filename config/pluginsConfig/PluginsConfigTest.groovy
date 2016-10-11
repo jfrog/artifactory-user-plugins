@@ -6,11 +6,16 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 class PluginConfigTest extends Specification {
   def 'list installed plugins test'() {
     setup:
-    def baseurl = 'http://localhost:8088/artifactory'
-    def artifactory = create(baseurl, 'admin', 'password')
+    def baseurl = 'http://localhost:8088/artifactory/api/plugins/execute'
+    def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
+    def conn = null
 
     when:
-    artifactory.plugins().execute('listPlugins')
+    conn = new URL("${baseurl}/listPlugins").openConnection()
+    conn.requestMethod = 'GET'
+    conn.setRequestProperty('Authorization', auth)
+    assert conn.responseCode == 200
+    conn.disconnect()
 
     then:
     notThrown(HttpResponseException)

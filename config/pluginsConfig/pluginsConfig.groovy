@@ -20,8 +20,8 @@ import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 executions {
   def artHome = ctx.artifactoryHome.haAwareEtcDir
 
-  //usage: curl -X POST http://localhost:8088/artifactory/api/plugins/execute/listPlugins
-  listPlugins() {
+  //usage: curl -X GET http://localhost:8088/artifactory/api/plugins/execute/listPlugins
+  listPlugins(httpMethod: 'GET') {
     def list = []
     def pluginsDir = new File(artHome, "plugins")
 
