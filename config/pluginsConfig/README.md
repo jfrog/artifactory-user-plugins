@@ -19,7 +19,7 @@ Executing
 
 To execute the list plugins command:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/listPlugins"`
+`curl -X GET -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/listPlugins"`
 
 To execute the download plugin's command:
 
