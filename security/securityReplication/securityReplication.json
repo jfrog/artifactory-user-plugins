@@ -1,0 +1,13 @@
+{ "securityReplication": {
+    "authorization": {
+      "username": "admin",
+      "password": "password"
+    },
+    "urls": [
+      "http://localhost:8088/artifactory".
+      "http://localhost:8090/artifactory",
+      "http://localhost:8092/artifactory"
+    ],
+    "whoami": "http://localhost:8088/artifactory"
+  }
+}
