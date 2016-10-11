@@ -1,0 +1,16 @@
+{"securityReplication":{
+    "authorization":{
+        "password":"password",
+        "username":"admin"
+        },
+    "recovery":false,
+    "filter":1,
+    "startTime":0,
+    "urls":[
+        "http://104.198.128.84/artifactory",
+        "http://104.197.177.94/artifactory",
+        "http://130.211.178.133/artifactory"
+        ],
+    "whoami":"http://104.198.128.84/artifactory"
+    }
+}
