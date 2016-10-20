@@ -51,7 +51,7 @@ download {
         }
         if (!xml) return
         // add the checksums to the file names, if they aren't already there
-        def downloads = []
+        def modified = false, downloads = []
         xml.each {
             // do nothing if this node is the wrong type
             if (it.name() != 'data' && it.name()?.localPart != 'data') return
@@ -68,6 +68,7 @@ download {
             log.info("Found legacy repodata file '{}'", pathpre + path[0])
             def newname = "${match[0][1]}$checksum-${match[0][2]}"
             it.location.@href = newname
+            modified = true
             // if the file already exists in the cache, we're done
             def npath = RepoPathFactory.create(repoPath.repoKey, newname)
             if (repositories.exists(npath)) return
@@ -79,6 +80,8 @@ download {
                 }
             }
         }
+        // if the file went unchanged, just exit
+        if (!modified) return
         // if all metadata files already exist in the cache, return the new
         // repomd.xml
         if (!downloads) {
