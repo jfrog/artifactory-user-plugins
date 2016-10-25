@@ -24,7 +24,7 @@ class PluginConfigTest extends Specification {
   def 'download plugin test'(){
     setup:
     def baseurl = 'http://localhost:8088/artifactory/api/plugins/execute'
-    def params = '?params=name=pluginsConfig'
+    def params = '?params=name=pluginsConfig.groovy'
     def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
     def conn = null
 
