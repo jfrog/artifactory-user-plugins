@@ -1,0 +1,181 @@
+{
+    "groups": {
+        "addme": {
+            "description": "add this group",
+            "isdefault": false,
+            "permissions": {
+                "changeme": "nrw"
+            },
+            "realm": "artifactory",
+            "realmattrs": null
+        },
+        "changeme": {
+            "description": "this group has been updated",
+            "isdefault": true,
+            "permissions": {
+                "addme": "dnrw",
+                "changeme": "dnrw"
+            },
+            "realm": "yrotcafitra",
+            "realmattrs": "yrotcafitra"
+        },
+        "readers": {
+            "description": "A group for read-only users",
+            "isdefault": true,
+            "permissions": {
+                "Anything": "r",
+                "changeme": "dmnrw"
+            },
+            "realm": "artifactory",
+            "realmattrs": null
+        }
+    },
+    "permissions": {
+        "Any Remote": {
+            "excludes": [
+                
+            ],
+            "includes": [
+                "**"
+            ],
+            "repos": [
+                "ANY REMOTE"
+            ]
+        },
+        "Anything": {
+            "excludes": [
+                
+            ],
+            "includes": [
+                "**"
+            ],
+            "repos": [
+                "ANY"
+            ]
+        },
+        "addme": {
+            "excludes": [
+                
+            ],
+            "includes": [
+                "**"
+            ],
+            "repos": [
+                "jcenter-cache"
+            ]
+        },
+        "changeme": {
+            "excludes": [
+                "bar"
+            ],
+            "includes": [
+                "foo"
+            ],
+            "repos": [
+                "libs-release-local",
+                "libs-snapshot-local"
+            ]
+        }
+    },
+    "users": {
+        "addme": {
+            "admin": false,
+            "bintray": null,
+            "email": "addme@foo.bar",
+            "enabled": true,
+            "expired": false,
+            "groups": [
+                "addme",
+                "changeme",
+                "readers"
+            ],
+            "locked": false,
+            "passkey": null,
+            "password": "12c2a2afff2ae64ef35c281a11264821",
+            "permissions": {
+                "changeme": "dnrw"
+            },
+            "privatekey": null,
+            "properties": {
+                "passwordCreated": "1478813721932"
+            },
+            "publickey": null,
+            "salt": "CAFEBABEEBABEFAC",
+            "updatable": true
+        },
+        "admin": {
+            "admin": true,
+            "bintray": null,
+            "email": null,
+            "enabled": true,
+            "expired": false,
+            "groups": [
+                
+            ],
+            "locked": false,
+            "passkey": null,
+            "password": "1f70548d73baca61aab8660733c7de81",
+            "permissions": {
+                
+            },
+            "privatekey": null,
+            "properties": {
+                "passwordCreated": "1476819553101"
+            },
+            "publickey": null,
+            "salt": "CAFEBABEEBABEFAC",
+            "updatable": true
+        },
+        "anonymous": {
+            "admin": false,
+            "bintray": null,
+            "email": null,
+            "enabled": true,
+            "expired": false,
+            "groups": [
+                
+            ],
+            "locked": false,
+            "passkey": null,
+            "password": "d41d8cd98f00b204e9800998ecf8427e",
+            "permissions": {
+                "Any Remote": "rw",
+                "Anything": "r",
+                "changeme": "dmnrw"
+            },
+            "privatekey": null,
+            "properties": {
+                "passwordCreated": "1476819553119"
+            },
+            "publickey": null,
+            "salt": null,
+            "updatable": false
+        },
+        "changeme": {
+            "admin": true,
+            "bintray": null,
+            "email": "changed@foo.bar",
+            "enabled": false,
+            "expired": true,
+            "groups": [
+                "addme",
+                "readers"
+            ],
+            "locked": true,
+            "passkey": null,
+            "password": "bb9d9871ba35be1c551f832573ec8cec",
+            "permissions": {
+                "addme": "nrw",
+                "changeme": "nrw"
+            },
+            "privatekey": null,
+            "properties": {
+                "passwordCreated": "1478813995156",
+                "sshPublicKey": "ssh-rsa foobar"
+            },
+            "publickey": null,
+            "salt": "CAFEBABEEBABEFAC",
+            "updatable": false
+        }
+    }
+}
