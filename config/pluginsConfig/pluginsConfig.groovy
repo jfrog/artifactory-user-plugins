@@ -15,6 +15,7 @@
  */
 
 import groovy.io.FileType
+import groovy.json.JsonBuilder
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 
 executions {
@@ -35,7 +36,7 @@ executions {
       message = "There are no user plugins installed in this Artifactory instance"
       status 204
     } else {
-      message = list
+      message = new JsonBuilder(list).toPrettyString()
       status = 200
     }
   }
@@ -44,7 +45,7 @@ executions {
   downloadPlugin(httpMethod: 'GET') { params->
     def pluginName = params?.('name')?.get(0) as String
 
-    File pluginFile = new File("${artHome}/plugins/${pluginName}.groovy")
+    File pluginFile = new File("${artHome}/plugins/${pluginName}")
     if (!pluginName || !pluginFile.exists()) {
       message = "Error: ${pluginName} was not found"
       status = 400
@@ -54,5 +55,3 @@ executions {
     }
   }
 }
-
-

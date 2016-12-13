@@ -21,13 +21,85 @@ import org.artifactory.repo.service.mover.DefaultRepoPathMover
 import org.artifactory.repo.service.mover.MoverConfigBuilder
 import org.artifactory.request.NullRequestContext
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor
+import org.artifactory.storage.fs.service.FileService
 
+// The number of milliseconds to sleep before reverting a repomd.xml's iteminfo
+// (see the storage hook for more details). This exists to avoid a race
+// condition which results in the cached file having the same lastModified
+// timestamp as a more recent version of the file from the remote server,
+// causing it to refuse to update until after the remote server updates the file
+// again. If you encounter this problem, try increasing this value.
+etagSleep = 100
+
+// This map contains the file paths of all metadata files that are currently in
+// the process of downloading. This keeps the same file from being downloaded by
+// multiple threads at the same time.
 downloadMutex = new Object()
 downloadQueue = [:]
+
+// This map contains the original file paths, etags, and iteminfos for all
+// repomd.xml files, so that these files can be reverted to a previous state
+// when necessary (see the storage hook for more details). The etagWorking flag
+// keeps the storage hook from running recursively.
+etagMutex = new Object()
+etagQueue = [:]
+etagWorking = false
 
 // The Artifactory thread pool, necessary to download metadata files as a
 // background task
 threadPool = ctx.beanForType(CachedThreadPoolTaskExecutor)
+
+storage {
+    // If a new repomd.xml is available, but none of the other necessary
+    // metadata files are cached yet, we serve the old repomd.xml instead by
+    // sending it as the alternate content. However, the new file's etag and
+    // lastModified timestamp are still added, so Artifactory will think it's
+    // the new file. This hook changes the etag and timestamps back after
+    // Artifactory updates the file, so that it still matches the old file.
+    afterPropertyCreate { item, name, values ->
+        // don't do anything here unless this is an etag property on a
+        // repomd.xml file in a remote cache
+        if (!item.repoKey.endsWith('-cache')) return
+        if (name != "artifactory.internal.etag") return
+        if (!(item.relPath ==~ '^(?:.+/)?repodata/repomd\\.xml$')) return
+        synchronized (etagMutex) {
+            // if we're recursing, stop
+            if (etagWorking) return
+            // if this file is new, save its info
+            if (!(item.repoPath.id in etagQueue)) {
+                etagQueue[item.repoPath.id] = [values[0], item]
+                log.info("Saved etag ${values[0]} for path $item.repoPath.id")
+                return
+            }
+        }
+        // start a thread, so we can wait for the original thread to update the
+        // file, before reverting it to its proper state
+        threadPool.submit {
+            synchronized (etagMutex) {
+                asSystem {
+                    try {
+                        // we are in a potentially recursive state: reverting
+                        // the etag property on this file invokes the
+                        // afterPropertyCreate hook, which calls this function
+                        etagWorking = true
+                        // sleep until after the new data is written
+                        Thread.sleep(etagSleep)
+                        // load the replacement data and write it to the file
+                        def (etag, info) = etagQueue[item.repoPath.id]
+                        repositories.setProperty(item.repoPath, name, etag)
+                        def fileserv = ctx.beanForType(FileService)
+                        def fileid = fileserv.getFileNodeId(item.repoPath)
+                        fileserv.updateFile(fileid, info)
+                        log.info("Wrote etag $etag to path $item.repoPath.id")
+                    } finally {
+                        // we are no longer in a potentially recursive state
+                        etagWorking = false
+                    }
+                }
+            }
+        }
+    }
+}
 
 download {
     // If we're getting from remote a repomd.xml file with legacy repodata file
@@ -36,14 +108,16 @@ download {
         // don't modify the content unless we're dealing with a repomd.xml
         if (!(repoPath.path ==~ '^(?:.+/)?repodata/repomd\\.xml$')) return
         def pathmatch = repoPath.path =~ '^(.+/)?repodata/repomd\\.xml$'
-        def pathpre = pathmatch[0][1] ?: ''
+        def prefix = pathmatch[0][1] ?: ''
         def repoService = ctx.beanForType(InternalRepositoryService)
         def repo = repoService.remoteRepositoryByKey(repoPath.repoKey)
+        def cache = repo.localCacheRepo
+        def xmlpath = repoPath.path
         def streamhandle = null, xml = null
         try {
             // open a stream to the remote and parse the repomd.xml file
             log.info("Downloading and parsing repomd.xml")
-            streamhandle = repo.downloadResource(repoPath.path)
+            streamhandle = repo.downloadResource(xmlpath)
             xml = new XmlParser().parseText(streamhandle.inputStream.text)
         } finally {
             // close the input stream
@@ -51,34 +125,39 @@ download {
         }
         if (!xml) return
         // add the checksums to the file names, if they aren't already there
-        def downloads = []
+        def modified = false, downloads = []
         xml.each {
             // do nothing if this node is the wrong type
             if (it.name() != 'data' && it.name()?.localPart != 'data') return
             // do nothing if there is no file path
-            def path = it?.location?.@href
-            if (!path) return
+            def origname = it?.location?.@href?.getAt(0)
+            if (!origname) return
             // do nothing if the checksum does not exist or is the wrong type
-            if (!(it?.checksum?.@type[0] ==~ '^sha1?$')) return
+            if (!(it?.checksum?.@type?.getAt(0) ==~ '^sha1?$')) return
             def checksum = it.checksum.text()
             // do nothing if the file path is not a legacy repodata path
-            def match = path[0] =~ '^((?:.+/)?repodata/)([^/]+)$'
+            def match = origname =~ '^((?:.+/)?repodata/)([^/]+)$'
             if (!match || match[0][2].startsWith("$checksum-")) return
             // if everything checks out, modify the file path
-            log.info("Found legacy repodata file '{}'", pathpre + path[0])
+            def origloc = prefix + origname
+            log.info("Found legacy repodata file '$origloc'")
             def newname = "${match[0][1]}$checksum-${match[0][2]}"
             it.location.@href = newname
+            modified = true
             // if the file already exists in the cache, we're done
-            def npath = RepoPathFactory.create(repoPath.repoKey, newname)
-            if (repositories.exists(npath)) return
+            def newloc = prefix + newname
+            def newpath = RepoPathFactory.create(repo.key, newloc)
+            if (repositories.exists(newpath)) return
             // if the file doesn't exist, add it to the list to download
             synchronized (downloadMutex) {
-                if (!downloadQueue[repo.key + ':' + pathpre + path[0]]) {
-                    downloadQueue[repo.key + ':' + pathpre + path[0]] = true
-                    downloads << [pathpre + path[0], pathpre + newname, match]
+                if (!downloadQueue[repo.key + ':' + origloc]) {
+                    downloadQueue[repo.key + ':' + origloc] = true
+                    downloads << [match[0][1], match[0][2], origloc]
                 }
             }
         }
+        // if the file went unchanged, just exit
+        if (!modified) return
         // if all metadata files already exist in the cache, return the new
         // repomd.xml
         if (!downloads) {
@@ -89,6 +168,11 @@ download {
             printer.preserveWhitespace = true
             printer.print(xml)
             def newXml = writer.toString()
+            // remove the old etag data so we can replace it later
+            synchronized (etagMutex) {
+                def etagPath = RepoPathFactory.create(cache.key, xmlpath)
+                etagQueue.remove(etagPath.id)
+            }
             // set the new string as the new file content
             size = newXml.length()
             inputStream = new ByteArrayInputStream(newXml.bytes)
@@ -97,33 +181,56 @@ download {
         // in separate threads, cache any necessary metadata files
         downloads.each { download ->
             threadPool.submit {
-                try {
-                    asSystem {
-                        def (path, newname, match) = download
+                asSystem {
+                    def (matchl, matchr, origloc) = download
+                    def origpath = RepoPathFactory.create(repo.key, origloc)
+                    def origcache = RepoPathFactory.create(cache.key, origloc)
+                    try {
+                        // do a HEAD request and check for a matching etag
+                        def resource = repo.retrieveInfo(origloc, false, null)
+                        if (!resource.isFound()) {
+                            def msg = "Repodata file '$origloc' not found"
+                            msg += " on remote server"
+                            log.info(msg)
+                            return
+                        }
+                        def etagprop = "artifactory.internal.etag"
+                        def parent = origpath.parent
+                        def item = repositories.getChildren(parent).find {
+                            def path = it.repoPath
+                            def etag = repositories.getProperty(path, etagprop)
+                            return etag && etag == resource.etag
+                        }
+                        if (item) {
+                            def msg = "Repodata file '$origloc' already exists"
+                            msg += " in cache as '$item.relPath"
+                            log.info(msg)
+                            return
+                        }
                         // download the new file
-                        log.info("Repodata file '{}' not cached, downloading", newname)
-                        def opath = RepoPathFactory.create(repoPath.repoKey, path)
-                        def ctx = new NullRequestContext(opath)
+                        def msg = "Repodata file '$origloc' not cached,"
+                        msg += " downloading ..."
+                        log.info(msg)
+                        def ctx = new NullRequestContext(origpath)
                         def res = repo.getInfo(ctx)
                         repo.getResourceStreamHandle(ctx, res)?.close()
                         // move the file to the appropriate location
-                        def cachekey = repo.localCacheRepo.key
-                        def truesha = repositories.getFileInfo(opath).checksumsInfo.sha1
-                        def truename = "${match[0][1]}$truesha-${match[0][2]}"
-                        def truepath = RepoPathFactory.create(cachekey, pathpre + truename)
-                        def oldpath = RepoPathFactory.create(cachekey, path)
+                        def trueinfo = repositories.getFileInfo(origpath)
+                        def truesha = trueinfo.checksumsInfo.sha1
+                        def trueloc = prefix + matchl + truesha + '-' + matchr
+                        def truecache = RepoPathFactory.create(cache.key, trueloc)
                         def status = new MoveMultiStatusHolder()
-                        def config = new MoverConfigBuilder(oldpath, truepath)
-                        config.failFast(true).atomic(true)
-                        def mover = new DefaultRepoPathMover(status, config.build())
-                        def mvsrc = repo.localCacheRepo.getImmutableFsItem(oldpath)
-                        def mvdst = repoService.getRepoRepoPath(truepath)
+                        def build = new MoverConfigBuilder(origcache, truecache)
+                        def config = build.failFast(true).atomic(true).build()
+                        def mover = new DefaultRepoPathMover(status, config)
+                        def mvsrc = cache.getImmutableFsItem(origcache)
+                        def mvdst = repoService.getRepoRepoPath(truecache)
                         mover.moveOrCopyMultiTx(mvsrc, mvdst)
-                        log.info("Completed download of '{}'", pathpre + truename)
-                    }
-                } finally {
-                    synchronized (downloadMutex) {
-                        downloadQueue.remove(repo.key + ':' + path)
+                        log.info("Completed download of '$trueloc'")
+                    } finally {
+                        synchronized (downloadMutex) {
+                            downloadQueue.remove(repo.key + ':' + origloc)
+                        }
                     }
                 }
             }
@@ -138,6 +245,11 @@ download {
             printer.preserveWhitespace = true
             printer.print(xml)
             def newXml = writer.toString()
+            // remove the old etag data so we can replace it later
+            synchronized (etagMutex) {
+                def etagPath = RepoPathFactory.create(cache.key, xmlpath)
+                etagQueue.remove(etagPath.id)
+            }
             // set the new string as the new file content
             size = newXml.length()
             inputStream = new ByteArrayInputStream(newXml.bytes)

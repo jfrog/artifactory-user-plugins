@@ -2,7 +2,7 @@ import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
-class CreateCopyTest extends Specification {
+class oldpasswordRealmTest extends Specification {
     def 'test name'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
@@ -11,6 +11,7 @@ class CreateCopyTest extends Specification {
         // when:
 
         // then:
+
 
         // cleanup:
     }
