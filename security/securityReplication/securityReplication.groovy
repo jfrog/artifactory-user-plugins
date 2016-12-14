@@ -27,6 +27,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 
+import org.artifactory.common.ArtifactoryHome
 import org.artifactory.model.xstream.security.AceImpl
 import org.artifactory.model.xstream.security.AclImpl
 import org.artifactory.model.xstream.security.GroupImpl
@@ -35,14 +36,16 @@ import org.artifactory.model.xstream.security.UserImpl
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
+import org.artifactory.security.crypto.CryptoHelper
 import org.artifactory.storage.db.DbService
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.db.util.DbUtils
 import org.artifactory.storage.db.util.JdbcHelper
 import org.artifactory.storage.security.service.AclStoreService
 import org.artifactory.storage.security.service.UserGroupStoreService
 import org.artifactory.util.HttpUtils
 
-import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
+import org.jfrog.security.crypto.EncodedKeyPair
 
 /* to enable logging ammend this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -935,6 +938,28 @@ writesort = { left, right ->
     return diffsort(left, right)
 }
 
+def mastercrypt(json, encrypt) {
+    if (!CryptoHelper.hasMasterKey()) return
+    def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
+                    'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
+    def masterWrapper = ArtifactoryHome.get().masterEncryptionWrapper
+    def wrapper = encrypt ? masterWrapper : null
+    for (user in json.users.values()) {
+        if (user.privatekey && user.publickey) {
+            def pair = new EncodedKeyPair(user.privatekey, user.publickey)
+            pair = pair.decode(masterWrapper)
+            pair = new EncodedKeyPair(pair, wrapper)
+            user.privatekey = pair.encodedPrivateKey
+            user.publickey = pair.encodedPublicKey
+        }
+        user.properties.each { k, v ->
+            if (!(k in encprops)) return
+            if (encrypt) user.properties[k] = CryptoHelper.encryptIfNeeded(v)
+            else user.properties[k] = CryptoHelper.decryptIfNeeded(v)
+        }
+    }
+}
+
 def select(jdbcHelper, query, callback) {
     def rs = null
     try {
@@ -1072,6 +1097,7 @@ def extract() {
         }
         result['users'] = users
     }
+    mastercrypt(result, false)
     return result
 }
 
@@ -1435,6 +1461,8 @@ def updateDatabase(oldver, newver) {
     // newver + currver
     def truever = applyDiff(oldver, truediff)
     // newver + currver from currver
+    mastercrypt(currver, true)
+    mastercrypt(truever, true)
     def finaldiff = buildDiff(currver, truever).sort(writesort)
     // log.error(new JsonBuilder(finaldiff).toPrettyString())
     // apply this to the database for the correct result
