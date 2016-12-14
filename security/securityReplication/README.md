@@ -69,7 +69,7 @@ Write a configuration file using the fields above. For example:
       "password": "password"
     },
     "filter": 1,
-    "cron_job": "*/30 * * * * ?",
+    "cron_job": "0 0 0/1 * * ?",
     "startTime": 0,
     "urls": [
       "http://localhost:8088/artifactory",
@@ -176,9 +176,6 @@ Issues and Limitations
   be too much of a problem, considering the plugin ensures that all users exist
   with the same properties on all instances, but it still might be preferred to
   have this option available.
-- Do not use this plugin with instances that have master encryption turned on.
-  It does not currently decrypt data before replicating it, which can lead to
-  incorrect or corrupted user entries.
 - When upgrading the plugin itself, do not refresh the plugin lists while the
   plugin's sync job is running. Doing this can cause the plugin to stop working
   entirely. If this happens, Artifactory must be restarted.
