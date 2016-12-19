@@ -103,6 +103,15 @@ for each node in the instance.
 
 Now, the plugin should be properly configured and running on all instances.
 
+Logging
+-------
+To enable logging, amend this to the end of `logback.xml`
+``` xml
+<logger name="securityReplication">
+    <level value="debug"/>
+</logger>
+```
+
 Issues and Limitations
 ----------------------
 
