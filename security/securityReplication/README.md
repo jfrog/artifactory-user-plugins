@@ -130,7 +130,7 @@ Now your security replication is using an API key instead of a plaintext passwor
 
 Removing the Plugin
 -------------------
- 
+
 To remove an instance A from the mesh:
 
 1. Edit the `securityReplication.json` file on another instance B, and delete the url for instance A from the urls list.
@@ -156,6 +156,7 @@ To enable logging, amend this to the end of `logback.xml`
     <level value="debug"/>
 </logger>
 ```
+Be careful; the logging is rather verbose. You might want to enable it temporarily.
 
 Issues and Limitations
 ----------------------
