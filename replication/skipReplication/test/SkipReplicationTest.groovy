@@ -42,7 +42,7 @@ class SkipReplicationTest extends Specification {
         artifactory1.repository("libs-release-local")
         .upload("maven-metadata.xml", xmlfile)
         .withProperty("prop", "test")
-		.doUpload()
+        .doUpload()
         artifactory1.repository("libs-release-local")
         .upload("lib-aopalliance-1.0.jar", jarfile)
         .withProperty("prop", "test")
