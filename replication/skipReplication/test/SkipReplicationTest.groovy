@@ -5,7 +5,7 @@ import groovyx.net.http.HttpResponseException
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class SkipReplicationTest extends Specification {
-    def 'test name'() {
+    def 'skip replication test'() {
         setup:
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
@@ -21,7 +21,7 @@ class SkipReplicationTest extends Specification {
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
-        def textFile = '{"url" : "http://localhost:8081/artifactory/libs-release-copy",'
+        def textFile = '{"url" : "${baseurl2}/libs-release-copy",'
         textFile += '"socketTimeoutMillis" : 15000,'
         textFile += '"username" : "admin",'
         textFile += '"password" : "password",'
@@ -36,31 +36,31 @@ class SkipReplicationTest extends Specification {
         assert conn.responseCode == 201
         conn.disconnect()
         def builder = artifactory2.repositories().builders()
-        def copy = builder.localRepositoryBuilder().key('libs-release-copy').repositorySettings(new MavenRepositorySettingsImpl()).build()
+        def copy = builder.localRepositoryBuilder().key('libs-release-copy')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory2.repositories().create(0, copy),,
         artifactory1.repository("libs-release-local")
         .upload("maven-metadata.xml", xmlfile)
         .withProperty("prop", "test")
-		.doUpload();
+		.doUpload()
         artifactory1.repository("libs-release-local")
         .upload("lib-aopalliance-1.0.jar", jarfile)
         .withProperty("prop", "test")
-        .doUpload();
-        artifactory2.repository("libs-release-copy").file("maven-metadata.xml").info();
+        .doUpload()
+        artifactory2.repository("libs-release-copy").file("maven-metadata.xml").info()
 
         then:
         thrown(HttpResponseException)
-        artifactory2.repository("libs-release-copy").file("lib-aopalliance-1.0.jar").info();
+        artifactory2.repository("libs-release-copy").file("lib-aopalliance-1.0.jar").info()
 
         cleanup:
-        artifactory1.repository("libs-release-local").delete("lib-aopalliance-1.0.jar");
-        artifactory1.repository("libs-release-local").delete("maven-metadata.xml");
-        artifactory2.repository("libs-release-copy").delete();
+        artifactory1.repository("libs-release-local").delete("lib-aopalliance-1.0.jar")
+        artifactory1.repository("libs-release-local").delete("maven-metadata.xml")
+        artifactory2.repository("libs-release-copy").delete()
         def dlconn = new URL("${baseurl1}/api/replications/libs-release-local").openConnection()
         dlconn.requestMethod = 'DELETE'
         dlconn.setRequestProperty('Authorization', auth)
         assert dlconn.responseCode == 200
         dlconn.disconnect()
-		
     }
 }
