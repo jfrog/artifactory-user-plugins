@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-settings>
+  <settings defaultResolver="main" />
+  <!--Authentication required for publishing (deployment). 'Artifactory Realm' is the realm used by Artifactory so don't change it.-->
+  <credentials host="gcartifactory-us.jfrog.info" realm="Artifactory Realm" username="rasikai" passwd="AP5X67RvyYRrCWBY57cXh2yahPFiqV8pG44HFTA6tSd68GTJ8" />
+  <resolvers>
+    <chain name="main">
+      <ibiblio name="public" m2compatible="true" root="https://gcartifactory-us.jfrog.info:443/artifactory/ivy-virtual" />
+    </chain>
+  </resolvers>
+</ivy-settings>
