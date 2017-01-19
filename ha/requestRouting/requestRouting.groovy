@@ -85,7 +85,7 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
         it.artifactoryRunningMode.isHa()
     }
 
-    def targetServer;
+    def targetServer = null
 
     if (ArtifactoryHome.get().isHaConfigured()) {
         log.info("HA cluster detected.")
@@ -101,6 +101,20 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
         }
     } else {
         return getLocalResource(apiEndpoint)
+    }
+
+    if (!targetServer) {
+        return ["Server $serverId does not exist", 400]
+    }
+
+    def heartbeat = ArtifactoryServersCommonService.hasHeartbeat(targetServer)
+    if (!heartbeat) {
+        return ["Server $serverId is unreachable", 400]
+    }
+
+    def status = targetServer.serverState.name()
+    if (!(status in ['RUNNING', 'STARTING', 'STOPPING', 'CONVERTING'])) {
+        return ["Server $serverId is unreachable: status is $status", 400]
     }
 
     StringBuilder url = new StringBuilder(targetServer.contextUrl);
