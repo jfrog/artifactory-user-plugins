@@ -21,12 +21,17 @@ import groovy.lang.MissingPropertyException
 import org.artifactory.storage.service.*
 import org.artifactory.storage.*
 
-import static org.artifactory.api.storage.StorageUnit.toReadableString
 import static org.artifactory.util.NumberFormatter.formatLong
 import static org.artifactory.util.NumberFormatter.formatPercentage
 
 executions {
     storageSummary(httpMethod: 'GET') { params ->
+        def uc = null
+        try {
+            uc = Class.forName('org.jfrog.storage.common.StorageUnit')
+        } catch (ClassNotFoundException ex) {
+            uc = Class.forName('org.artifactory.api.storage.StorageUnit')
+        }
         def storageService = ctx.beanForType(InternalStorageService.class)
         def fileStoreInfo = storageService.fileStoreStorageSummary
         def summaryInfo = storageService.storageSummaryInfo
@@ -37,11 +42,11 @@ executions {
         def optim = formatPercentage(summaryInfo.optimization)
         def usedp = formatPercentage(fileStoreInfo.usedSpaceFraction)
         def freep = formatPercentage(fileStoreInfo.freeSpaceFraction)
-        def binsz = toReadableString(binariesInfo.binariesSize)
-        def totsz = toReadableString(summaryInfo.totalSize)
-        def totsp = toReadableString(fileStoreInfo.totalSpace)
-        def useds = toReadableString(fileStoreInfo.usedSpace)
-        def frees = toReadableString(fileStoreInfo.freeSpace)
+        def binsz = uc.toReadableString(binariesInfo.binariesSize)
+        def totsz = uc.toReadableString(summaryInfo.totalSize)
+        def totsp = uc.toReadableString(fileStoreInfo.totalSpace)
+        def useds = uc.toReadableString(fileStoreInfo.usedSpace)
+        def frees = uc.toReadableString(fileStoreInfo.freeSpace)
         def repoSummaries = [], binSummary = [:], fstoreSummary = [:]
         binSummary['binariesCount'] = binct
         binSummary['binariesSize'] = binsz
@@ -75,7 +80,7 @@ executions {
             result['repoType'] = repo.repoType.name()
             result['foldersCount'] = repo.foldersCount
             result['filesCount'] = repo.filesCount
-            result['usedSpace'] = toReadableString(repo.usedSpace)
+            result['usedSpace'] = uc.toReadableString(repo.usedSpace)
             result['itemsCount'] = repo.itemsCount
             try {
                 result['packageType'] = repo.type
