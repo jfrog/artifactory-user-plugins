@@ -6,4 +6,4 @@ This plugin prevents non admin users from editing existing properties of an arti
 Adding to Artifactory
 ---------------------
 
-This plugin need to be added to the $ARTIFACTORY_HOME/etc/plugins directory.
+This plugin needs to be added to the $ARTIFACTORY_HOME/etc/plugins directory.
