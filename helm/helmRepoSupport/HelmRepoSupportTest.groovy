@@ -2,7 +2,7 @@ import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
-class CreateCopyTest extends Specification {
+class HelmRepoSupportTest extends Specification {
     def 'test name'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
