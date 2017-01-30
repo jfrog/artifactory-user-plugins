@@ -3,7 +3,7 @@ import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
-class PluginConfigTest extends Specification {
+class PluginsConfigTest extends Specification {
   def 'list installed plugins test'() {
     setup:
     def baseurl = 'http://localhost:8088/artifactory/api/plugins/execute'

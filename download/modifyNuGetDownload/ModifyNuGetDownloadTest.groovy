@@ -2,7 +2,7 @@ import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
-class ModifyNuGetDownLoadTest extends Specification {
+class ModifyNuGetDownloadTest extends Specification {
     def 'test name'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
