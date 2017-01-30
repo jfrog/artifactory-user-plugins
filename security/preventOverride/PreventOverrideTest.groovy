@@ -1,17 +1,25 @@
 import spock.lang.Specification
-
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class PreventOverrideTest extends Specification {
-    def 'test name'() {
+    def 'prevent override test'() {
         setup:
-        def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def baseurl = 'http://localhost:8081/artifactory'
+        def artifactory = create(baseurl, 'non_admin', 'password')
+        def file = new File('/Users/alexeiv/Documents/temp/npm/test/test.txt')
 
-        // when:
+        when:
+        //create item in local
+        artifactory.repository("libs-release-local")
+                .upload("a/test/path/test.txt", file)
+                .withProperty("prop", "test")
+                .doUpload();
 
-        // then:
-
-        // cleanup:
+        then:
+        //deploy the file again with the non admin user, the upload should fail
+        artifactory.repository("libs-release-local")
+                .upload("a/test/path/test.txt", file)
+                .withProperty("prop", "test")
+                .doUpload();
     }
 }

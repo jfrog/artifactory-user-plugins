@@ -12,7 +12,6 @@ class OldPasswordRealmTest extends Specification {
 
         // then:
 
-
         // cleanup:
     }
 }
