@@ -24,7 +24,6 @@ import org.jwaresoftware.log4ant.listener.AntToSlf4jConduit
 import static java.io.File.createTempFile
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.artifactory.repo.RepoPathFactory.create
-import static org.artifactory.util.PathUtils.getFileName
 
 final String TARGET_RELEASES_REPOSITORY = 'ext-release-local'
 final String TARGET_SNAPSHOTS_REPOSITORY = 'ext-snapshot-local'
@@ -91,7 +90,7 @@ private File pom2Ivy(Reader reader) {
 }
 
 private boolean isIvyDescriptor(FileLayoutInfo fileLayoutInfo, RepoPath repoPath) {
-    String fileName = getFileName(repoPath.path)
+    String fileName = new File(repoPath.path).canonicalFile.name
     String repoLayoutRef = repositories.getRepositoryConfiguration(repoPath.repoKey).repoLayoutRef
     fileLayoutInfo.valid && // it was search for some descriptor.
         (repoLayoutRef.contains('ivy') || // Now let's check if it was ivy. We can't be sure, Ivy is flexible. We'll do our best effort

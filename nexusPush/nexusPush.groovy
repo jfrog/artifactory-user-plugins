@@ -33,7 +33,6 @@ import org.springframework.util.AntPathMatcher
 import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
 import static org.artifactory.repo.RepoPathFactory.create
-import static org.artifactory.util.PathUtils.getExtension
 
 executions {
     /**
@@ -219,7 +218,7 @@ def uploadToStagingRepo(searchResults) {
                 response.success = { resp ->
                     log.debug "Artifact ${repoPath.name} was successfully put in Staging Server"
                     backupFileRepoPath = repoPath
-                    if (getExtension(repoPath.path).equalsIgnoreCase('pom')) {
+                    if (repoPath.path.toLowerCase().endsWith('.pom')) {
                         // we'd better go with pom
                         referenceFileRepoPath = repoPath
                     }
