@@ -1,6 +1,7 @@
 import groovy.json.JsonBuilder
-import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+import groovyx.net.http.HttpResponseException
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -11,7 +12,6 @@ class ProtectPropertiesEditTest extends Specification {
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         def artifactory = create(baseurl, "admin", "password")
         def artuser = create(baseurl, "newuser", "password")
-        def repo = artifactory.repository('libs-release-local')
         def conn = new URL(baseurl + '/api/security/users/newuser').openConnection()
         def json = new JsonBuilder()
         json name: 'newuser', email: 'newuser@jfrog.com', password: "password", admin: true
@@ -21,10 +21,14 @@ class ProtectPropertiesEditTest extends Specification {
         conn.getOutputStream().write(json.toString().bytes)
         conn.getResponseCode()
         def tmpfile = new ByteArrayInputStream('temporary file'.bytes)
-        repo.upload('tmpfile', tmpfile).doUpload()
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
 
         when:
-        def file1 = artifactory.repository('libs-release-local').file('tmpfile')
+        def file1 = artifactory.repository("maven-local").file('tmpfile')
         file1.properties().addProperty('prop1', 'value').doSet()
         file1.deleteProperty('prop1')
 
@@ -32,7 +36,7 @@ class ProtectPropertiesEditTest extends Specification {
         notThrown(HttpResponseException)
 
         when:
-        def file2 = artuser.repository('libs-release-local').file('tmpfile')
+        def file2 = artuser.repository("maven-local").file('tmpfile')
         file2.properties().addProperty('prop2', 'value').doSet()
         file2.deleteProperty('prop2')
 
@@ -40,7 +44,7 @@ class ProtectPropertiesEditTest extends Specification {
         thrown(HttpResponseException)
 
         cleanup:
-        repo.delete('tmpfile')
+        artifactory.repository("maven-local").delete()
         conn = new URL(baseurl + '/api/security/users/newuser').openConnection()
         conn.setRequestMethod('DELETE')
         conn.setRequestProperty('Authorization', auth)

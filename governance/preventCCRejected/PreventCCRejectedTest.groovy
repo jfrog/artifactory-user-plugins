@@ -1,4 +1,5 @@
 import spock.lang.Specification
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -7,10 +8,15 @@ class PreventCCRejectedTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def repo = artifactory.repository('libs-release-local')
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
         def file = new ByteArrayInputStream('sample file'.bytes)
-        repo.upload('sample', file).doUpload()
-        repo.file('sample').properties().addProperty('blackduck.cc.id', 'sample').doSet()
+        artifactory.repository("maven-local").upload('sample', file).doUpload()
+        artifactory.repository("maven-local").file('sample').properties().addProperty('blackduck.cc.id', 'sample').doSet()
 
         when:
         artifactory.plugins().execute('setCCProperty').
@@ -18,7 +24,7 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appName', 'sampleapp').
             withParameter('appVersion', '3.14').
             withParameter('status', 'approved').sync()
-        def conn = new URL(baseurl + '/libs-release-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        def conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
         def code1 = conn.getResponseCode()
 
         then:
@@ -30,13 +36,13 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appName', 'sampleapp').
             withParameter('appVersion', '3.14').
             withParameter('status', 'rejected').sync()
-        conn = new URL(baseurl + '/libs-release-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
         def code2 = conn.getResponseCode()
 
         then:
         code2 == 403
 
         cleanup:
-        repo.delete('sample')
+        artifactory.repository("maven-local").delete()
     }
 }
