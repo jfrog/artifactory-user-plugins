@@ -6,10 +6,6 @@ instances. So, any change made to any instance's security data will be
 automatically replicated to the others. This allows, for example, a user to
 regenerate an API key from one instance, and then use the new key from another.
 
-This plugin is currently in a beta stage of development. It is still rather
-fragile, and probably not yet fit for most use cases. It is recommended that you
-do not use this plugin in a production environment in its current state.
-
 Details
 -------
 
@@ -33,8 +29,8 @@ Configuration is done via the configuration file, `securityReplication.json`.
 This file takes the following information:
 
 - `authorization`: The password (or, preferrably, api key) and username of an
-  **admin user**. This user will be used to communicate between all instances in the
-  mesh and needs to be present on all instances of the mesh.
+  **admin user**. This user will be used to communicate between all instances in
+  the mesh and needs to be present on all instances of the mesh.
 - `urls`: A list of urls of all the instances in the mesh. This list is in order
   of priority: in the event of a data conflict (say, if the same user's api key
   was regenerated on two different instances at the same time), the data from
@@ -57,7 +53,8 @@ This file takes the following information:
 Setup
 -----
 
-Ensure you have an admin user that has the same login and password across your entire mesh.
+Ensure you have an admin user that has the same login and password across your
+entire mesh.
 
 Write a configuration file using the fields above. For example:
 
@@ -103,12 +100,21 @@ curl -uadmin:password -XPOST http://localhost:8088/artifactory/api/plugins/execu
 At this point, any HA instances may need their plugin lists refreshed manually,
 for each node in the instance.
 
-Now, the plugin should be properly configured and running on all instances.  You can easily confirm by temporarily [enabling the debug log](https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/securityReplication#logging) and confirming in `artifactory.log`.
+Now, the plugin should be properly configured and running on all instances. You
+can easily confirm by temporarily [enabling the debug log][log] and confirming
+in `artifactory.log`.
 
-### Optional Setup Tasks
-Once the plugin has propagated across your mesh and is working correctly, consider creating a dedicated user for security replication.  Ensure this user has admin privileges, and generate an API key for this user. The plugin will ensure the user and its API key are replicated across the mesh.
+[log]: https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/securityReplication#logging
 
-You may then use this user's login and API key in your `securityReplication.json`:
+### Optional Setup Tasks ###
+
+Once the plugin has propagated across your mesh and is working correctly,
+consider creating a dedicated user for security replication. Ensure this user
+has admin privileges, and generate an API key for this user. The plugin will
+ensure the user and its API key are replicated across the mesh.
+
+You may then use this user's login and API key in your
+`securityReplication.json`:
 
 ``` json
 {
@@ -119,44 +125,58 @@ You may then use this user's login and API key in your `securityReplication.json
     },
 ```
 
-Edit `securityReplication.json` on your master instance, then call the distribution API endpoint to distribute the new `.json` file to the mesh:
+Edit `securityReplication.json` on your master instance, then call the
+distribution API endpoint to distribute the new `.json` file to the mesh:
 
 ``` shell
 curl -u<REPLICATION USER>:<API KEY> -XPOST http://localhost:8088/artifactory/api/plugins/execute/distSecRep
 ```
 
-Now your security replication is using an API key instead of a plaintext password.
-
+Now your security replication is using an API key instead of a plaintext
+password.
 
 Removing the Plugin
 -------------------
 
 To remove an instance A from the mesh:
 
-1. Edit the `securityReplication.json` file on another instance B, and delete the url for instance A from the urls list.
-1. Call the `distSecRep` REST endpoint on instance B, which will propagate the updated configuration to all the other instances.
-1. Delete the plugin `groovy` and related `json` files from the filesystem on instance A.
-1. Restart instance A (due to a limitation in Groovy, calling the `plugins/reload` REST endpoint does not unload deleted plugins, so a full restart of Artifactory is required).
-
+1. Edit the `securityReplication.json` file on another instance B, and delete
+   the url for instance A from the urls list.
+2. Call the `distSecRep` REST endpoint on instance B, which will propagate the
+   updated configuration to all the other instances.
+3. Delete the plugin `groovy` and related `json` files from the filesystem on
+   instance A.
+4. Restart instance A (due to a limitation in Groovy, calling the
+   `plugins/reload` REST endpoint does not unload deleted plugins, so a full
+   restart of Artifactory is required).
 
 FAQ
 ---
 
-> Will users in Cluster B be replicated to Cluster A if Cluster A doesn’t have the user and Cluster A has the highest precedence?
+> Will users in Cluster B be replicated to Cluster A if Cluster A doesn't have
+> the user and Cluster A has the highest precedence?
 
-Yes, changes on any cluster will be replicated to any other cluster, regardless of precedence. Precedence only comes into play when there are direct conflicts in data. For example, if the API key for a particular user is regenerated on both clusters at the same time, the API key in Cluster A will take precedence. Or, if a user is created in Cluster A, and a different user with exactly the same name is created in Cluster B at the same time, the user in Cluster A will be replicated, and will overwrite the user in Cluster B.
-
-
+Yes, changes on any cluster will be replicated to any other cluster, regardless
+of precedence. Precedence only comes into play when there are direct conflicts
+in data. For example, if the API key for a particular user is regenerated on
+both clusters at the same time, the API key in Cluster A will take precedence.
+Or, if a user is created in Cluster A, and a different user with exactly the
+same name is created in Cluster B at the same time, the user in Cluster A will
+be replicated, and will overwrite the user in Cluster B.
 
 Logging
 -------
+
 To enable logging, amend this to the end of `logback.xml`
+
 ``` xml
 <logger name="securityReplication">
     <level value="debug"/>
 </logger>
 ```
-Be careful; the logging is rather verbose. You might want to enable it temporarily.
+
+Be careful; the logging is rather verbose. You might want to enable it
+temporarily.
 
 Issues and Limitations
 ----------------------
