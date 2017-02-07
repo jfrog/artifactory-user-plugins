@@ -26,15 +26,15 @@ Execution
 	slavePassword=password
 	deleteDifferentBuild=true/false
 	```
-3. Call the plugin execution by running:
+3. Execution
+	- Call the plugin execution by running:
 	```
 	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication"
 	```
-
 	- You can pass all the parameters for the plugin in the REST call:
-```
+	```
 	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=http://localhost:8080/artifactory|masterUser=admin|masterPassword=password|slave=http://localhost:8081/artifactory|slaveUser=admin|slavePassword=password|deleteDifferentBuild=false"
-```
+	```
 
 Logic
 ---------------------------------------
