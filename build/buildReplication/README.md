@@ -41,9 +41,9 @@ Logic
 1. The plugin compare the list of build from master and slave and:
 	- Add all builds of projects that are found on master but not on slave.
 	- Projects that are found on slave but not on master are completely ignored.
-2. If deleteDifferentBuild=false:
+2. If `deleteDifferentBuild=false`:
 	- Builds deleted from master and already exists in slave will not be deleted.
-3. BE CAREFUL `deleteDifferentBuild=true`
+3. BE CAREFUL `deleteDifferentBuild=true`:
 	- Builds deleted from master and already exists in slave will be deleted from slave.
 	- If the delete artifacts flag is on inside the build info it will also delete artifacts on the slave.
 The script can get 7 params:
