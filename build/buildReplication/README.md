@@ -10,7 +10,8 @@ To install Build Replication:
 1. Place buildReplication.groovy under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
 2. Place buildReplication.properties file under `${ARTIFACTORY_HOME}/etc/plugins`.
 
-Run the plugin
+
+Execution
 ---------------------------------------
 
 1. The plugin may run using the `buildReplication.properties`
@@ -25,15 +26,14 @@ Run the plugin
 	slavePassword=password
 	deleteDifferentBuild=true/false
 	```
+3. Call the plugin execution by running:
+	```
+	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication"
+	```
 
-Execution
----------------------------------------
+	- You can pass all the parameters for the plugin in the REST call:
 ```
-curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication"
-```
- You can pass all the parameters for the plugin in the REST call:
-```
-curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=http://localhost:8080/artifactory|masterUser=admin|masterPassword=password|slave=http://localhost:8081/artifactory|slaveUser=admin|slavePassword=password|deleteDifferentBuild=false"
+	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=http://localhost:8080/artifactory|masterUser=admin|masterPassword=password|slave=http://localhost:8081/artifactory|slaveUser=admin|slavePassword=password|deleteDifferentBuild=false"
 ```
 
 Logic
