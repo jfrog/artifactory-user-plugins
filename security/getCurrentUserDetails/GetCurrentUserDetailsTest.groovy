@@ -30,7 +30,7 @@ class GetCurrentUserDetailsTest extends Specification {
         json.lastLoginClientIp == null
         json.lastAccessClientIp == null
         json.lastLoginTimeMillis == 0
-        json.lastAccessTimeMillis == 0
+        json.lastAccessTimeMillis == null
         json.transientUser == false
         json.anonymous == false
         json.admin == false
