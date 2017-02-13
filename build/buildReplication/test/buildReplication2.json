@@ -1,0 +1,21 @@
+{
+  "version" : "1.0.1",
+  "name" : "buildReplication2",
+  "number" : "29",
+  "type" : "MAVEN",
+  "buildAgent" : {
+    "name" : "Maven",
+    "version" : "3.0.5"
+  },
+  "agent" : {
+    "name" : "Jenkins",
+    "version" : "1.554.2"
+  },
+  "started" : "2014-09-30T12:00:19.893+0300",
+  "artifactoryPluginVersion" : "2.3.1",
+  "durationMillis" : 9762,
+  "artifactoryPrincipal" : "james",
+  "url" : "http://my-ci-server/jenkins/job/My-project-name/28/",
+  "vcsRevision" : "e4ab2e493afd369ae7bdc90d69c912e8346a3463",
+  "vcsUrl" : "https://github.com/github-user/my-project.git"
+}
