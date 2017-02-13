@@ -33,8 +33,8 @@ import org.artifactory.security.User
  * @since 02/04/15
  */
 
-@Field final String centralAuthenticatorArtifactory = 'http://localhost:8081/artifactory'
-@Field final String uriPath = '/api/plugins/execute/getCurrentUserDetails'
+@Field final String centralAuthenticatorArtifactory = 'http://localhost:8081'
+@Field final String uriPath = '/artifactory/api/plugins/execute/getCurrentUserDetails'
 
 realms {
     delegateRealm(autoCreateUsers: true) {
@@ -66,6 +66,8 @@ realms {
                         currentUser.email = json.email
                         currentUser.groups = json.groups
                         currentUser.setUserProperty("basictoken", json?.userProperties?.basictoken)
+                        currentUser.admin = json.admin
+                        currentUser.updatableProfile = json.updatableProfile
                         log.info "User ${currentUser.username} was successfully synchronize"
                         passed = true
                     }
