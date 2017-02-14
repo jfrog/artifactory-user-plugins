@@ -1,0 +1,7 @@
+{
+  "repositories": {
+    "gitlfs-local": {
+      "repourl": "http://localhost:3000/lfstest.git"
+    }
+  }
+}
