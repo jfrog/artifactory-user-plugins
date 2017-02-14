@@ -8,11 +8,13 @@ class QuotaWarnSlackTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
 
-        // when:
+        when:
+        null
 
-        // then:
+        then:
+        false
 
-        // cleanup:
+        //cleanup:
     }
 }
 
