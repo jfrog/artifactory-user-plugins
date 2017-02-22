@@ -43,10 +43,6 @@ This file takes the following information:
 - `cron_job`: The [quartz][] style cron expression describing how often
   synchronization occurs. Changes to this will not take effect until after the
   plugin is reloaded or Artifactory is restarted.
-- `startTime`: A timestamp representing when the artifactory instance was
-  started. This is used by the plugin to detect crashes and restarts. This is
-  used internally by the plugin, and is not a configuration option. It should
-  not be modified.
 
 [quartz]: http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html
 
@@ -67,7 +63,6 @@ Write a configuration file using the fields above. For example:
     },
     "filter": 1,
     "cron_job": "0 0 0/1 * * ?",
-    "startTime": 0,
     "urls": [
       "http://localhost:8088/artifactory",
       "http://localhost:8090/artifactory",
@@ -167,7 +162,7 @@ be replicated, and will overwrite the user in Cluster B.
 Logging
 -------
 
-To enable logging, amend this to the end of `logback.xml`
+To enable logging, append this to the end of `logback.xml`
 
 ``` xml
 <logger name="securityReplication">

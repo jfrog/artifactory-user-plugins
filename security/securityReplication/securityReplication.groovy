@@ -14,40 +14,27 @@
  * limitations under the License.
  */
 
-import com.google.common.collect.HashMultimap
-
 import groovy.json.JsonBuilder
-import groovy.json.JsonSlurper
 import groovy.json.JsonException
+import groovy.json.JsonSlurper
 
 import java.security.MessageDigest
 
 import org.apache.http.client.methods.*
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 
 import org.artifactory.common.ArtifactoryHome
-import org.artifactory.model.xstream.security.AceImpl
-import org.artifactory.model.xstream.security.AclImpl
-import org.artifactory.model.xstream.security.GroupImpl
-import org.artifactory.model.xstream.security.PermissionTargetImpl
-import org.artifactory.model.xstream.security.UserImpl
-import org.artifactory.request.RequestThreadLocal
+import org.artifactory.factory.InfoFactoryHolder
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
-import org.artifactory.security.crypto.CryptoHelper
-import org.artifactory.storage.db.DbService
-import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
-import org.artifactory.storage.db.util.DbUtils
-import org.artifactory.storage.db.util.JdbcHelper
-import org.artifactory.storage.security.service.AclStoreService
-import org.artifactory.storage.security.service.UserGroupStoreService
+import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.util.HttpUtils
 
 import org.jfrog.security.crypto.EncodedKeyPair
+import org.jfrog.security.crypto.result.DecryptionStatusHolder
 
-/* to enable logging ammend this to the end of artifactorys logback.xml
+/* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
         <level value="debug"/>
     </logger>
@@ -56,63 +43,23 @@ import org.jfrog.security.crypto.EncodedKeyPair
 //global variables
 verbose = false
 artHome = ctx.artifactoryHome.haAwareEtcDir
-MASTER = null
-DOWN_INSTANCE = []
 
 //general artifactory plugin execution hook
 executions {
     //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/getUserDB
     //External/Internal Use
-    getUserDB(httpMethod: 'GET'){
-        try {
-            message = new File(artHome, '/plugins/goldenFile.json').text
-
-            if (verbose == true){
-                log.debug("ALL: getUserDB is called giving my golden file DB: ${message}")
-            }
-
-            status = 200
-        } catch (FileNotFoundException ex) {
-            message = "The golden user file either does not exist or has the wrong permissions"
-            status = 400
-        }
-    }
-
-    //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/userDBSync
-    //External Use
-    userDBSync(httpMethod: 'POST') {
-        def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-        def auth = RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("Authorization")
-        def secRepJson = new File(artHome, '/plugins/securityReplication.json')
-        def slurped = null
-        try {
-            slurped = new JsonSlurper().parse(secRepJson)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem prasing JSON: $ex.message"
-            status = 400
-            return
-        }
-        def extracted = extract()
-        syncAll(extracted, buildDiff(baseSnapShot, extracted), auth, 'dbSync', slurped, secRepJson)
-        status = 200
+    getUserDB(httpMethod: 'GET') {
+        def (msg, stat) = getGoldenFile()
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/distSecRep
     //External Use
     distSecRep(httpMethod: 'POST') {
-        def auth = RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("Authorization")
-        def targetFile = new File(artHome, '/plugins/securityReplication.json')
-        def slurped = null
-        try {
-            slurped = new JsonSlurper().parse(targetFile)
-        } catch (JsonException ex) {
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-        log.debug("Running distSecRep command: slurped: $slurped")
-        pushData(slurped, auth)
+        def (msg, stat) = pushData()
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X PUT http://localhost:8081/artifactory/api/plugins/execute/securityReplication -T <textfile>
@@ -140,137 +87,37 @@ executions {
         }
     }
 
-    //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet?params=action=<action> -d <data>
+    //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/secRepPing
     //Internal Use
-    secRepDataGet(httpMethod: 'GET') { params ->
+    secRepPing(httpMethod: 'GET') {
+        log.debug("SLAVE: secRepPing is called")
+        def (msg, stat) = getPingAndFingerprint()
+        message = unwrapData('js', msg)
+        status = stat
+    }
+
+    //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet -d <data>
+    //Internal Use
+    secRepDataGet(httpMethod: 'POST') { ResourceStreamHandle body ->
+        def arg = wrapData('jo', null)
         log.debug("SLAVE: secRepDataGet is called")
-        def action = params?.('action')?.getAt(0) as String
-        def slavePatch = null
-        def goldenDB = null
-        def slurped = null
-        def state = 0
-        def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-
-        def recentDump = new File(artHome, '/plugins/recent.json')
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-        def secRepJson = new File(artHome, "/plugins/securityReplication.json")
-
-        try {
-            slurped = new JsonSlurper().parse(secRepJson)
-        } catch (JsonException ex) {
-            message = "Problem parsing JSON: $ex.message"
-            log.error("ALL: problem getting ${secRepJson} file")
-            status = 400
-            return
+        def bodytext = body.inputStream.text
+        if (bodytext.length() > 0) {
+            arg = wrapData('js', bodytext)
         }
-        log.debug("SLAVE: secRepDataGet is called")
-
-        state = checkState(slurped, state, secRepJson)
-        log.debug("SLAVE: state: ${state}")
-
-        if (state == 1) {
-            log.debug("SLAVE: I am also in disaster recovery mode, nothing to give back")
-            message = "[]"
-            status = 200
-            return
-        }
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-        if (verbose == true) {
-            log.debug("SLAVE: goldenDB is ${goldenDB.toString()}")
-        }
-        def extracted = extract()
-        recentDump.withWriter { new JsonBuilder(extracted).writeTo(it) }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slaveExract is: ${extracted.toString()}")
-        }
-
-        if (action == 'diff'){
-            log.debug("SLAVE: secRepDataGet diff")
-            slavePatch = buildDiff(goldenDB, extracted)
-        } else if (action == 'dbSync'){
-            log.debug("SLAVE: secRepDataGet: dbSync")
-            slavePatch = buildDiff(baseSnapShot, extracted)
-        } else {
-            log.debug("SLAVE: secRepDataGet bad action: ${data}")
-            message = "secRepDataGet bad action"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slavePatch is: ${slavePatch.toString()}")
-        }
-
-        slavePatch = new JsonBuilder(slavePatch)
-        message = slavePatch
-        status = 200
+        def (msg, stat) = getRecentPatch(arg)
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataPost -d <data>
     //Internal Use
     secRepDataPost(httpMethod: 'POST') { ResourceStreamHandle body ->
         log.debug("SLAVE: secRepDataPost is called")
-        def slurped = null
-        def goldenDB = null
-        def tempSlaveGolden = null
-
-        try {
-            slurped = new JsonSlurper().parse(body.inputStream)
-        } catch (JsonException ex) {
-            log.error("SLAVE: error parsing JSON: $ex.message")
-            message = "SLAVE: Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slurped: ${slurped.toString()}")
-        }
-
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: original slave Golden is ${goldenDB.toString()}")
-        }
-
-        tempSlaveGolden = applyDiff(goldenDB, slurped)
-        goldenDB = tempSlaveGolden
-
-        if (verbose == true){
-            log.debug("SLAVE: new slave Golden is ${goldenDB.toString()}")
-        }
-
-        writeToGoldenFile(goldenDB)
-        //insert into DB here
-        def recentDump = new File(artHome, '/plugins/recent.json')
-        try {
-            def extracted = new JsonSlurper().parse(recentDump)
-            updateDatabase(extracted, goldenDB)
-        } catch (JsonException ex) {
-            log.error("Could not parse recent.json: $ex.message")
-            message = "Could not parse recent.json: $ex.message"
-            status = 400
-            return
-        }
-
-        message = goldenDB.toString()
-        status = 200
+        def arg = wrapData('ji', body.inputStream)
+        def (msg, stat) = applyAggregatePatch(arg)
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //TODO: Delete later, testing purposes only
@@ -285,23 +132,30 @@ executions {
         status = 200
         message = "Completed, try dumping now"
     }
+
+    testSnapshotClear() {
+        def cfgserv = ctx.beanForType(ConfigsService)
+        cfgserv.deleteConfig("plugin.securityreplication.golden")
+        cfgserv.deleteConfig("plugin.securityreplication.recent")
+        cfgserv.deleteConfig("plugin.securityreplication.fingerprint")
+        status = 200
+        message = "Snapshots cleared successfully"
+    }
 }
 
 def getCronJob() {
     def defaultcron = "0 0 0/1 * * ?"
     def slurped = null
     def jsonFile = new File(artHome, "/plugins/securityReplication.json")
-
     try {
         slurped = new JsonSlurper().parse(jsonFile)
     } catch (JsonException ex) {
-        log.error("ALL: problem getting ${jsonFile}, using default")
+        log.error("ALL: problem getting $jsonFile, using default")
         return defaultcron
     }
-
     def cron_job = slurped?.securityReplication?.cron_job
     if (cron_job) {
-        log.debug("ALL: config cron job is being set at: ${cron_job}")
+        log.debug("ALL: config cron job is being set at: $cron_job")
         return cron_job
     }  else {
         log.debug("ALL: cron job is not configured, using default")
@@ -312,592 +166,551 @@ def getCronJob() {
 //general artifactory cron job hook
 jobs {
     securityReplicationWorker(cron: getCronJob()) {
-        MASTER = null
-        DOWN_INSTANCE = []
-        def masterPatch = null
-        def goldenDB = null
         def slurped = null
-        def artStartTime = null
-        def disasterRecovery = false
-        def state = 0
-
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
         def targetFile = new File(artHome, "/plugins/securityReplication.json")
-
         try {
             slurped = new JsonSlurper().parse(targetFile)
         } catch (JsonException ex) {
-            log.error("ALL: problem getting ${targetFile}")
+            log.error("ALL: problem getting $targetFile")
             return
         }
-
-        state = checkState(slurped, state, targetFile)
-        log.debug("ALL: state: ${state}")
-
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("No goldenFile lets get the first goldenDB")
-            goldenDB = extract()
-            writeToGoldenFile(goldenDB)
-        }
-
         def whoami = slurped.securityReplication.whoami
         def distList = slurped.securityReplication.urls
         def username = slurped.securityReplication.authorization.username
         def password = slurped.securityReplication.authorization.password
         def encoded = "$username:$password".getBytes().encodeBase64().toString()
-        def auth = "Basic ${encoded}"
-
-        log.debug("ALL: whoami: ${whoami}")
-        log.debug("ALL: Master: ${MASTER}")
-
-        findMaster(distList, whoami, auth)
-
-        if (whoami != MASTER) {
-            if (state == 0){
-                bringUp('SLAVE', auth, slurped, targetFile, null)
-            } else if (state == 1) {
-                sleep(1000)
-                runDisasterRecovery('SLAVE', auth, slurped, targetFile, goldenDB)
-            } else {
-                log.debug("SLAVE: I am a slave, going back to sleep")
-            }
+        def auth = "Basic $encoded"
+        def master = findMaster(distList, whoami, auth)
+        log.debug("ALL: whoami: $whoami")
+        log.debug("ALL: Master: $master")
+        if (whoami != master) {
+            log.debug("SLAVE: I am a slave, going back to sleep")
             return
-        } else {
-            log.debug("MASTER: I am the Master, starting to do work")
-
-            log.debug("MASTER: Checking my slave instances")
-            checkSlaveInstances(distList, whoami, auth)
-
-            log.debug("MASTER: DOWN_INSTANCE: ${DOWN_INSTANCE.size()}, distList size: ${distList.size()}")
-            if (DOWN_INSTANCE.size() >= (distList.size() - 1) && (MASTER == whoami)) {
-                log.debug("MASTER: I'm all alone here, no need to do work")
-                return
-            }
-            log.debug("MASTER: Down Instances again are: ${DOWN_INSTANCE}")
-
-            if (state == 0){
-                bringUp('MASTER', auth, slurped, targetFile, goldenDB)
-            } else if (state == 1){
-                log.debug("MASTER: I am recovering from a failure, please next slave given me a new golden DB")
-                runDisasterRecovery('MASTER', auth, slurped, targetFile, goldenDB)
-            } else {
-                log.debug("MASTER: Not first time coming up, lets do some updates")
-                def extracted = extract()
-                masterPatch = buildDiff(goldenDB, extracted)
-                log.debug("MASTER: masterPatch is: ${masterPatch}")
-
-                //set new goldenDB with current db snapshot
-                goldenDB = extracted
-
-                if (verbose == true) {
-                    log.debug("MASTER: new goldenDB is: ${goldenDB.toString()}")
-                }
-
-                writeToGoldenFile(goldenDB)
-
-                syncAll(extracted, masterPatch, auth, 'diff', slurped, targetFile)
-            }
         }
-    }
-}
-
-//TODO: add hashing
-def checkState(slurped, state, targetFile){
-    def artStartTime = null
-    def pluginStartTime = slurped.securityReplication.startTime
-
-    if (ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary != null ) {
-        artStartTime = ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary.startTime
-    } else {
-        artStartTime = ctx.beanForType(ArtifactoryServersCommonService).currentMember.startTime
-    }
-    log.debug("ALL: artStartTime: ${artStartTime}")
-    log.debug("All: plugin startTime: ${pluginStartTime}")
-
-    if (pluginStartTime == 0 || pluginStartTime == null) {
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
-        log.debug("ALL: init new plugin start time = ${artStartTime}")
-        state = 0
-    } else if ( pluginStartTime < artStartTime ) {
-        state = 1
-        log.debug("ALL: plugin is in disaster recovery mode")
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
-        log.debug("ALL: recovery new plugin start time = ${artStartTime}")
-    } else {
-        state = 2
-        log.debug("ALL: steady state nothing to do")
-    }
-    return state
-}
-
-def writeToGoldenFile(goldenDB){
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-
-    if (verbose == true) {
-        log.debug("TESTING: ${artHome}")
-        log.debug("ALL: writing to goldenFile: ${goldenDB.toString()}")
-    }
-
-    try {
-        JsonBuilder builder = new JsonBuilder(goldenDB)
-        goldenFile.withWriter{builder.writeTo(it)}
-    } catch (Exception ex){
-        log.error("ALL: failed to write to file $ex.message")
-    }
-}
-
-def syncAll(recent, patch, auth, action, slurped, jsonFile){
-    def goldenDB = null
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-
-    log.debug("MASTER: Going to slaves to get stuff action: ${action}")
-    def whoami = slurped.securityReplication.whoami
-    def distList = slurped.securityReplication.urls
-    def bigDiff = grabStuffFromSlaves(distList, patch, whoami, auth, action)
-    
-    if (verbose == true) {
-        log.debug("MASTER: The aggragated diff is: ${bigDiff}")
-    }
-
-    if (bigDiff.isEmpty()){
-        log.debug("MASTER: The aggragated diff is empty, no need to do anything")
-        return
-    } else {
+        if (distList.size() <= 1) {
+            log.debug("MASTER: I'm all alone here, no need to do work")
+            return
+        }
+        log.debug("MASTER: I am the Master, starting to do work")
+        log.debug("MASTER: Checking my slave instances")
+        def upList = checkSlaveInstances(distList, whoami, auth)
+        log.debug("MASTER: upList size: ${upList.size()}, distList size: ${distList.size()}")
+        if (2*upList.size() <= distList.size()) {
+            log.debug("MASTER: Cannot continue, majority of instances unavailable")
+            return
+        }
+        log.debug("MASTER: Available instances are: $upList")
+        log.debug("MASTER: Let's do some updates")
+        log.debug("MASTER: Getting the golden file")
+        def golden = findBestGolden(upList, whoami, auth)
+        log.debug("MASTER: Going to slaves to get stuff")
+        def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth)
+        if (verbose == true) {
+            log.debug("MASTER: The aggragated diff is: $bigDiff")
+        }
         def mergedPatch = merge(bigDiff)
-
         if (verbose == true) {
-            log.debug("MASTER: the merged golden patch is ${mergedPatch.toString()}")
+            log.debug("MASTER: the merged golden patch is $mergedPatch")
         }
-
-        //comvert tp JSON
-        def jsonMergedPatch = new JsonBuilder(mergedPatch)
-
-        if (verbose == true) {
-            log.debug("MASTER: jsonMergedPatch: ${jsonMergedPatch.toString()}")
-        }
-
         log.debug("MASTER: I gotta send the golden copy back to my slaves")
-        sendSlavesGoldenCopy(distList, whoami, auth, jsonMergedPatch)
-
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            return
-        }
-
-        goldenDB = applyDiff(goldenDB, mergedPatch)
-
-        if (verbose == true) {
-            log.debug("MASTER: the merged golden db is ${goldenDB.toString()}")
-        }
-
-        //Apply the new merged master golden into the DB
-        updateDatabase(recent, goldenDB)
+        sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden)
     }
 }
 
-counter = 0
-def remoteCall(baseurl, auth, method, data){
-    if (verbose == true) {
-        counter = counter + 1
-        log.debug("COUNTER COUNTER COUNTER: ${counter}")
-    }
+def readFile(fname) {
+    def cfgserv = ctx.beanForType(ConfigsService)
+    def data = cfgserv.getStreamConfig("plugin.securityreplication.$fname")
+    if (!data) return null
+    return wrapData('ji', data)
+}
 
-    CloseableHttpClient httpclient = HttpClients.createDefault()
-    def req = null
+def writeFile(fname, content) {
+    def data = unwrapData('js', content)
+    def cfgserv = ctx.beanForType(ConfigsService)
+    try {
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data)
+    } catch (MissingMethodException ex) {
+        def t = System.currentTimeMillis()
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data, t)
+    }
+}
+
+def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
+    def exurl = "$baseurl/api/plugins/execute"
+    def me = whoami == baseurl
     switch(method) {
-        case 'ping':
-            def url = "${baseurl}/api/system/ping"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Authorization", auth)
-            break
         case 'json':
-            def url = "${baseurl}/api/plugins/execute/securityReplication"
-            req = new HttpPut(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "text/plain")
-            req.addHeader("Authorization", auth)
-            if (data){
-                req.entity = new StringEntity(data)
-            }
-            break
+            def req = new HttpPut("$exurl/securityReplication")
+            return makeRequest(req, auth, data, "text/plain")
         case 'plugin':
-            def url = "${baseurl}/api/plugins/securityReplication"
-            req = new HttpPut(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "text/plain")
-            req.addHeader("Authorization", auth)
-            if (data){
-                req.entity = new StringEntity(data)
-            }
-            break
-        case 'data_retrieve':
-            def url = "${baseurl}/api/plugins/execute/secRepDataGet?params=action=${data}"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
+            def req = new HttpPut("$baseurl/api/plugins/securityReplication")
+            return makeRequest(req, auth, data, "text/plain")
         case 'data_send':
-            def url = "${baseurl}/api/plugins/execute/secRepDataPost"
-            req = new HttpPost(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-
-            if (verbose == true) {
-                log.debug("MASTER: data being sent to slave is: ${data}")
-            }
-
-            if (data){
-                req.entity = new StringEntity(data.toString())
-            }
-            break
-        case 'slaveDBSync':
-            def url = "${baseurl}/api/plugins/execute/userDBSync"
-            req = new HttpPost(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
+            if (me) return applyAggregatePatch(wrapData('js', unwrapData('js', data)))
+            def req = new HttpPost("$exurl/secRepDataPost")
+            return makeRequest(req, auth, data, "application/json")
+        case 'data_retrieve':
+            if (me) return getRecentPatch(data)
+            def req = new HttpPost("$exurl/secRepDataGet")
+            return makeRequest(req, auth, data, "application/json")
         case 'recoverySync':
-            def url = "${baseurl}/api/plugins/execute/getUserDB"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
-        default: throw new RuntimeException("Invalid method ${method}.")
+            if (me) return getGoldenFile()
+            def req = new HttpGet("$exurl/getUserDB")
+            return makeRequest(req, auth)
+        case 'ping':
+            if (me) return getPingAndFingerprint()
+            def req = new HttpGet("$exurl/secRepPing")
+            return makeRequest(req, auth)
+        default: throw new RuntimeException("Invalid method $method")
     }
-    CloseableHttpResponse resp = null
+}
+
+def makeRequest(req, auth, data = null, ctype = null) {
+    def resp = null, httpclient = HttpClients.createDefault()
+    req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
+    req.addHeader("Authorization", auth)
+    if (data) {
+        req.addHeader("Content-Type", ctype)
+        req.entity = new StringEntity(unwrapData('js', data))
+    }
     try {
         resp = httpclient.execute(req)
-        def ips = resp.getEntity().getContent()
-        def statusCode = resp.getStatusLine().getStatusCode()
-        return [ips.text, statusCode]
-    } catch (e) {
-        return [null, 406]
+        def ips = resp.entity.content
+        def statusCode = resp.statusLine.statusCode
+        return [wrapData('js', ips.text), statusCode]
+    } catch (ex) {
+        return [wrapData('js', "Problem making request: $ex.message"), 502]
     } finally {
         httpclient?.close()
         resp?.close()
     }
 }
 
-def pushData(slurped, auth) {
+def pushData() {
+    def targetFile = new File(artHome, '/plugins/securityReplication.json')
+    def slurped = null
+    try {
+        slurped = new JsonSlurper().parse(targetFile)
+    } catch (JsonException ex) {
+        return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+    }
+    log.debug("Running distSecRep command: slurped: $slurped")
+    def whoami = slurped.securityReplication.whoami
+    def username = slurped.securityReplication.authorization.username
+    def password = slurped.securityReplication.authorization.password
+    def encoded = "$username:$password".getBytes().encodeBase64().toString()
+    def auth = "Basic $encoded"
     def pluginFile = new File(artHome, '/plugins/securityReplication.groovy')
     log.debug("Running distSecRep command: inside pushData")
-
-    if (!pluginFile || !pluginFile.exists()) {
-        log.error("GENERAL: ${pluginFile} not found")
-        return
-    }
-
+    if (!pluginFile?.exists()) return [wrapData('js', "$pluginFile not found"), 400]
     def distList = slurped.securityReplication.urls
-    log.debug("Running distSecRep command: distList: ${distList}")
-    distList.each{
-        if (slurped.securityReplication.whoami != it) {
-
-            //check the health status of each artifactory instance
-            log.debug("checking health of ${it}")
-            def resp = remoteCall(it, auth, 'ping', null)
-            if (resp[1] != 200) {
-                throw new RuntimeException("Health Check Failed: ${it}: HTTP error code: " + resp[1])
-            }
-
-            slurped.securityReplication.whoami = "${it}"
-            def builder = new JsonBuilder(slurped)
-
-            //push plugin to all instances
-            log.debug("sending plugin to ${it} instance")
-            resp = remoteCall(it, auth, 'plugin', pluginFile.text)
-            if (resp[1] != 200) {
-                throw new RuntimeException("PLUGIN Push Failed: ${it}: HTTP error code: " + resp[1])
-            }
-
-            //push json to all instances
-            log.debug("sending json file to ${it} instance")
-            resp = remoteCall(it, auth, 'json', builder.toString())
-            if (resp[1] != 200) {
-                throw new RuntimeException("JSON Push Failed: ${it}: HTTP errorcode: " + resp[1])
-            }
-        }
-    }
-}
-
-def sendSlavesGoldenCopy(distList, whoami, auth, mergedPatch){
-    if (verbose == true) {
-        log.debug("MASTER: the merged patch is: ${mergedPatch.toString()}")
-    }
-
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if ((MASTER == instance) && (MASTER == whoami)) {
-            log.debug("MASTER: This is myself (the Master), I don't need to send stuff to myself")
-        } else if (DOWN_INSTANCE.contains(instance)) {
-            log.debug("MASTER: This instance: ${instance} is down, I don't need to give it stuff")
-        } else {
-            log.debug("MASTER: Sending mergedPatch to ${instance}")
-            def resp = remoteCall(instance, auth, 'data_send', mergedPatch)
-            if (resp[1] != 200) {
-                log.error("MASTER: Error sending to ${instance} the mergedPatch, statusCode: ${resp[1]}")
-                break
-            }
-            
-            if (verbose == true) {
-                log.debug("MASTER: Sent Data, Slave responds: ${resp[0].toString()}")
-            }
-        }
-    }
-}
-
-def findNextSlave(node, distList, auth, whoami){
-    def recoverySlave = null
-    log.debug("${node}: find next slave who is not the master to get golden db from")
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if (MASTER == instance && MASTER == whoami){
-            log.debug("${node}: this is me, I need the recovery DB from the next up slave")
-        } else if (DOWN_INSTANCE.contains(instance)){
-            log.debug("${node}: ${instance} is down, can't get anything from this slave")
-        } else {
-            def resp = remoteCall(instance, auth, 'ping', null)
-            if (resp[1] != 200){
-                log.error("${node}: ping failed: ${MASTER}: HTTP error code: " + resp[1])
-            } else {
-                log.debug("${node}: ${instance} is up, let's get the recovery DB from this slave")
-                recoverySlave = instance
-                break
-            }
-        }
-    }
-    return recoverySlave
-}
-
-def runDisasterRecovery(node, auth, slurped, jsonFile, goldenDB){
-    def recoverySlave = null
-    def resp = null
-    def distList = slurped.securityReplication.urls
-    def retryCount = 0
-
-    if (node == 'SLAVE'){
-        log.debug("${node}: I am recovering from a failure, please send me the master golden db")
-        resp = remoteCall(MASTER, auth, 'recoverySync', null)
+    log.debug("Running distSecRep command: distList: $distList")
+    def pluginData = wrapData('js', pluginFile.text)
+    for (dist in distList) {
+        if (whoami == dist) continue
+        slurped.securityReplication.whoami = "$dist"
+        //push plugin to all instances
+        log.debug("sending plugin to $dist instance")
+        resp = remoteCall(whoami, dist, auth, 'plugin', pluginData)
         if (resp[1] != 200) {
-            log.error("${node}: recoverySync failed: ${MASTER} retry(${retryCount}): HTTP error code: " + resp[1])
-            if (retryCount >= 3){
-                bringUp('SLAVE', auth, slurped, jsonFile, null)
-            } else {
-                retryCount = retryCount + 1
-            }
-            return
+            return [wrapData('js', "PLUGIN Push $dist Failed: ${resp[0][2]}"), resp[1]]
         }
-
-        try {
-            goldenDB = new JsonSlurper().parseText(resp[0].toString())
-        } catch (JsonException ex) {
-            log.error("${node}: Problem parsing JSON: $ex.message")
-            return
+        //push json to all instances
+        log.debug("sending json file to $dist instance")
+        resp = remoteCall(whoami, dist, auth, 'json', wrapData('jo', slurped))
+        if (resp[1] != 200) {
+            return [wrapData('js', "JSON Push $dist Failed: ${resp[0][2]}"), resp[1]]
         }
-
-        writeToGoldenFile(goldenDB)
-        updateDatabase(null, goldenDB)
-    } else if (node == 'MASTER'){
-        log.debug("${node}: I am recovering from a failure, please next slave given me a new golden DB")
-
-        //find next slave who is not the master to get golden db from
-        if (distList.size() > 1) {
-            recoverySlave = findNextSlave('MASTER', distList, auth, slurped.securityReplication.whoami)
-            resp = remoteCall(recoverySlave, auth, 'recoverySync', null)
-
-            if (resp[1] != 200) {
-                log.error("${node}: recoverySync failed: ${MASTER}: retry(${retryCount}), HTTP error code: " + resp[1])
-                if (retryCount >= 3) {
-                    bringUp('MASTER', auth, slurped, jsonFile, goldenDB)
-                } else {
-                    retryCount = retryCount + 1
-                }
-                return
-            }
-
-            try {
-                goldenDB = new JsonSlurper().parseText(resp[0].toString())
-            } catch (JsonException ex) {
-                log.error("${node}: Problem parsing JSON: $ex.message")
-                return
-            }
-
-            writeToGoldenFile(goldenDB)
-            updateDatabase(null, goldenDB)
-        } else {
-            log.debug("${node}: there is only me, i'll start from scratch")
-            goldenDB = extract()
-            writeToGoldenFile(goldenDB)
-            return
-        }
-    } else {
-        log.error("ALL: invalid node: ${node}")
     }
+    return [wrapData('js', "Pushed all data successfully"), 200]
 }
 
-def bringUp(node, auth, slurped, jsonFile, goldenDB){
+def findBestGolden(upList, whoami, auth) {
     def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-    if (node == 'SLAVE'){
-        log.debug("${node}: This is my first time I'm coming up, telling master to sync everything for me")
-        sleep(1000) //this sleep is here to avoid initial bring up timing colisions
-        def resp = remoteCall(MASTER, auth, 'slaveDBSync', null)
+    def synched = upList.every { k, v -> v?.cs == upList[whoami]?.cs }
+    if (synched) return [fingerprint: upList[whoami], golden: baseSnapShot]
+    def latest = null, golden = null
+    for (inst in upList.entrySet()) {
+        if (!inst.value) continue
+        if (!latest || latest.value.ts < inst.value.ts) latest = inst
+    }
+    if (!latest) return [fingerprint: null, golden: baseSnapShot]
+    if (latest.value.cs == upList[whoami]?.cs) golden = whoami
+    else golden = latest.key
+    def resp = remoteCall(whoami, golden, auth, 'recoverySync')
+    if (resp[1] != 200) {
+        throw new RuntimeException("failed to retrieve golden from $golden")
+    }
+    return [fingerprint: latest.value, golden: unwrapData('jo', resp[0])]
+}
+
+def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
+    def fingerprint = [cs: null, ts: System.currentTimeMillis()]
+    if (golden.fingerprint && fingerprint.ts <= golden.fingerprint.ts) {
+        fingerprint.ts = 1 + golden.fingerprint.ts
+    }
+    for (instance in upList.entrySet()) {
+        log.debug("MASTER: Sending mergedPatch to $instance.key")
+        def data = wrapData('jo', [fingerprint: fingerprint, patch: mergedPatch])
+        def resp = remoteCall(whoami, instance.key, auth, 'data_send', data)
         if (resp[1] != 200) {
-            throw new RuntimeException("${node}: slaveDBSync Failed: ${MASTER}: HTTP error code: " + resp[1])
+            log.error("MASTER: Error sending to $instance.key the mergedPatch, statusCode: ${resp[1]}")
         }
-    } else if (node == 'MASTER'){
-        log.debug("${node}: first time comming up, lets sync everything existing first")
-
-        writeToGoldenFile(goldenDB)
-
+        def newfinger = unwrapData('jo', resp[0])
         if (verbose == true) {
-            log.debug("${node}: goldenDB is: ${goldenDB.toString()}")
-            log.debug("${node}: baseSnapShot: ${baseSnapShot.toString()}")
+            log.debug("MASTER: Sent Data, Slave responds: $newfinger")
         }
-
-        def extracted = extract()
-        def dbMasterPatch = buildDiff(baseSnapShot, extracted)
-
-        if (verbose == true) {
-            log.debug("${node}: dbMasterPatch: ${dbMasterPatch.toString()}")
+        if (fingerprint.cs == null) fingerprint.cs = newfinger.cs
+        if (fingerprint != newfinger) {
+            log.error("MASTER: Response from $instance indicates bad sync (fingerprint mismatch)")
         }
-
-        log.debug("${node}: going to slaves to grab everything")
-        syncAll(extracted, dbMasterPatch, auth, 'dbSync', slurped, jsonFile)
-    } else {
-        log.error("ALL: invalid node ${node}")
     }
 }
 
-def findMaster(distList, whoami, auth){
-    if (whoami == MASTER) {
-        log.debug("MASTER: I am the Master")
-    } else {
-        log.debug("ALL: I don't know who I am, checking if Master is up")
-
-        //check if master is up
-        for (i = 0; i < distList.size(); i++) {
-            def instance = distList[i]
-
-            if (instance == whoami) {
-                log.debug("MASTER: I am the Master setting Master")
-                MASTER = whoami
-                break
-            }
-
-            log.debug("ALL: Checking if ${instance} is up")
-            def resp = remoteCall(instance, auth, 'ping', null)
-            log.debug("ALL: ping statusCode: ${resp[1]}")
-            if (resp[1] != 200) {
-                log.warn("ALL: ${instance} instance is down, finding new master\r")
-                if (!DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE << instance
-                }
-            } else {
-                log.debug("ALL: ${instance} is up, setting MASTER \r")
-                MASTER = instance
-                if (DOWN_INSTANCE.contains(instance)) {
-                    DOWN_INSTANCE.remove(instance)
-                }
-                break
-            }
-        }
-    }
-    log.debug("ALL: Down Instances are: ${DOWN_INSTANCE}")
-}
-
-def checkSlaveInstances(distList, whoami, auth){
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if ((MASTER == instance) && (MASTER == whoami)){
-            log.debug("MASTER: This is myself (the Master), I'm up, setting MASTER")
-            MASTER = whoami
+def findMaster(distList, whoami, auth) {
+    log.debug("ALL: I don't know who I am, checking if Master is up")
+    for (instance in distList) {
+        log.debug("ALL: Checking if $instance is up")
+        def resp = remoteCall(whoami, instance, auth, 'ping')
+        log.debug("ALL: ping statusCode: ${resp[1]}")
+        if (resp[1] != 200) {
+            log.warn("ALL: $instance instance is down, finding new master\r")
         } else {
-            def resp = remoteCall(instance, auth, 'ping', null)
-            log.debug("MASTER: ping statusCode: ${resp[1]}")
-            if (resp[1] != 200) {
-                log.warn("MASTER: Slave: ${instance} instance is down, adding to DOWN_INSTANCE list")
-                if (!DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE << instance
-                }
-            } else {
-                log.debug("MASTER: Slave: ${instance} instance is up")
-                if (DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE.remove(instance)
-                }
+            log.debug("ALL: $instance is up, setting Master \r")
+            return instance
+        }
+    }
+    def msg = "Cannot find master. Please check the configuration file and"
+    msg += " ensure that $whoami is in the urls list."
+    throw new RuntimeException(msg)
+}
+
+def checkSlaveInstances(distList, whoami, auth) {
+    def upList = [:]
+    for (instance in distList) {
+        def resp = remoteCall(whoami, instance, auth, 'ping')
+        log.debug("MASTER: ping statusCode: ${resp[1]}")
+        if (resp[1] != 200) {
+            log.warn("MASTER: Slave: $instance instance is down")
+        } else {
+            log.debug("MASTER: Slave: $instance instance is up")
+            try {
+                upList[instance] = unwrapData('jo', resp[0])
+            } catch (Exception ex) {
+                upList[instance] = null
             }
         }
     }
+    return upList
 }
 
-def grabStuffFromSlaves(distList, masterDiff, whoami, auth, action){
+def grabStuffFromSlaves(golden, upList, whoami, auth) {
     def bigDiff = []
-    
-    if (verbose == true) {
-        log.debug("MASTER: masterDiff is ${masterDiff.toString()}")
-    }
-
-    //only add masterDiff if it not empty
-    if (!masterDiff.isEmpty()){
-        bigDiff << masterDiff
-    }
-
-    for (i = 0; i < distList.size(); i++) {
-        def instance = distList[i]
-        if (MASTER == instance && MASTER == whoami){
-            log.debug("MASTER: This is myself (the Master), don't need to do any work here")
-        } else if (DOWN_INSTANCE.contains(instance)) {
-            log.debug("MASTER: ${instance} is down, no need to do anything")
+    for (inst in upList.entrySet()) {
+        log.debug("MASTER: Accessing $inst.key, give me your stuff")
+        def resp = null
+        def data = wrapData('jo', golden)
+        if (golden.fingerprint && golden.fingerprint.cs == inst.value?.cs) {
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve')
         } else {
-            log.debug("MASTER: Accessing ${instance}, give me your stuff")
-            def resp = remoteCall(instance, auth, 'data_retrieve', action)
-            if (resp[1] != 200) {
-                log.error("MASTER: Error accessing ${instance}, failed to retrieve data")
-                break
-            }
-
-            //get response message
-            newDiff = resp[0]
-
-            //removing brackets to detect null strings
-            def indexOfOpenBracket = newDiff.indexOf("[")
-            def indexOfLastBracket = newDiff.lastIndexOf("]")
-            tempNewDiff = newDiff.substring(indexOfOpenBracket+1, indexOfLastBracket)
-
-            newDiff = new JsonSlurper().parseText(newDiff.toString())
-
-            if (verbose == true) {
-                log.debug("MASTER: Slaves stuff in newDiff: ${newDiff.toString()}")
-                log.debug("MASTER: tempNewDiff without bracket: ${tempNewDiff.toString()}")
-            }
-
-            if (!tempNewDiff.isEmpty()) {
-                bigDiff << newDiff
-            } else {
-                log.debug("MASTER: newDiff is empty moving on")
-            }
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data)
         }
+        if (resp[1] != 200) {
+            throw new RuntimeException("failed to retrieve data from $inst.key")
+        }
+        def newDiff = unwrapData('jo', resp[0])
+        if (verbose == true) {
+            log.debug("MASTER: Slaves stuff in newDiff: $newDiff")
+        }
+        bigDiff << newDiff
     }
-
     if (verbose == true) {
-        log.debug("MASTER: slave bigdiff return: ${bigDiff.toString()}")
+        log.debug("MASTER: slave bigdiff return: $bigDiff")
     }
-
     return bigDiff
 }
 
-// TODO see if this can be a normal function in the plugin
+// Sometimes we generate json objects, other times we pull json strings from the
+// database, other times we need to look inside a json object or write a string
+// to the database. Sometimes we need to convert to or from a string to send
+// over a network, and sometimes we don't. All of these systems interacting in
+// various ways would require either many different special case handling
+// scenarios, or else some unnecessary and potentially costly conversions
+// between json object and string. This wrapper system allows us to avoid both
+// of those issues. It works like so:
+// - When a value is created, wrap it. This saves the value with its type, and
+//   they will be passed around together wherever the value goes.
+// - When you need to use a value, unwrap it. This converts the value to the
+//   required type if necessary.
+// Supported types are 'ji' (json input stream), 'js' (json string), and 'jo'
+// (json object).
+
+def wrapData(typ, data) {
+    if (data && data instanceof Iterable && data[0] == 'datawrapper') {
+        throw new RuntimeException("Cannot wrap wrapped data: $data")
+    }
+    if (!(typ in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $typ not recognized")
+    }
+    return ['datawrapper', typ, data]
+}
+
+def unwrapData(rtyp, wdata) {
+    if (!wdata || !(wdata instanceof Iterable) || wdata[0] != 'datawrapper') {
+        throw new RuntimeException("Cannot unwrap non-wrapped data: $wdata")
+    }
+    if (!(rtyp in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $rtyp not recognized")
+    }
+    def (kw, typ, data) = wdata
+    if (!(typ in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $typ not recognized")
+    }
+    if (typ == rtyp) return data
+    if (typ == 'js' && rtyp == 'jo') {
+        return new JsonSlurper().parseText(data)
+    } else if (typ == 'jo' && rtyp == 'js') {
+        return new JsonBuilder(data).toString()
+    } else if (typ == 'ji' && rtyp == 'js') {
+        return data.text
+    } else if (typ == 'ji' && rtyp == 'jo') {
+        return new JsonSlurper().parse(data)
+    } else {
+        throw new RuntimeException("Cannot convert $typ to $rtyp")
+    }
+}
+
+// Each of the following functions contains the logic for one of the execution
+// hooks. The idea is that the master is going to want to call the same code on
+// itself as on any of the other instances, so to avoid code duplication, we
+// separate the implementations out here. When the Master makes a call to any
+// execution hook, there is intermediate code that checks if it's calling it on
+// itself, and if so, it runs one of these functions directly instead of making
+// a REST call. This way we can avoid making HTTP requests to ourselves without
+// resorting to more obtuse logic.
+
+def getGoldenFile() {
+    def is = null
+    try {
+        is = readFile('golden')
+        if (is) return [wrapData('js', unwrapData('js', is)), 200]
+        else return [wrapData('js', "The golden user file does not exist"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+}
+
+def getPingAndFingerprint() {
+    def is = null
+    try {
+        is = readFile('fingerprint')
+        if (is) return [wrapData('js', unwrapData('js', is)), 200]
+        else return [wrapData('jo', null), 200]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+}
+
+def getRecentPatch(newgolden) {
+    def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
+    def newgoldenuw = unwrapData('jo', newgolden)
+    def goldenDB = newgoldenuw?.golden
+    def extracted = extract()
+    def is = null
+    if (!newgoldenuw) {
+        try {
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = unwrapData('jo', is)
+        } catch (JsonException ex) {
+            log.error("Problem parsing JSON: $ex.message")
+            return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+        } finally {
+            if (is) unwrapData('ji', is).close()
+        }
+    } else {
+        def goldendiff = buildDiff(baseSnapShot, goldenDB)
+        def extractdiff = buildDiff(baseSnapShot, extracted)
+        def mergeddiff = merge([goldendiff, extractdiff])
+        extracted = applyDiff(baseSnapShot, mergeddiff)
+        updateDatabase(null, extracted)
+        writeFile('fingerprint', wrapData('jo', newgoldenuw.fingerprint))
+        writeFile('golden', wrapData('jo', goldenDB))
+    }
+    if (verbose == true) {
+        log.debug("SLAVE: goldenDB is $goldenDB")
+    }
+    writeFile('recent', wrapData('jo', extracted))
+    if (verbose == true) {
+        log.debug("SLAVE: slaveExract is: $extracted")
+    }
+    log.debug("SLAVE: secRepDataGet diff")
+    def slavePatch = buildDiff(goldenDB, extracted)
+    if (verbose == true) {
+        log.debug("SLAVE: slavePatch is: $slavePatch")
+    }
+    return [wrapData('jo', slavePatch), 200]
+}
+
+def applyAggregatePatch(newpatch) {
+    def goldenDB = null, oldGoldenDB = null
+    def patch = unwrapData('jo', newpatch)
+    if (verbose == true) {
+        log.debug("SLAVE: newpatch: $patch")
+    }
+    def is = null
+    try {
+        is = readFile('golden')
+        if (!is) throw new JsonException("Golden file not found.")
+        oldGoldenDB = unwrapData('jo', is)
+    } catch (JsonException ex) {
+        log.error("Problem parsing JSON: $ex.message")
+        return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+    if (verbose == true) {
+        log.debug("SLAVE: original slave Golden is $oldGoldenDB")
+    }
+    goldenDB = applyDiff(oldGoldenDB, patch.patch)
+    if (verbose == true) {
+        log.debug("SLAVE: new slave Golden is $goldenDB")
+    }
+    patch.fingerprint.cs = getHash(goldenDB)
+    writeFile('fingerprint', wrapData('jo', patch.fingerprint))
+    writeFile('golden', wrapData('jo', goldenDB))
+    is = null
+    try {
+        is = readFile('recent')
+        if (!is) throw new JsonException("Recent file not found.")
+        def extracted = unwrapData('jo', is)
+        updateDatabase(extracted, goldenDB)
+    } catch (JsonException ex) {
+        log.error("Could not parse recent.json: $ex.message")
+        return [wrapData('js', "Could not parse recent.json: $ex.message"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+    return [wrapData('jo', patch.fingerprint), 200]
+}
+
+// Security snapshot JSON format:
+// Snapshots of the security data are taken and stored in a JSON format, to
+// allow for easy handling between Artifactory instances:
+// {
+//   "users": {
+//     "<user name>": {
+//       "password": <string>,
+//       "salt": <string>,
+//       "email": <string>,
+//       "passkey": <string>,
+//       "admin": <boolean>,
+//       "enabled": <boolean>,
+//       "updatable": <boolean>,
+//       "privatekey": <string>,
+//       "publickey": <string>,
+//       "bintray": <string>,
+//       "locked": <boolean>,
+//       "expired": <boolean>,
+//       "groups": [
+//         "<group name>",
+//         "<another group name>",
+//         ...
+//       ],
+//       "properties": {
+//         "<property name>": <string>,
+//         "<another property name>": <string>,
+//         ...
+//       },
+//       "permissions": {
+//         "<permission name>": <dmnrw string>,
+//         "<another permission name>": <dmnrw string>,
+//         ...
+//       }
+//     },
+//     "<another user name>": {
+//       ...
+//     },
+//     ...
+//   },
+//   "groups": {
+//     "<group name>": {
+//       "description": <string>,
+//       "isdefault": <boolean>,
+//       "realm": <string>,
+//       "realmattrs": <string>,
+//       "permissions": {
+//         "<permission name>": <dmnrw string>,
+//         "<another permission name>": <dmnrw string>,
+//         ...
+//       }
+//     },
+//     "<another group name>": {
+//       ...
+//     },
+//     ...
+//   },
+//   "permissions": {
+//     "<permission name>": {
+//       "includes": [
+//         "<include pattern>",
+//         "<another include pattern>",
+//         ...
+//       ],
+//       "excludes": [
+//         "<exclude pattern>",
+//         "<another exclude pattern>",
+//         ...
+//       ],
+//       "repos": [
+//         "<repository name>",
+//         "<another repository name>",
+//         ...
+//       ]
+//     },
+//     "<another permission name>": {
+//       ...
+//     },
+//     ...
+//   }
+// }
+
+// JSON diff format:
+// To track changes between snapshots, we use a JSON diff/patch system. This
+// system compares JSON objects, and outputs patches in a JSON format:
+// - A patch consists of a list of changes
+// - Each change is a tuple (list) with one of the following formats:
+//   [<path>, <op>, <key>, <val>]
+//   [<path>, <op>, <key>]
+//   [<path>, <op>, <val>]
+// - <path> is a list of strings representing a path to the object to change.
+//   Each string is a key in a JSON map. For example:
+//   {"users": {"foo": {"email": "f@bar.baz", ...}, ...}, "groups": {...}, ...}
+//   To access the email field, the path is ["users", "foo", "email"]
+// - <key> is a string representing the key to update in the map being changed.
+//   <val> is the new value to use.
+// - <op> is the operation to run on the specified map. Depending on this value,
+//   either <key>, <val>, or both might be required. <op> is one of the
+//   following:
+//   - ":~" updates the specified simple value (string, number, or boolean) in a
+//     map. This only takes <val>, which is the new value to set.
+//   - ":+" adds a simple value to the specified list. This only takes <val>,
+//     which is the new value to add.
+//   - ":-" removes a simple value from the specified list. This only takes
+//     <val>, which is the value to remove.
+//   - ";+" adds a new key/value pair to the specified map. This takes both
+//     <key> and <val>, which are the new pair to add.
+//   - ";-" removes a key/value pair from the specified map. This only takes
+//     <key>, which is the key of the pair to remove.
+// The format is limited in the following ways:
+// - Lists should not contain complex data such as other lists or maps, as they
+//   don't diff well: The diff system treats list elements as atomic values and
+//   does not descend into them.
+// - Lists should not depend on element ordering, as the diff system does not
+//   have a way to track or specify the order of elements in a list.
+// This is okay in this case, because every list in the snapshot format is an
+// unordered set of strings.
+
 diffsort = { left, right ->
     def ls = left[0].size(), rs = right[0].size()
     for (i in 0..([ls, rs].min())) {
@@ -907,26 +720,6 @@ diffsort = { left, right ->
     return right[1] <=> left[1]
 }
 
-// internal structure for security data:
-// - what's the database structure for this?
-//   - ACES: ACE_ID ACL_ID MASK USER_ID GROUP_ID
-//   - ACLS: ACL_ID PERM_TARGET_ID
-//   - GROUPS: GROUP_ID GROUP_NAME DESCRIPTION DEFAULT_NEW_USER
-//             REALM REALM_ATTRIBUTES
-//   - PERMISSION_TARGETS: PERM_TARGET_ID PERM_TARGET_NAME INCLUDES EXCLUDES
-//   - PERMISSION_TARGET_REPOS: PERM_TARGET_ID REPO_KEY
-//   - USERS: USER_ID USERNAME PASSWORD SALT EMAIL GEN_PASSWORD_KEY ADMIN
-//            ENABLED UPDATABLE_PROFILE PRIVATE_KEY PUBLIC_KEY BINTRAY_AUTH
-//            LOCKED CREDENTIALS_EXPIRED
-//   - USERS_GROUPS: USER_ID GROUP_ID REALM
-//   - USER_PROPS: USER_ID PROP_KEY PROP_VALUE
-// - final setup:
-//   - Permission: name [includes] [excludes] [repos]
-//   - Group: name description isdefault realm realmattrs {permissions}
-//   - User: name password salt email passkey admin enabled updatable
-//           privatekey publickey bintray locked expired
-//           [groups] {properties} {permissions}
-
 writesort = { left, right ->
     def opord = [';+': 0, ':+': 1, ':~': 2, ':-': 3, ';-': 4]
     def typord = ['permissions': 0, 'groups': 1, 'users': 2]
@@ -935,11 +728,26 @@ writesort = { left, right ->
         def result = typord[left[0][0]] <=> typord[right[0][0]]
         return left[1] == ';-' ? -result : result
     }
+    if (left[1] == ':~' && left[0][0] == 'users') {
+        if (left[0][2] == 'expired' && right[0][2] != 'expired') return 1
+        if (right[0][2] == 'expired' && left[0][2] != 'expired') return -1
+    }
     return diffsort(left, right)
 }
 
-def mastercrypt(json, encrypt) {
-    if (!CryptoHelper.hasMasterKey()) return
+def encryptDecrypt(json, encrypt) {
+    def home = ArtifactoryHome.get()
+    def is5x = false, cryptoHelper = null
+    try {
+        def art4ch = "org.artifactory.security.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art4ch)
+        if (!cryptoHelper.hasMasterKey()) return
+    } catch (ClassNotFoundException ex) {
+        is5x = true
+        def art5ch = "org.artifactory.common.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art5ch)
+        if (!cryptoHelper.hasMasterKey(home)) return
+    }
     def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
                     'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
     def masterWrapper = ArtifactoryHome.get().masterEncryptionWrapper
@@ -947,173 +755,27 @@ def mastercrypt(json, encrypt) {
     for (user in json.users.values()) {
         if (user.privatekey && user.publickey) {
             def pair = new EncodedKeyPair(user.privatekey, user.publickey)
-            pair = pair.decode(masterWrapper)
+            try {
+                pair = pair.decode(masterWrapper, new DecryptionStatusHolder())
+            } catch (MissingMethodException ex) {
+                pair = pair.decode(masterWrapper)
+            }
             pair = new EncodedKeyPair(pair, wrapper)
             user.privatekey = pair.encodedPrivateKey
             user.publickey = pair.encodedPublicKey
         }
         user.properties.each { k, v ->
             if (!(k in encprops)) return
-            if (encrypt) user.properties[k] = CryptoHelper.encryptIfNeeded(v)
-            else user.properties[k] = CryptoHelper.decryptIfNeeded(v)
-        }
-    }
-}
-
-def select(jdbcHelper, query, callback) {
-    def rs = null
-    try {
-        rs = jdbcHelper.executeSelect(query)
-        while (rs.next()) callback(rs)
-    } finally {
-        if (rs) DbUtils.close(rs)
-    }
-}
-
-def extract() {
-    def jdbcHelper = ctx.beanForType(JdbcHelper)
-    def result = [:], useraces = null, groupaces = null, usergroups = null
-    // get the filter settings from the config file
-    def filter = null
-    def secRepJson = new File(artHome, '/plugins/securityReplication.json')
-    try {
-        def slurped = new JsonSlurper().parse(secRepJson)
-        filter = slurped?.securityReplication?.filter ?: 1
-    } catch (JsonException ex) {
-        filter = 1
-    }
-    if (filter >= 3) {
-        // extract from permission_target_repos
-        def permrepos = HashMultimap.create()
-        def permrepoquery = 'SELECT perm_target_id, repo_key FROM'
-        permrepoquery += ' permission_target_repos'
-        select(jdbcHelper, permrepoquery) {
-            permrepos.put(it.getLong(1), it.getString(2))
-        }
-        // extract from permission_targets
-        def perms = [:]
-        def permnames = [:]
-        def permquery = 'SELECT perm_target_id, perm_target_name, includes,'
-        permquery += ' excludes FROM permission_targets'
-        select(jdbcHelper, permquery) {
-            def perm = [:]
-            def id = it.getLong(1)
-            def name = it.getString(2)
-            perm.includes = it.getString(3)?.split(',') as List ?: []
-            perm.excludes = it.getString(4)?.split(',') as List ?: []
-            perm.repos = permrepos.get(id) ?: []
-            permnames[id] = name
-            perms[name] = perm
-        }
-        result['permissions'] = perms
-        // extract from aces
-        useraces = [:]
-        groupaces = [:]
-        def acequery = 'SELECT e.user_id, e.group_id, e.mask, l.perm_target_id'
-        acequery += ' FROM aces e INNER JOIN acls l ON (e.acl_id = l.acl_id)'
-        select(jdbcHelper, acequery) {
-            def userid = it.getLong(1)
-            def groupid = it.getLong(2)
-            def privstr = ''
-            def privs = it.getInt(3)
-            if (privs &  8) privstr += 'd'
-            if (privs & 16) privstr += 'm'
-            if (privs &  4) privstr += 'n'
-            if (privs &  1) privstr += 'r'
-            if (privs &  2) privstr += 'w'
-            def perm = permnames[it.getLong(4)]
-            if (perm != null && userid != null) {
-                if (!(userid in useraces)) useraces[userid] = [:]
-                useraces[userid][perm] = privstr
-            }
-            if (perm != null && groupid != null) {
-                if (!(groupid in groupaces)) groupaces[groupid] = [:]
-                groupaces[groupid][perm] = privstr
+            if (is5x && encrypt) {
+                user.properties[k] = cryptoHelper.encryptIfNeeded(home, v)
+            } else if (is5x) {
+                user.properties[k] = cryptoHelper.decryptIfNeeded(home, v)
+            } else if (encrypt) {
+                user.properties[k] = cryptoHelper.encryptIfNeeded(v)
+            } else {
+                user.properties[k] = cryptoHelper.decryptIfNeeded(v)
             }
         }
-    }
-    if (filter >= 2) {
-        // extract from groups
-        def groups = [:]
-        def groupnames = [:]
-        def groupquery = 'SELECT group_id, group_name, description,'
-        groupquery += ' default_new_user, realm, realm_attributes FROM groups'
-        select(jdbcHelper, groupquery) {
-            def group = [:]
-            def id = it.getLong(1)
-            def name = it.getString(2)
-            group.description = it.getString(3)
-            group.isdefault = it.getBoolean(4)
-            group.realm = it.getString(5)
-            group.realmattrs = it.getString(6)
-            if (filter >= 3) group.permissions = groupaces[id] ?: [:]
-            groupnames[id] = name
-            groups[name] = group
-        }
-        result['groups'] = groups
-        // extract from users_groups
-        usergroups = HashMultimap.create()
-        def usergroupquery = 'SELECT user_id, group_id FROM users_groups'
-        select(jdbcHelper, usergroupquery) {
-            usergroups.put(it.getLong(1), groupnames[it.getLong(2)])
-        }
-    }
-    if (filter >= 1) {
-        // extract from user_props
-        def userprops = [:]
-        def userpropquery = 'SELECT user_id, prop_key, prop_value'
-        userpropquery += ' FROM user_props'
-        select(jdbcHelper, userpropquery) {
-            def userid = it.getLong(1)
-            if (!(userid in userprops)) userprops[userid] = [:]
-            userprops[userid][it.getString(2)] = it.getString(3)
-        }
-        // extract from users
-        def users = [:]
-        def userquery = 'SELECT user_id, username, password, salt, email,'
-        userquery += ' gen_password_key, admin, enabled, updatable_profile,'
-        userquery += ' private_key, public_key, bintray_auth, locked,'
-        userquery += ' credentials_expired FROM users'
-        select(jdbcHelper, userquery) {
-            def user = [:]
-            def id = it.getLong(1)
-            def name = it.getString(2)
-            user.password = it.getString(3)
-            user.salt = it.getString(4)
-            user.email = it.getString(5)
-            user.passkey = it.getString(6)
-            user.admin = it.getBoolean(7)
-            user.enabled = it.getBoolean(8)
-            user.updatable = it.getBoolean(9)
-            user.privatekey = it.getString(10)
-            user.publickey = it.getString(11)
-            user.bintray = it.getString(12)
-            user.locked = it.getBoolean(13)
-            user.expired = it.getBoolean(14)
-            if (filter >= 2) user.groups = usergroups.get(id) ?: []
-            user.properties = userprops[id] ?: [:]
-            if (filter >= 3) user.permissions = useraces[id] ?: [:]
-            users[name] = user
-        }
-        result['users'] = users
-    }
-    mastercrypt(result, false)
-    return result
-}
-
-def getdbid(jdbcHelper, type, name) {
-    def rs = null
-    def data = ['users': ['user_id', 'users', 'username'],
-                'groups': ['group_id', 'groups', 'group_name'],
-                'permissions': ['perm_target_id', 'permission_targets',
-                                'perm_target_name']]
-    def (idfield, table, namefield) = data[type]
-    def query = "SELECT $idfield FROM $table WHERE $namefield = ?"
-    try {
-        rs = jdbcHelper.executeSelect(query, name)
-        if (rs.next()) return rs.getLong(1)
-    } finally {
-        DbUtils.close(rs)
     }
 }
 
@@ -1128,91 +790,184 @@ def makeMask(privs) {
     return mask
 }
 
+def readMask(privs) {
+    def mask = ''
+    if (privs &  8) mask += 'd'
+    if (privs & 16) mask += 'm'
+    if (privs &  4) mask += 'n'
+    if (privs &  1) mask += 'r'
+    if (privs &  2) mask += 'w'
+    return mask
+}
+
+def extract() {
+    def secserv = ctx.securityService
+    def result = [:]
+    // get the filter settings from the config file
+    def filter = null
+    def secRepJson = new File(artHome, '/plugins/securityReplication.json')
+    try {
+        def slurped = new JsonSlurper().parse(secRepJson)
+        filter = slurped?.securityReplication?.filter ?: 1
+    } catch (JsonException ex) {
+        filter = 1
+    }
+    // permissions
+    if (filter >= 3) {
+        def perms = [:], acls = secserv.allAcls
+        for (acl in acls) {
+            def perm = [:]
+            perm.includes = acl.permissionTarget.includes
+            perm.excludes = acl.permissionTarget.excludes
+            perm.repos = acl.permissionTarget.repoKeys
+            perms[acl.permissionTarget.name] = perm
+        }
+        result['permissions'] = perms
+    }
+    // groups
+    if (filter >= 2) {
+        def groups = [:], grps = secserv.allGroups
+        for (grp in grps) {
+            def group = [:]
+            group.description = grp.description
+            group.isdefault = grp.newUserDefault
+            group.realm = grp.realm
+            group.realmattrs = grp.realmAttributes
+            if (filter >= 3) {
+                def perms = secserv.getGroupsPermissions([grp.groupName])
+                try {
+                    group.permissions = perms.asMap().collectEntries { k, vs ->
+                        [k.name, readMask(vs[0].mask)]
+                    }
+                } catch (MissingMethodException ex) {
+                    group.permissions = perms.collectEntries { k, v ->
+                        [k.name, readMask(v.mask)]
+                    }
+                }
+            }
+            groups[grp.groupName] = group
+        }
+        result['groups'] = groups
+    }
+    // users
+    if (filter >= 1) {
+        def users = [:], usrs = secserv.getAllUsers(true)
+        for (usr in usrs) {
+            def user = [:]
+            user.password = usr.password
+            user.salt = usr.salt
+            user.email = usr.email
+            user.passkey = usr.genPasswordKey
+            user.admin = usr.isAdmin()
+            user.enabled = usr.isEnabled()
+            user.updatable = usr.isUpdatableProfile()
+            user.privatekey = usr.privateKey
+            user.publickey = usr.publicKey
+            user.bintray = usr.bintrayAuth
+            user.locked = usr.isLocked()
+            user.expired = usr.isCredentialsExpired()
+            user.properties = usr.userProperties.collectEntries {
+                [it.propKey, it.propValue]
+            }
+            user.properties = user.properties.findAll { k, v ->
+                k != 'passwordCreated'
+            }
+            if (filter >= 2) user.groups = usr.groups.collect { it.groupName }
+            if (filter >= 3) {
+                def perms = secserv.getUserPermissions(usr.username)
+                user.permissions = perms.collectEntries { k, v ->
+                    [k.name, readMask(v.mask)]
+                }
+            }
+            users[usr.username] = user
+        }
+        result['users'] = users
+    }
+    encryptDecrypt(result, false)
+    return result
+}
+
+def modifyProp(secserv, op, user, key, val) {
+    def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
+                    'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
+    if (key in encprops) {
+        if (op == 'create') {
+            secserv.createPropsToken(user, key, val)
+        } else if (op == 'delete') {
+            secserv.revokePropsToken(user, key)
+        } else if (op == 'update') {
+            secserv.updatePropsToken(user, key, val)
+        }
+    } else {
+        if (op == 'create') {
+            secserv.addUserProperty(user, key, val)
+        } else if (op == 'delete') {
+            secserv.deleteProperty(user, key)
+        } else if (op == 'update') {
+            if (secserv.deleteProperty(user, key)) {
+                secserv.addUserProperty(user, key, val)
+            }
+        }
+    }
+}
+
 def update(ptch) {
-    def userrows = ['password': 'password', 'salt': 'salt', 'email': 'email',
-                    'passkey': 'gen_password_key', 'admin': 'admin',
-                    'enabled': 'enabled', 'updatable': 'updatable_profile',
-                    'privatekey': 'private_key', 'publickey': 'public_key',
-                    'bintray': 'bintray_auth', 'locked': 'locked',
-                    'expired': 'credentials_expired']
-    def grouprows = ['description': 'description',
-                     'isdefault': 'default_new_user', 'realm': 'realm',
-                     'realmattrs': 'realm_attributes']
-    def dbserv = ctx.beanForType(DbService)
-    def aclserv = ctx.beanForType(AclStoreService)
-    def userserv = ctx.beanForType(UserGroupStoreService)
-    def jdbcHelper = ctx.beanForType(JdbcHelper)
+    def secserv = ctx.securityService
+    def infact = InfoFactoryHolder.get()
     for (line in ptch) {
         def (path, oper, key, val) = line
         def pathsize = path.size()
         if (pathsize == 3 && oper in [':+', ':-'] &&
-            path[0] == 'permissions' && path[2] in ['includes', 'excludes']) {
+            path[0] == 'permissions' &&
+            path[2] in ['includes', 'excludes', 'repos']) {
             // permission targets
-            def ls = null, rs = null
-            def query = "SELECT ${path[2]} FROM permission_targets WHERE"
-            query += " perm_target_name = ?"
-            try {
-                rs = jdbcHelper.executeSelect(query, path[1])
-                if (rs.next()) ls = rs.getString(1)?.split(',') as List ?: []
-            } finally {
-                DbUtils.close(rs)
+            def acl = infact.copyAcl(secserv.getAcl(path[1]))
+            def perm = infact.copyPermissionTarget(acl.permissionTarget)
+            def op = null
+            if (oper == ':+') op = { coll, elem -> coll + elem }
+            else if (oper == ':-') op = { coll, elem -> coll - elem }
+            if (path[2] == 'includes') {
+                perm.includes = op(perm.includes, key)
+            } else if (path[2] == 'excludes') {
+                perm.excludes = op(perm.excludes, key)
+            } else if (path[2] == 'repos') {
+                perm.repoKeys = op(perm.repoKeys, key)
             }
-            if (oper == ':+') ls << key
-            else if (oper == ':-') ls -= key
-            ls = ls.sort().unique().join(',') ?: null
-            query = "UPDATE permission_targets SET ${path[2]} = ? WHERE"
-            query += " perm_target_name = ?"
-            jdbcHelper.executeUpdate(query, ls, path[1])
+            acl.permissionTarget = perm
+            secserv.updateAcl(acl)
         } else if ((pathsize == 3 && oper in [';+', ';-'] ||
                     pathsize == 4 && oper == ':~') &&
                    path[0] in ['users', 'groups'] && path[2] == 'permissions') {
             // aces
-            def ownerfield = path[0] == 'users' ? 'user_id' : 'group_id'
-            def ownerid = getdbid(jdbcHelper, path[0], path[1])
-            def permkey = oper == ':~' ? path[3] : key
-            def permid = getdbid(jdbcHelper, 'permissions', permkey)
-            def aceid = null
-            if (oper != ';+') {
-                def rs = null
-                def query = "SELECT e.ace_id FROM aces e INNER JOIN"
-                query += " acls l ON (e.acl_id = l.acl_id) WHERE"
-                query += " l.perm_target_id = ? AND e.$ownerfield = ?"
-                try {
-                    rs = jdbcHelper.executeSelect(query, permid, ownerid)
-                    if (rs.next()) aceid = rs.getLong(1)
-                } finally {
-                    DbUtils.close(rs)
-                }
-            }
+            def isgroup = path[0] == 'groups'
+            def principal = oper == ':~' ? path[3] : key
+            def acl = infact.copyAcl(secserv.getAcl(principal))
+            def aces = acl.aces
             if (oper == ';+') {
-                def mask = makeMask(val)
-                def aclid = null, rs = null
-                def query = "SELECT acl_id FROM acls WHERE perm_target_id = ?"
-                try {
-                    rs = jdbcHelper.executeSelect(query, permid)
-                    if (rs.next()) aclid = rs.getLong(1)
-                } finally {
-                    DbUtils.close(rs)
+                def ace = infact.createAce()
+                ace.principal = path[1]
+                ace.group = isgroup
+                ace.mask = makeMask(val)
+                acl.aces = aces + ace
+            } else {
+                def ace = aces.find {
+                    it.principal == path[1] && it.isGroup() == isgroup
                 }
-                aceid = dbserv.nextId()
-                def uid = null, gid = null
-                if (path[0] == 'users') uid = ownerid
-                else if (path[0] == 'groups') gid = ownerid
-                query = "INSERT INTO aces VALUES(?,?,?,?,?)"
-                jdbcHelper.executeUpdate(query, aceid, aclid, mask, uid, gid)
-            } else if (oper == ';-') {
-                def query = "DELETE FROM aces WHERE ace_id = ?"
-                jdbcHelper.executeUpdate(query, aceid)
-            } else if (oper == ':~') {
-                def mask = makeMask(key)
-                def query = "UPDATE aces SET mask = ? WHERE ace_id = ?"
-                jdbcHelper.executeUpdate(query, mask, aceid)
+                if (oper == ';-') {
+                    acl.aces = aces - ace
+                } else {
+                    def newace = infact.copyAce(ace)
+                    newace.mask = makeMask(key)
+                    acl.aces = aces - ace + newace
+                }
             }
+            secserv.updateAcl(acl)
         } else if (pathsize == 1 && oper in [';+', ';-'] &&
                    path[0] in ['users', 'groups', 'permissions']) {
             // users, groups, and permissions
             if (oper == ';+' && path[0] == 'users') {
-                def user = new UserImpl(key)
+                def user = infact.createUser()
+                user.username = key
                 user.password = new SaltedPassword(val.password, val.salt)
                 user.email = val.email
                 user.genPasswordKey = val.passkey
@@ -1225,97 +980,117 @@ def update(ptch) {
                 user.locked = val.locked
                 user.credentialsExpired = val.expired
                 for (group in val.groups) user.addGroup(group)
+                secserv.createUser(user)
                 for (prop in val.properties.entrySet()) {
-                    user.putUserProperty(prop.key, prop.value)
+                    modifyProp(secserv, 'create', key, prop.key, prop.value)
                 }
-                userserv.createUserWithProperties(user, true)
                 for (perm in val.permissions?.entrySet()) {
-                    def mask = makeMask(perm.value)
-                    def acl = new AclImpl(aclserv.getAcl(perm.key))
-                    acl.mutableAces << new AceImpl(key, false, mask)
-                    aclserv.updateAcl(acl)
+                    def ace = infact.createAce()
+                    ace.principal = key
+                    ace.group = false
+                    ace.mask = makeMask(perm.value)
+                    def acl = infact.copyAcl(secserv.getAcl(perm.key))
+                    acl.aces = acl.aces + ace
+                    secserv.updateAcl(acl)
                 }
             } else if (oper == ';-' && path[0] == 'users') {
-                aclserv.removeAllUserAces(key)
-                userserv.deleteUser(key)
+                secserv.deleteUser(key)
             } else if (oper == ';+' && path[0] == 'groups') {
-                def group = new GroupImpl(
-                    key, val.description, val.isdefault, val.realm,
-                    val.realmattrs)
-                userserv.createGroup(group)
+                def group = infact.createGroup()
+                group.groupName = key
+                group.description = val.description
+                group.newUserDefault = val.isdefault
+                group.realm = val.realm
+                group.realmAttributes = val.realmattrs
+                secserv.createGroup(group)
                 for (perm in val.permissions?.entrySet()) {
-                    def mask = makeMask(perm.value)
-                    def acl = new AclImpl(aclserv.getAcl(perm.key))
-                    acl.mutableAces << new AceImpl(key, true, mask)
-                    aclserv.updateAcl(acl)
+                    def ace = infact.createAce()
+                    ace.principal = key
+                    ace.group = true
+                    ace.mask = makeMask(perm.value)
+                    def acl = infact.copyAcl(secserv.getAcl(perm.key))
+                    acl.aces = acl.aces + ace
+                    secserv.updateAcl(acl)
                 }
             } else if (oper == ';-' && path[0] == 'groups') {
-                aclserv.removeAllGroupAces(key)
-                userserv.deleteGroup(key)
+                secserv.deleteGroup(key)
             } else if (oper == ';+' && path[0] == 'permissions') {
-                def perm = new PermissionTargetImpl(
-                    key, val.repos, val.includes, val.excludes)
-                aclserv.createAcl(new AclImpl(perm))
+                def perm = infact.createPermissionTarget()
+                perm.name = key
+                perm.repoKeys = val.repos
+                perm.includes = val.includes
+                perm.excludes = val.excludes
+                def acl = infact.createAcl()
+                acl.permissionTarget = perm
+                secserv.createAcl(acl)
             } else if (oper == ';-' && path[0] == 'permissions') {
-                aclserv.deleteAcl(key)
+                secserv.deleteAcl(secserv.getAcl(key).permissionTarget)
             }
         } else if ((pathsize == 3 && oper in [';+', ';-'] ||
                     pathsize == 4 && oper == ':~') &&
                    path[0] == 'users' && path[2] == 'properties') {
             // user properties, including API keys
-            def userid = getdbid(jdbcHelper, 'users', path[1])
             if (oper == ';+') {
-                def query = "INSERT INTO user_props VALUES(?,?,?)"
-                jdbcHelper.executeUpdate(query, userid, key, val)
+                modifyProp(secserv, 'create', path[1], key, val)
             } else if (oper == ';-') {
-                def query = "DELETE FROM user_props WHERE"
-                query += " user_id = ? AND prop_key = ?"
-                jdbcHelper.executeUpdate(query, userid, key)
+                modifyProp(secserv, 'delete', path[1], key, null)
             } else if (oper == ':~') {
-                def query = "UPDATE user_props SET prop_value = ? WHERE"
-                query += " user_id = ? AND prop_key = ?"
-                jdbcHelper.executeUpdate(query, key, userid, path[3])
+                modifyProp(secserv, 'update', path[1], path[3], key)
             }
         } else if (pathsize == 3 && oper in [':+', ':-'] &&
                    path[0] == 'users' && path[2] == 'groups') {
             // user/group memberships
-            def userid = getdbid(jdbcHelper, 'users', path[1])
-            def groupid = getdbid(jdbcHelper, 'groups', key)
             if (oper == ':+') {
-                def query = "INSERT INTO users_groups VALUES(?,?,?)"
-                jdbcHelper.executeUpdate(query, userid, groupid, null)
-            } else if (oper == ':-') {
-                def query = "DELETE FROM users_groups WHERE"
-                query += " user_id = ? AND group_id = ?"
-                jdbcHelper.executeUpdate(query, userid, groupid)
+                secserv.addUsersToGroup(key, [path[1]])
+            } else {
+                secserv.removeUsersFromGroup(key, [path[1]])
             }
-        } else if (pathsize == 3 && oper in [':+', ':-'] &&
-                   path[0] == 'permissions' && path[2] == 'repos') {
-            // repository lists for permission configurations
-            def permid = getdbid(jdbcHelper, 'permissions', path[1])
-            if (oper == ':+') {
-                def query = "INSERT INTO permission_target_repos VALUES(?,?)"
-                jdbcHelper.executeUpdate(query, permid, key)
-            } else if (oper == ':-') {
-                def query = "DELETE FROM permission_target_repos WHERE"
-                query += " perm_target_id = ? AND repo_key = ?"
-                jdbcHelper.executeUpdate(query, permid, key)
+        } else if (pathsize == 3 && oper == ':~' && path[0] == 'users') {
+            // simple user attributes (email, is admin, etc)
+            def user = infact.copyUser(secserv.findUser(path[1]))
+            if (path[2] == 'password') {
+                user.password = new SaltedPassword(key, user.salt)
+            } else if (path[2] == 'salt') {
+                user.password = new SaltedPassword(user.password, key)
+            } else if (path[2] == 'email') {
+                user.email = key
+            } else if (path[2] == 'passkey') {
+                user.genPasswordKey = key
+            } else if (path[2] == 'admin') {
+                user.admin = key
+            } else if (path[2] == 'enabled') {
+                user.enabled = key
+            } else if (path[2] == 'updatable') {
+                user.updatableProfile = key
+            } else if (path[2] == 'privatekey') {
+                user.privateKey = key
+            } else if (path[2] == 'publickey') {
+                user.publicKey = key
+            } else if (path[2] == 'bintray') {
+                user.bintrayAuth = key
+            } else if (path[2] == 'locked') {
+                user.locked = key
+            } else if (path[2] == 'expired') {
+                user.credentialsExpired = key
             }
-        } else if (pathsize == 3 && oper == ':~' &&
-                   (path[0] == 'users' && path[2] in userrows ||
-                    path[0] == 'groups' && path[2] in grouprows)) {
-            // simple user/group attributes (description, is admin, etc)
-            def id = null, attr = null
-            if (path[0] == 'users') {
-                id = 'username'
-                attr = userrows[path[2]]
-            } else if (path[0] == 'groups') {
-                id = 'group_name'
-                attr = grouprows[path[2]]
+            secserv.updateUser(user, true)
+            if (path[2] == 'locked') {
+                if (key) secserv.lockUser(path[1])
+                else secserv.unlockUser(path[1])
             }
-            def setvalue = key instanceof Boolean ? (key ? 1 : 0) : key
-            def query = "UPDATE ${path[0]} SET $attr = ? WHERE $id = ?"
-            jdbcHelper.executeUpdate(query, setvalue, path[1])
+        } else if (pathsize == 3 && oper == ':~' && path[0] == 'groups') {
+            // simple group attributes (description, is default, etc)
+            def group = infact.copyGroup(secserv.findGroup(path[1]))
+            if (path[2] == 'description') {
+                group.description = key
+            } else if (path[2] == 'isdefault') {
+                group.newUserDefault = key
+            } else if (path[2] == 'realm') {
+                group.realm = key
+            } else if (path[2] == 'realmattrs') {
+                group.realmAttributes = key
+            }
+            secserv.updateGroup(group)
         }
     }
 }
@@ -1461,8 +1236,8 @@ def updateDatabase(oldver, newver) {
     // newver + currver
     def truever = applyDiff(oldver, truediff)
     // newver + currver from currver
-    mastercrypt(currver, true)
-    mastercrypt(truever, true)
+    encryptDecrypt(currver, true)
+    encryptDecrypt(truever, true)
     def finaldiff = buildDiff(currver, truever).sort(writesort)
     // log.error(new JsonBuilder(finaldiff).toPrettyString())
     // apply this to the database for the correct result
