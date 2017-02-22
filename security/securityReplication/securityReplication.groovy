@@ -36,8 +36,8 @@ import org.artifactory.model.xstream.security.UserImpl
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
-import org.artifactory.security.crypto.CryptoHelper
 import org.artifactory.storage.db.DbService
+import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.db.util.DbUtils
 import org.artifactory.storage.db.util.JdbcHelper
@@ -65,7 +65,17 @@ executions {
     //External/Internal Use
     getUserDB(httpMethod: 'GET'){
         try {
-            message = new File(artHome, '/plugins/goldenFile.json').text
+            def is = null
+            try {
+                is = readFile('golden')
+                if (is) {
+                    message = is.text
+                } else {
+                    throw new FileNotFoundException()
+                }
+            } finally {
+                is?.close()
+            }
 
             if (verbose == true){
                 log.debug("ALL: getUserDB is called giving my golden file DB: ${message}")
@@ -147,26 +157,27 @@ executions {
         def action = params?.('action')?.getAt(0) as String
         def slavePatch = null
         def goldenDB = null
-        def slurped = null
         def state = 0
         def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
 
-        def recentDump = new File(artHome, '/plugins/recent.json')
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-        def secRepJson = new File(artHome, "/plugins/securityReplication.json")
+        state = checkState()
+        log.debug("SLAVE: state: ${state}")
 
-        try {
-            slurped = new JsonSlurper().parse(secRepJson)
-        } catch (JsonException ex) {
-            message = "Problem parsing JSON: $ex.message"
-            log.error("ALL: problem getting ${secRepJson} file")
-            status = 400
-            return
-        }
         log.debug("SLAVE: secRepDataGet is called")
 
-        state = checkState(slurped, state, secRepJson)
-        log.debug("SLAVE: state: ${state}")
+        def is = null
+        try {
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = new JsonSlurper().parse(is)
+        } catch (JsonException ex) {
+            log.error("Problem parsing JSON: $ex.message")
+            message = "Problem parsing JSON: $ex.message"
+            status = 400
+            return
+        } finally {
+            is?.close()
+        }
 
         if (state == 1) {
             log.debug("SLAVE: I am also in disaster recovery mode, nothing to give back")
@@ -174,19 +185,11 @@ executions {
             status = 200
             return
         }
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
         if (verbose == true) {
             log.debug("SLAVE: goldenDB is ${goldenDB.toString()}")
         }
         def extracted = extract()
-        recentDump.withWriter { new JsonBuilder(extracted).writeTo(it) }
+        writeFile('recent', extracted)
 
         if (verbose == true) {
             log.debug("SLAVE: slaveExract is: ${extracted.toString()}")
@@ -235,14 +238,18 @@ executions {
             log.debug("SLAVE: slurped: ${slurped.toString()}")
         }
 
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
+        def is = null
         try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = new JsonSlurper().parse(is)
         } catch (JsonException ex) {
             log.error("Problem parsing JSON: $ex.message")
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
+        } finally {
+            is?.close()
         }
 
         if (verbose == true) {
@@ -256,17 +263,21 @@ executions {
             log.debug("SLAVE: new slave Golden is ${goldenDB.toString()}")
         }
 
-        writeToGoldenFile(goldenDB)
+        writeFile('golden', goldenDB)
         //insert into DB here
-        def recentDump = new File(artHome, '/plugins/recent.json')
+        is = null
         try {
-            def extracted = new JsonSlurper().parse(recentDump)
+            is = readFile('recent')
+            if (!is) throw new JsonException("Recent file not found.")
+            def extracted = new JsonSlurper().parse(is)
             updateDatabase(extracted, goldenDB)
         } catch (JsonException ex) {
             log.error("Could not parse recent.json: $ex.message")
             message = "Could not parse recent.json: $ex.message"
             status = 400
             return
+        } finally {
+            is?.close()
         }
 
         message = goldenDB.toString()
@@ -321,7 +332,6 @@ jobs {
         def disasterRecovery = false
         def state = 0
 
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
         def targetFile = new File(artHome, "/plugins/securityReplication.json")
 
         try {
@@ -331,15 +341,20 @@ jobs {
             return
         }
 
-        state = checkState(slurped, state, targetFile)
+        state = checkState()
         log.debug("ALL: state: ${state}")
 
+        def is = null
         try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = new JsonSlurper().parse(is)
         } catch (JsonException ex) {
             log.error("No goldenFile lets get the first goldenDB")
             goldenDB = extract()
-            writeToGoldenFile(goldenDB)
+            writeFile('golden', goldenDB)
+        } finally {
+            is?.close()
         }
 
         def whoami = slurped.securityReplication.whoami
@@ -395,7 +410,7 @@ jobs {
                     log.debug("MASTER: new goldenDB is: ${goldenDB.toString()}")
                 }
 
-                writeToGoldenFile(goldenDB)
+                writeFile('golden', goldenDB)
 
                 syncAll(extracted, masterPatch, auth, 'diff', slurped, targetFile)
             }
@@ -404,9 +419,18 @@ jobs {
 }
 
 //TODO: add hashing
-def checkState(slurped, state, targetFile){
-    def artStartTime = null
-    def pluginStartTime = slurped.securityReplication.startTime
+def checkState() {
+    def state = 0, artStartTime = null, pluginStartTime = null
+    def is = null
+    try {
+        is = readFile('state')
+        if (!is) throw new JsonException("State file not found.")
+        pluginStartTime = new JsonSlurper().parse(is).startTime
+    } catch (JsonException ex) {
+        pluginStartTime = null
+    } finally {
+        is?.close()
+    }
 
     if (ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary != null ) {
         artStartTime = ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary.startTime
@@ -417,17 +441,13 @@ def checkState(slurped, state, targetFile){
     log.debug("All: plugin startTime: ${pluginStartTime}")
 
     if (pluginStartTime == 0 || pluginStartTime == null) {
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
+        writeFile('state', [startTime: artStartTime])
         log.debug("ALL: init new plugin start time = ${artStartTime}")
         state = 0
     } else if ( pluginStartTime < artStartTime ) {
         state = 1
         log.debug("ALL: plugin is in disaster recovery mode")
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
+        writeFile('state', [startTime: artStartTime])
         log.debug("ALL: recovery new plugin start time = ${artStartTime}")
     } else {
         state = 2
@@ -436,31 +456,30 @@ def checkState(slurped, state, targetFile){
     return state
 }
 
-def writeToGoldenFile(goldenDB){
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
+def readFile(fname) {
+    def cfgserv = ctx.beanForType(ConfigsService)
+    return cfgserv.getStreamConfig("plugin.securityreplication.$fname")
+}
 
-    if (verbose == true) {
-        log.debug("TESTING: ${artHome}")
-        log.debug("ALL: writing to goldenFile: ${goldenDB.toString()}")
-    }
-
+def writeFile(fname, content) {
+    def data = new JsonBuilder(content).toString()
+    def cfgserv = ctx.beanForType(ConfigsService)
     try {
-        JsonBuilder builder = new JsonBuilder(goldenDB)
-        goldenFile.withWriter{builder.writeTo(it)}
-    } catch (Exception ex){
-        log.error("ALL: failed to write to file $ex.message")
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data)
+    } catch (MissingMethodException ex) {
+        def t = System.currentTimeMillis()
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data, t)
     }
 }
 
 def syncAll(recent, patch, auth, action, slurped, jsonFile){
     def goldenDB = null
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
 
     log.debug("MASTER: Going to slaves to get stuff action: ${action}")
     def whoami = slurped.securityReplication.whoami
     def distList = slurped.securityReplication.urls
     def bigDiff = grabStuffFromSlaves(distList, patch, whoami, auth, action)
-    
+
     if (verbose == true) {
         log.debug("MASTER: The aggragated diff is: ${bigDiff}")
     }
@@ -485,11 +504,16 @@ def syncAll(recent, patch, auth, action, slurped, jsonFile){
         log.debug("MASTER: I gotta send the golden copy back to my slaves")
         sendSlavesGoldenCopy(distList, whoami, auth, jsonMergedPatch)
 
+        def is = null
         try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = new JsonSlurper().parse(is)
         } catch (JsonException ex) {
             log.error("Problem parsing JSON: $ex.message")
             return
+        } finally {
+            is?.close()
         }
 
         goldenDB = applyDiff(goldenDB, mergedPatch)
@@ -650,7 +674,7 @@ def sendSlavesGoldenCopy(distList, whoami, auth, mergedPatch){
                 log.error("MASTER: Error sending to ${instance} the mergedPatch, statusCode: ${resp[1]}")
                 break
             }
-            
+
             if (verbose == true) {
                 log.debug("MASTER: Sent Data, Slave responds: ${resp[0].toString()}")
             }
@@ -707,7 +731,7 @@ def runDisasterRecovery(node, auth, slurped, jsonFile, goldenDB){
             return
         }
 
-        writeToGoldenFile(goldenDB)
+        writeFile('golden', goldenDB)
         updateDatabase(null, goldenDB)
     } else if (node == 'MASTER'){
         log.debug("${node}: I am recovering from a failure, please next slave given me a new golden DB")
@@ -734,12 +758,12 @@ def runDisasterRecovery(node, auth, slurped, jsonFile, goldenDB){
                 return
             }
 
-            writeToGoldenFile(goldenDB)
+            writeFile('golden', goldenDB)
             updateDatabase(null, goldenDB)
         } else {
             log.debug("${node}: there is only me, i'll start from scratch")
             goldenDB = extract()
-            writeToGoldenFile(goldenDB)
+            writeFile('golden', goldenDB)
             return
         }
     } else {
@@ -759,7 +783,7 @@ def bringUp(node, auth, slurped, jsonFile, goldenDB){
     } else if (node == 'MASTER'){
         log.debug("${node}: first time comming up, lets sync everything existing first")
 
-        writeToGoldenFile(goldenDB)
+        writeFile('golden', goldenDB)
 
         if (verbose == true) {
             log.debug("${node}: goldenDB is: ${goldenDB.toString()}")
@@ -843,7 +867,7 @@ def checkSlaveInstances(distList, whoami, auth){
 
 def grabStuffFromSlaves(distList, masterDiff, whoami, auth, action){
     def bigDiff = []
-    
+
     if (verbose == true) {
         log.debug("MASTER: masterDiff is ${masterDiff.toString()}")
     }
@@ -939,7 +963,17 @@ writesort = { left, right ->
 }
 
 def mastercrypt(json, encrypt) {
-    if (!CryptoHelper.hasMasterKey()) return
+    def home = null, cryptoHelper = null
+    try {
+        def art4ch = "org.artifactory.security.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art4ch)
+        if (!cryptoHelper.hasMasterKey()) return
+    } catch (ClassNotFoundException ex) {
+        home = ArtifactoryHome.get()
+        def art5ch = "org.artifactory.common.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art5ch)
+        if (!cryptoHelper.hasMasterKey(home)) return
+    }
     def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
                     'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
     def masterWrapper = ArtifactoryHome.get().masterEncryptionWrapper
@@ -954,8 +988,19 @@ def mastercrypt(json, encrypt) {
         }
         user.properties.each { k, v ->
             if (!(k in encprops)) return
-            if (encrypt) user.properties[k] = CryptoHelper.encryptIfNeeded(v)
-            else user.properties[k] = CryptoHelper.decryptIfNeeded(v)
+            if (home) {
+                if (encrypt) {
+                    user.properties[k] = cryptoHelper.encryptIfNeeded(home, v)
+                } else {
+                    user.properties[k] = cryptoHelper.decryptIfNeeded(home, v)
+                }
+            } else {
+                if (encrypt) {
+                    user.properties[k] = cryptoHelper.encryptIfNeeded(v)
+                } else {
+                    user.properties[k] = cryptoHelper.decryptIfNeeded(v)
+                }
+            }
         }
     }
 }
