@@ -36,8 +36,8 @@ import org.artifactory.model.xstream.security.UserImpl
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
-import org.artifactory.security.crypto.CryptoHelper
 import org.artifactory.storage.db.DbService
+import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.db.util.DbUtils
 import org.artifactory.storage.db.util.JdbcHelper
@@ -46,8 +46,9 @@ import org.artifactory.storage.security.service.UserGroupStoreService
 import org.artifactory.util.HttpUtils
 
 import org.jfrog.security.crypto.EncodedKeyPair
+import org.jfrog.security.crypto.result.DecryptionStatusHolder
 
-/* to enable logging ammend this to the end of artifactorys logback.xml
+/* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
         <level value="debug"/>
     </logger>
@@ -56,63 +57,23 @@ import org.jfrog.security.crypto.EncodedKeyPair
 //global variables
 verbose = false
 artHome = ctx.artifactoryHome.haAwareEtcDir
-MASTER = null
-DOWN_INSTANCE = []
 
 //general artifactory plugin execution hook
 executions {
     //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/getUserDB
     //External/Internal Use
-    getUserDB(httpMethod: 'GET'){
-        try {
-            message = new File(artHome, '/plugins/goldenFile.json').text
-
-            if (verbose == true){
-                log.debug("ALL: getUserDB is called giving my golden file DB: ${message}")
-            }
-
-            status = 200
-        } catch (FileNotFoundException ex) {
-            message = "The golden user file either does not exist or has the wrong permissions"
-            status = 400
-        }
-    }
-
-    //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/userDBSync
-    //External Use
-    userDBSync(httpMethod: 'POST') {
-        def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-        def auth = RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("Authorization")
-        def secRepJson = new File(artHome, '/plugins/securityReplication.json')
-        def slurped = null
-        try {
-            slurped = new JsonSlurper().parse(secRepJson)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem prasing JSON: $ex.message"
-            status = 400
-            return
-        }
-        def extracted = extract()
-        syncAll(extracted, buildDiff(baseSnapShot, extracted), auth, 'dbSync', slurped, secRepJson)
-        status = 200
+    getUserDB(httpMethod: 'GET') {
+        def (msg, stat) = getGoldenFile()
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/distSecRep
     //External Use
     distSecRep(httpMethod: 'POST') {
-        def auth = RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("Authorization")
-        def targetFile = new File(artHome, '/plugins/securityReplication.json')
-        def slurped = null
-        try {
-            slurped = new JsonSlurper().parse(targetFile)
-        } catch (JsonException ex) {
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-        log.debug("Running distSecRep command: slurped: $slurped")
-        pushData(slurped, auth)
+        def (msg, stat) = pushData()
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X PUT http://localhost:8081/artifactory/api/plugins/execute/securityReplication -T <textfile>
@@ -140,137 +101,37 @@ executions {
         }
     }
 
-    //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet?params=action=<action> -d <data>
+    //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/secRepPing
     //Internal Use
-    secRepDataGet(httpMethod: 'GET') { params ->
+    secRepPing(httpMethod: 'GET') {
+        log.debug("SLAVE: secRepPing is called")
+        def (msg, stat) = getPingAndFingerprint()
+        message = unwrapData('js', msg)
+        status = stat
+    }
+
+    //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet -d <data>
+    //Internal Use
+    secRepDataGet(httpMethod: 'POST') { ResourceStreamHandle body ->
+        def arg = wrapData('jo', null)
         log.debug("SLAVE: secRepDataGet is called")
-        def action = params?.('action')?.getAt(0) as String
-        def slavePatch = null
-        def goldenDB = null
-        def slurped = null
-        def state = 0
-        def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-
-        def recentDump = new File(artHome, '/plugins/recent.json')
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-        def secRepJson = new File(artHome, "/plugins/securityReplication.json")
-
-        try {
-            slurped = new JsonSlurper().parse(secRepJson)
-        } catch (JsonException ex) {
-            message = "Problem parsing JSON: $ex.message"
-            log.error("ALL: problem getting ${secRepJson} file")
-            status = 400
-            return
+        def bodytext = body.inputStream.text
+        if (bodytext.length() > 0) {
+            arg = wrapData('js', bodytext)
         }
-        log.debug("SLAVE: secRepDataGet is called")
-
-        state = checkState(slurped, state, secRepJson)
-        log.debug("SLAVE: state: ${state}")
-
-        if (state == 1) {
-            log.debug("SLAVE: I am also in disaster recovery mode, nothing to give back")
-            message = "[]"
-            status = 200
-            return
-        }
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-        if (verbose == true) {
-            log.debug("SLAVE: goldenDB is ${goldenDB.toString()}")
-        }
-        def extracted = extract()
-        recentDump.withWriter { new JsonBuilder(extracted).writeTo(it) }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slaveExract is: ${extracted.toString()}")
-        }
-
-        if (action == 'diff'){
-            log.debug("SLAVE: secRepDataGet diff")
-            slavePatch = buildDiff(goldenDB, extracted)
-        } else if (action == 'dbSync'){
-            log.debug("SLAVE: secRepDataGet: dbSync")
-            slavePatch = buildDiff(baseSnapShot, extracted)
-        } else {
-            log.debug("SLAVE: secRepDataGet bad action: ${data}")
-            message = "secRepDataGet bad action"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slavePatch is: ${slavePatch.toString()}")
-        }
-
-        slavePatch = new JsonBuilder(slavePatch)
-        message = slavePatch
-        status = 200
+        def (msg, stat) = getRecentPatch(arg)
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataPost -d <data>
     //Internal Use
     secRepDataPost(httpMethod: 'POST') { ResourceStreamHandle body ->
         log.debug("SLAVE: secRepDataPost is called")
-        def slurped = null
-        def goldenDB = null
-        def tempSlaveGolden = null
-
-        try {
-            slurped = new JsonSlurper().parse(body.inputStream)
-        } catch (JsonException ex) {
-            log.error("SLAVE: error parsing JSON: $ex.message")
-            message = "SLAVE: Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: slurped: ${slurped.toString()}")
-        }
-
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            message = "Problem parsing JSON: $ex.message"
-            status = 400
-            return
-        }
-
-        if (verbose == true) {
-            log.debug("SLAVE: original slave Golden is ${goldenDB.toString()}")
-        }
-
-        tempSlaveGolden = applyDiff(goldenDB, slurped)
-        goldenDB = tempSlaveGolden
-
-        if (verbose == true){
-            log.debug("SLAVE: new slave Golden is ${goldenDB.toString()}")
-        }
-
-        writeToGoldenFile(goldenDB)
-        //insert into DB here
-        def recentDump = new File(artHome, '/plugins/recent.json')
-        try {
-            def extracted = new JsonSlurper().parse(recentDump)
-            updateDatabase(extracted, goldenDB)
-        } catch (JsonException ex) {
-            log.error("Could not parse recent.json: $ex.message")
-            message = "Could not parse recent.json: $ex.message"
-            status = 400
-            return
-        }
-
-        message = goldenDB.toString()
-        status = 200
+        def arg = wrapData('ji', body.inputStream)
+        def (msg, stat) = applyAggregatePatch(arg)
+        message = unwrapData('js', msg)
+        status = stat
     }
 
     //TODO: Delete later, testing purposes only
@@ -285,23 +146,30 @@ executions {
         status = 200
         message = "Completed, try dumping now"
     }
+
+    testSnapshotClear() {
+        def cfgserv = ctx.beanForType(ConfigsService)
+        cfgserv.deleteConfig("plugin.securityreplication.golden")
+        cfgserv.deleteConfig("plugin.securityreplication.recent")
+        cfgserv.deleteConfig("plugin.securityreplication.fingerprint")
+        status = 200
+        message = "Snapshots cleared successfully"
+    }
 }
 
 def getCronJob() {
     def defaultcron = "0 0 0/1 * * ?"
     def slurped = null
     def jsonFile = new File(artHome, "/plugins/securityReplication.json")
-
     try {
         slurped = new JsonSlurper().parse(jsonFile)
     } catch (JsonException ex) {
-        log.error("ALL: problem getting ${jsonFile}, using default")
+        log.error("ALL: problem getting $jsonFile, using default")
         return defaultcron
     }
-
     def cron_job = slurped?.securityReplication?.cron_job
     if (cron_job) {
-        log.debug("ALL: config cron job is being set at: ${cron_job}")
+        log.debug("ALL: config cron job is being set at: $cron_job")
         return cron_job
     }  else {
         log.debug("ALL: cron job is not configured, using default")
@@ -312,589 +180,432 @@ def getCronJob() {
 //general artifactory cron job hook
 jobs {
     securityReplicationWorker(cron: getCronJob()) {
-        MASTER = null
-        DOWN_INSTANCE = []
-        def masterPatch = null
-        def goldenDB = null
         def slurped = null
-        def artStartTime = null
-        def disasterRecovery = false
-        def state = 0
-
-        def goldenFile = new File(artHome, '/plugins/goldenFile.json')
         def targetFile = new File(artHome, "/plugins/securityReplication.json")
-
         try {
             slurped = new JsonSlurper().parse(targetFile)
         } catch (JsonException ex) {
-            log.error("ALL: problem getting ${targetFile}")
+            log.error("ALL: problem getting $targetFile")
             return
         }
-
-        state = checkState(slurped, state, targetFile)
-        log.debug("ALL: state: ${state}")
-
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("No goldenFile lets get the first goldenDB")
-            goldenDB = extract()
-            writeToGoldenFile(goldenDB)
-        }
-
         def whoami = slurped.securityReplication.whoami
         def distList = slurped.securityReplication.urls
         def username = slurped.securityReplication.authorization.username
         def password = slurped.securityReplication.authorization.password
         def encoded = "$username:$password".getBytes().encodeBase64().toString()
-        def auth = "Basic ${encoded}"
-
-        log.debug("ALL: whoami: ${whoami}")
-        log.debug("ALL: Master: ${MASTER}")
-
-        findMaster(distList, whoami, auth)
-
-        if (whoami != MASTER) {
-            if (state == 0){
-                bringUp('SLAVE', auth, slurped, targetFile, null)
-            } else if (state == 1) {
-                sleep(1000)
-                runDisasterRecovery('SLAVE', auth, slurped, targetFile, goldenDB)
-            } else {
-                log.debug("SLAVE: I am a slave, going back to sleep")
-            }
+        def auth = "Basic $encoded"
+        def master = findMaster(distList, whoami, auth)
+        log.debug("ALL: whoami: $whoami")
+        log.debug("ALL: Master: $master")
+        if (whoami != master) {
+            log.debug("SLAVE: I am a slave, going back to sleep")
             return
-        } else {
-            log.debug("MASTER: I am the Master, starting to do work")
-
-            log.debug("MASTER: Checking my slave instances")
-            checkSlaveInstances(distList, whoami, auth)
-
-            log.debug("MASTER: DOWN_INSTANCE: ${DOWN_INSTANCE.size()}, distList size: ${distList.size()}")
-            if (DOWN_INSTANCE.size() >= (distList.size() - 1) && (MASTER == whoami)) {
-                log.debug("MASTER: I'm all alone here, no need to do work")
-                return
-            }
-            log.debug("MASTER: Down Instances again are: ${DOWN_INSTANCE}")
-
-            if (state == 0){
-                bringUp('MASTER', auth, slurped, targetFile, goldenDB)
-            } else if (state == 1){
-                log.debug("MASTER: I am recovering from a failure, please next slave given me a new golden DB")
-                runDisasterRecovery('MASTER', auth, slurped, targetFile, goldenDB)
-            } else {
-                log.debug("MASTER: Not first time coming up, lets do some updates")
-                def extracted = extract()
-                masterPatch = buildDiff(goldenDB, extracted)
-                log.debug("MASTER: masterPatch is: ${masterPatch}")
-
-                //set new goldenDB with current db snapshot
-                goldenDB = extracted
-
-                if (verbose == true) {
-                    log.debug("MASTER: new goldenDB is: ${goldenDB.toString()}")
-                }
-
-                writeToGoldenFile(goldenDB)
-
-                syncAll(extracted, masterPatch, auth, 'diff', slurped, targetFile)
-            }
         }
-    }
-}
-
-//TODO: add hashing
-def checkState(slurped, state, targetFile){
-    def artStartTime = null
-    def pluginStartTime = slurped.securityReplication.startTime
-
-    if (ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary != null ) {
-        artStartTime = ctx.beanForType(ArtifactoryServersCommonService).runningHaPrimary.startTime
-    } else {
-        artStartTime = ctx.beanForType(ArtifactoryServersCommonService).currentMember.startTime
-    }
-    log.debug("ALL: artStartTime: ${artStartTime}")
-    log.debug("All: plugin startTime: ${pluginStartTime}")
-
-    if (pluginStartTime == 0 || pluginStartTime == null) {
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
-        log.debug("ALL: init new plugin start time = ${artStartTime}")
-        state = 0
-    } else if ( pluginStartTime < artStartTime ) {
-        state = 1
-        log.debug("ALL: plugin is in disaster recovery mode")
-        slurped.securityReplication.startTime = artStartTime
-        JsonBuilder builder = new JsonBuilder(slurped)
-        targetFile.withWriter{builder.writeTo(it)}
-        log.debug("ALL: recovery new plugin start time = ${artStartTime}")
-    } else {
-        state = 2
-        log.debug("ALL: steady state nothing to do")
-    }
-    return state
-}
-
-def writeToGoldenFile(goldenDB){
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-
-    if (verbose == true) {
-        log.debug("TESTING: ${artHome}")
-        log.debug("ALL: writing to goldenFile: ${goldenDB.toString()}")
-    }
-
-    try {
-        JsonBuilder builder = new JsonBuilder(goldenDB)
-        goldenFile.withWriter{builder.writeTo(it)}
-    } catch (Exception ex){
-        log.error("ALL: failed to write to file $ex.message")
-    }
-}
-
-def syncAll(recent, patch, auth, action, slurped, jsonFile){
-    def goldenDB = null
-    def goldenFile = new File(artHome, '/plugins/goldenFile.json')
-
-    log.debug("MASTER: Going to slaves to get stuff action: ${action}")
-    def whoami = slurped.securityReplication.whoami
-    def distList = slurped.securityReplication.urls
-    def bigDiff = grabStuffFromSlaves(distList, patch, whoami, auth, action)
-    
-    if (verbose == true) {
-        log.debug("MASTER: The aggragated diff is: ${bigDiff}")
-    }
-
-    if (bigDiff.isEmpty()){
-        log.debug("MASTER: The aggragated diff is empty, no need to do anything")
-        return
-    } else {
+        if (distList.size() <= 1) {
+            log.debug("MASTER: I'm all alone here, no need to do work")
+            return
+        }
+        log.debug("MASTER: I am the Master, starting to do work")
+        log.debug("MASTER: Checking my slave instances")
+        def upList = checkSlaveInstances(distList, whoami, auth)
+        log.debug("MASTER: upList size: ${upList.size()}, distList size: ${distList.size()}")
+        if (2*upList.size() <= distList.size()) {
+            log.debug("MASTER: Cannot continue, majority of instances unavailable")
+            return
+        }
+        log.debug("MASTER: Available instances are: $upList")
+        log.debug("MASTER: Let's do some updates")
+        log.debug("MASTER: Getting the golden file")
+        def golden = findBestGolden(upList, whoami, auth)
+        log.debug("MASTER: Going to slaves to get stuff")
+        def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth)
+        if (verbose == true) {
+            log.debug("MASTER: The aggragated diff is: $bigDiff")
+        }
         def mergedPatch = merge(bigDiff)
-
         if (verbose == true) {
-            log.debug("MASTER: the merged golden patch is ${mergedPatch.toString()}")
+            log.debug("MASTER: the merged golden patch is $mergedPatch")
         }
-
-        //comvert tp JSON
-        def jsonMergedPatch = new JsonBuilder(mergedPatch)
-
-        if (verbose == true) {
-            log.debug("MASTER: jsonMergedPatch: ${jsonMergedPatch.toString()}")
-        }
-
         log.debug("MASTER: I gotta send the golden copy back to my slaves")
-        sendSlavesGoldenCopy(distList, whoami, auth, jsonMergedPatch)
-
-        try {
-            goldenDB = new JsonSlurper().parse(goldenFile)
-        } catch (JsonException ex) {
-            log.error("Problem parsing JSON: $ex.message")
-            return
-        }
-
-        goldenDB = applyDiff(goldenDB, mergedPatch)
-
-        if (verbose == true) {
-            log.debug("MASTER: the merged golden db is ${goldenDB.toString()}")
-        }
-
-        //Apply the new merged master golden into the DB
-        updateDatabase(recent, goldenDB)
+        sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden)
     }
 }
 
-counter = 0
-def remoteCall(baseurl, auth, method, data){
-    if (verbose == true) {
-        counter = counter + 1
-        log.debug("COUNTER COUNTER COUNTER: ${counter}")
-    }
+def readFile(fname) {
+    def cfgserv = ctx.beanForType(ConfigsService)
+    def data = cfgserv.getStreamConfig("plugin.securityreplication.$fname")
+    if (!data) return null
+    return wrapData('ji', data)
+}
 
-    CloseableHttpClient httpclient = HttpClients.createDefault()
-    def req = null
+def writeFile(fname, content) {
+    def data = unwrapData('js', content)
+    def cfgserv = ctx.beanForType(ConfigsService)
+    try {
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data)
+    } catch (MissingMethodException ex) {
+        def t = System.currentTimeMillis()
+        cfgserv.addOrUpdateConfig("plugin.securityreplication.$fname", data, t)
+    }
+}
+
+def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
+    def exurl = "$baseurl/api/plugins/execute"
+    def me = whoami == baseurl
     switch(method) {
-        case 'ping':
-            def url = "${baseurl}/api/system/ping"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Authorization", auth)
-            break
         case 'json':
-            def url = "${baseurl}/api/plugins/execute/securityReplication"
-            req = new HttpPut(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "text/plain")
-            req.addHeader("Authorization", auth)
-            if (data){
-                req.entity = new StringEntity(data)
-            }
-            break
+            def req = new HttpPut("$exurl/securityReplication")
+            return makeRequest(req, auth, data, "text/plain")
         case 'plugin':
-            def url = "${baseurl}/api/plugins/securityReplication"
-            req = new HttpPut(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "text/plain")
-            req.addHeader("Authorization", auth)
-            if (data){
-                req.entity = new StringEntity(data)
-            }
-            break
-        case 'data_retrieve':
-            def url = "${baseurl}/api/plugins/execute/secRepDataGet?params=action=${data}"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
+            def req = new HttpPut("$baseurl/api/plugins/securityReplication")
+            return makeRequest(req, auth, data, "text/plain")
         case 'data_send':
-            def url = "${baseurl}/api/plugins/execute/secRepDataPost"
-            req = new HttpPost(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-
-            if (verbose == true) {
-                log.debug("MASTER: data being sent to slave is: ${data}")
-            }
-
-            if (data){
-                req.entity = new StringEntity(data.toString())
-            }
-            break
-        case 'slaveDBSync':
-            def url = "${baseurl}/api/plugins/execute/userDBSync"
-            req = new HttpPost(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
+            if (me) return applyAggregatePatch(wrapData('js', unwrapData('js', data)))
+            def req = new HttpPost("$exurl/secRepDataPost")
+            return makeRequest(req, auth, data, "application/json")
+        case 'data_retrieve':
+            if (me) return getRecentPatch(data)
+            def req = new HttpPost("$exurl/secRepDataGet")
+            return makeRequest(req, auth, data, "application/json")
         case 'recoverySync':
-            def url = "${baseurl}/api/plugins/execute/getUserDB"
-            req = new HttpGet(url)
-            req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
-            req.addHeader("Content-Type", "application/json")
-            req.addHeader("Authorization", auth)
-            break
-        default: throw new RuntimeException("Invalid method ${method}.")
+            if (me) return getGoldenFile()
+            def req = new HttpGet("$exurl/getUserDB")
+            return makeRequest(req, auth)
+        case 'ping':
+            if (me) return getPingAndFingerprint()
+            def req = new HttpGet("$exurl/secRepPing")
+            return makeRequest(req, auth)
+        default: throw new RuntimeException("Invalid method $method")
     }
-    CloseableHttpResponse resp = null
+}
+
+def makeRequest(req, auth, data = null, ctype = null) {
+    def resp = null, httpclient = HttpClients.createDefault()
+    req.addHeader("User-Agent", HttpUtils.artifactoryUserAgent)
+    req.addHeader("Authorization", auth)
+    if (data) {
+        req.addHeader("Content-Type", ctype)
+        req.entity = new StringEntity(unwrapData('js', data))
+    }
     try {
         resp = httpclient.execute(req)
-        def ips = resp.getEntity().getContent()
-        def statusCode = resp.getStatusLine().getStatusCode()
-        return [ips.text, statusCode]
-    } catch (e) {
-        return [null, 406]
+        def ips = resp.entity.content
+        def statusCode = resp.statusLine.statusCode
+        return [wrapData('js', ips.text), statusCode]
+    } catch (ex) {
+        return [wrapData('js', "Problem making request: $ex.message"), 502]
     } finally {
         httpclient?.close()
         resp?.close()
     }
 }
 
-def pushData(slurped, auth) {
+def pushData() {
+    def targetFile = new File(artHome, '/plugins/securityReplication.json')
+    def slurped = null
+    try {
+        slurped = new JsonSlurper().parse(targetFile)
+    } catch (JsonException ex) {
+        return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+    }
+    log.debug("Running distSecRep command: slurped: $slurped")
+    def whoami = slurped.securityReplication.whoami
+    def username = slurped.securityReplication.authorization.username
+    def password = slurped.securityReplication.authorization.password
+    def encoded = "$username:$password".getBytes().encodeBase64().toString()
+    def auth = "Basic $encoded"
     def pluginFile = new File(artHome, '/plugins/securityReplication.groovy')
     log.debug("Running distSecRep command: inside pushData")
-
-    if (!pluginFile || !pluginFile.exists()) {
-        log.error("GENERAL: ${pluginFile} not found")
-        return
-    }
-
+    if (!pluginFile?.exists()) return [wrapData('js', "$pluginFile not found"), 400]
     def distList = slurped.securityReplication.urls
-    log.debug("Running distSecRep command: distList: ${distList}")
-    distList.each{
-        if (slurped.securityReplication.whoami != it) {
-
-            //check the health status of each artifactory instance
-            log.debug("checking health of ${it}")
-            def resp = remoteCall(it, auth, 'ping', null)
-            if (resp[1] != 200) {
-                throw new RuntimeException("Health Check Failed: ${it}: HTTP error code: " + resp[1])
-            }
-
-            slurped.securityReplication.whoami = "${it}"
-            def builder = new JsonBuilder(slurped)
-
-            //push plugin to all instances
-            log.debug("sending plugin to ${it} instance")
-            resp = remoteCall(it, auth, 'plugin', pluginFile.text)
-            if (resp[1] != 200) {
-                throw new RuntimeException("PLUGIN Push Failed: ${it}: HTTP error code: " + resp[1])
-            }
-
-            //push json to all instances
-            log.debug("sending json file to ${it} instance")
-            resp = remoteCall(it, auth, 'json', builder.toString())
-            if (resp[1] != 200) {
-                throw new RuntimeException("JSON Push Failed: ${it}: HTTP errorcode: " + resp[1])
-            }
-        }
-    }
-}
-
-def sendSlavesGoldenCopy(distList, whoami, auth, mergedPatch){
-    if (verbose == true) {
-        log.debug("MASTER: the merged patch is: ${mergedPatch.toString()}")
-    }
-
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if ((MASTER == instance) && (MASTER == whoami)) {
-            log.debug("MASTER: This is myself (the Master), I don't need to send stuff to myself")
-        } else if (DOWN_INSTANCE.contains(instance)) {
-            log.debug("MASTER: This instance: ${instance} is down, I don't need to give it stuff")
-        } else {
-            log.debug("MASTER: Sending mergedPatch to ${instance}")
-            def resp = remoteCall(instance, auth, 'data_send', mergedPatch)
-            if (resp[1] != 200) {
-                log.error("MASTER: Error sending to ${instance} the mergedPatch, statusCode: ${resp[1]}")
-                break
-            }
-            
-            if (verbose == true) {
-                log.debug("MASTER: Sent Data, Slave responds: ${resp[0].toString()}")
-            }
-        }
-    }
-}
-
-def findNextSlave(node, distList, auth, whoami){
-    def recoverySlave = null
-    log.debug("${node}: find next slave who is not the master to get golden db from")
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if (MASTER == instance && MASTER == whoami){
-            log.debug("${node}: this is me, I need the recovery DB from the next up slave")
-        } else if (DOWN_INSTANCE.contains(instance)){
-            log.debug("${node}: ${instance} is down, can't get anything from this slave")
-        } else {
-            def resp = remoteCall(instance, auth, 'ping', null)
-            if (resp[1] != 200){
-                log.error("${node}: ping failed: ${MASTER}: HTTP error code: " + resp[1])
-            } else {
-                log.debug("${node}: ${instance} is up, let's get the recovery DB from this slave")
-                recoverySlave = instance
-                break
-            }
-        }
-    }
-    return recoverySlave
-}
-
-def runDisasterRecovery(node, auth, slurped, jsonFile, goldenDB){
-    def recoverySlave = null
-    def resp = null
-    def distList = slurped.securityReplication.urls
-    def retryCount = 0
-
-    if (node == 'SLAVE'){
-        log.debug("${node}: I am recovering from a failure, please send me the master golden db")
-        resp = remoteCall(MASTER, auth, 'recoverySync', null)
+    log.debug("Running distSecRep command: distList: $distList")
+    def pluginData = wrapData('js', pluginFile.text)
+    for (dist in distList) {
+        if (whoami == dist) continue
+        slurped.securityReplication.whoami = "$dist"
+        //push plugin to all instances
+        log.debug("sending plugin to $dist instance")
+        resp = remoteCall(whoami, dist, auth, 'plugin', pluginData)
         if (resp[1] != 200) {
-            log.error("${node}: recoverySync failed: ${MASTER} retry(${retryCount}): HTTP error code: " + resp[1])
-            if (retryCount >= 3){
-                bringUp('SLAVE', auth, slurped, jsonFile, null)
-            } else {
-                retryCount = retryCount + 1
-            }
-            return
+            return [wrapData('js', "PLUGIN Push $dist Failed: ${resp[0][2]}"), resp[1]]
         }
-
-        try {
-            goldenDB = new JsonSlurper().parseText(resp[0].toString())
-        } catch (JsonException ex) {
-            log.error("${node}: Problem parsing JSON: $ex.message")
-            return
+        //push json to all instances
+        log.debug("sending json file to $dist instance")
+        resp = remoteCall(whoami, dist, auth, 'json', wrapData('jo', slurped))
+        if (resp[1] != 200) {
+            return [wrapData('js', "JSON Push $dist Failed: ${resp[0][2]}"), resp[1]]
         }
-
-        writeToGoldenFile(goldenDB)
-        updateDatabase(null, goldenDB)
-    } else if (node == 'MASTER'){
-        log.debug("${node}: I am recovering from a failure, please next slave given me a new golden DB")
-
-        //find next slave who is not the master to get golden db from
-        if (distList.size() > 1) {
-            recoverySlave = findNextSlave('MASTER', distList, auth, slurped.securityReplication.whoami)
-            resp = remoteCall(recoverySlave, auth, 'recoverySync', null)
-
-            if (resp[1] != 200) {
-                log.error("${node}: recoverySync failed: ${MASTER}: retry(${retryCount}), HTTP error code: " + resp[1])
-                if (retryCount >= 3) {
-                    bringUp('MASTER', auth, slurped, jsonFile, goldenDB)
-                } else {
-                    retryCount = retryCount + 1
-                }
-                return
-            }
-
-            try {
-                goldenDB = new JsonSlurper().parseText(resp[0].toString())
-            } catch (JsonException ex) {
-                log.error("${node}: Problem parsing JSON: $ex.message")
-                return
-            }
-
-            writeToGoldenFile(goldenDB)
-            updateDatabase(null, goldenDB)
-        } else {
-            log.debug("${node}: there is only me, i'll start from scratch")
-            goldenDB = extract()
-            writeToGoldenFile(goldenDB)
-            return
-        }
-    } else {
-        log.error("ALL: invalid node: ${node}")
     }
+    return [wrapData('js', "Pushed all data successfully"), 200]
 }
 
-def bringUp(node, auth, slurped, jsonFile, goldenDB){
+def findBestGolden(upList, whoami, auth) {
     def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-    if (node == 'SLAVE'){
-        log.debug("${node}: This is my first time I'm coming up, telling master to sync everything for me")
-        sleep(1000) //this sleep is here to avoid initial bring up timing colisions
-        def resp = remoteCall(MASTER, auth, 'slaveDBSync', null)
+    def synched = upList.every { k, v -> v?.cs == upList[whoami]?.cs }
+    if (synched) return [fingerprint: upList[whoami], golden: baseSnapShot]
+    def latest = null, golden = null
+    for (inst in upList.entrySet()) {
+        if (!inst.value) continue
+        if (!latest || latest.value.ts < inst.value.ts) latest = inst
+    }
+    if (!latest) return [fingerprint: null, golden: baseSnapShot]
+    if (latest.value.cs == upList[whoami].cs) golden = whoami
+    else golden = latest.key
+    def resp = remoteCall(whoami, golden, auth, 'recoverySync')
+    if (resp[1] != 200) {
+        throw new RuntimeException("failed to retrieve golden from $golden")
+    }
+    return [fingerprint: latest.value, golden: unwrapData('jo', resp[0])]
+}
+
+def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
+    def fingerprint = [cs: null, ts: System.currentTimeMillis()]
+    if (fingerprint.ts <= golden.fingerprint.ts) {
+        fingerprint.ts = 1 + golden.fingerprint.ts
+    }
+    for (instance in upList.entrySet()) {
+        log.debug("MASTER: Sending mergedPatch to $instance.key")
+        def data = wrapData('jo', [fingerprint: fingerprint, patch: mergedPatch])
+        def resp = remoteCall(whoami, instance.key, auth, 'data_send', data)
         if (resp[1] != 200) {
-            throw new RuntimeException("${node}: slaveDBSync Failed: ${MASTER}: HTTP error code: " + resp[1])
+            log.error("MASTER: Error sending to $instance.key the mergedPatch, statusCode: ${resp[1]}")
         }
-    } else if (node == 'MASTER'){
-        log.debug("${node}: first time comming up, lets sync everything existing first")
-
-        writeToGoldenFile(goldenDB)
-
+        def newfinger = unwrapData('jo', resp[0])
         if (verbose == true) {
-            log.debug("${node}: goldenDB is: ${goldenDB.toString()}")
-            log.debug("${node}: baseSnapShot: ${baseSnapShot.toString()}")
+            log.debug("MASTER: Sent Data, Slave responds: $newfinger")
         }
-
-        def extracted = extract()
-        def dbMasterPatch = buildDiff(baseSnapShot, extracted)
-
-        if (verbose == true) {
-            log.debug("${node}: dbMasterPatch: ${dbMasterPatch.toString()}")
+        if (fingerprint.cs == null) fingerprint.cs = newfinger.cs
+        if (fingerprint != newfinger) {
+            log.error("MASTER: Response from $instance indicates bad sync (fingerprint mismatch)")
         }
-
-        log.debug("${node}: going to slaves to grab everything")
-        syncAll(extracted, dbMasterPatch, auth, 'dbSync', slurped, jsonFile)
-    } else {
-        log.error("ALL: invalid node ${node}")
     }
 }
 
-def findMaster(distList, whoami, auth){
-    if (whoami == MASTER) {
-        log.debug("MASTER: I am the Master")
-    } else {
-        log.debug("ALL: I don't know who I am, checking if Master is up")
-
-        //check if master is up
-        for (i = 0; i < distList.size(); i++) {
-            def instance = distList[i]
-
-            if (instance == whoami) {
-                log.debug("MASTER: I am the Master setting Master")
-                MASTER = whoami
-                break
-            }
-
-            log.debug("ALL: Checking if ${instance} is up")
-            def resp = remoteCall(instance, auth, 'ping', null)
-            log.debug("ALL: ping statusCode: ${resp[1]}")
-            if (resp[1] != 200) {
-                log.warn("ALL: ${instance} instance is down, finding new master\r")
-                if (!DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE << instance
-                }
-            } else {
-                log.debug("ALL: ${instance} is up, setting MASTER \r")
-                MASTER = instance
-                if (DOWN_INSTANCE.contains(instance)) {
-                    DOWN_INSTANCE.remove(instance)
-                }
-                break
-            }
-        }
-    }
-    log.debug("ALL: Down Instances are: ${DOWN_INSTANCE}")
-}
-
-def checkSlaveInstances(distList, whoami, auth){
-    for (i = 0; i < distList.size(); i++){
-        def instance = distList[i]
-        if ((MASTER == instance) && (MASTER == whoami)){
-            log.debug("MASTER: This is myself (the Master), I'm up, setting MASTER")
-            MASTER = whoami
+def findMaster(distList, whoami, auth) {
+    log.debug("ALL: I don't know who I am, checking if Master is up")
+    for (instance in distList) {
+        log.debug("ALL: Checking if $instance is up")
+        def resp = remoteCall(whoami, instance, auth, 'ping')
+        log.debug("ALL: ping statusCode: ${resp[1]}")
+        if (resp[1] != 200) {
+            log.warn("ALL: $instance instance is down, finding new master\r")
         } else {
-            def resp = remoteCall(instance, auth, 'ping', null)
-            log.debug("MASTER: ping statusCode: ${resp[1]}")
-            if (resp[1] != 200) {
-                log.warn("MASTER: Slave: ${instance} instance is down, adding to DOWN_INSTANCE list")
-                if (!DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE << instance
-                }
-            } else {
-                log.debug("MASTER: Slave: ${instance} instance is up")
-                if (DOWN_INSTANCE.contains(instance)){
-                    DOWN_INSTANCE.remove(instance)
-                }
+            log.debug("ALL: $instance is up, setting Master \r")
+            return instance
+        }
+    }
+    def msg = "Cannot find master. Please check the configuration file and"
+    msg += " ensure that $whoami is in the urls list."
+    throw new RuntimeException(msg)
+}
+
+def checkSlaveInstances(distList, whoami, auth) {
+    def upList = [:]
+    for (instance in distList) {
+        def resp = remoteCall(whoami, instance, auth, 'ping')
+        log.debug("MASTER: ping statusCode: ${resp[1]}")
+        if (resp[1] != 200) {
+            log.warn("MASTER: Slave: $instance instance is down")
+        } else {
+            log.debug("MASTER: Slave: $instance instance is up")
+            try {
+                upList[instance] = unwrapData('jo', resp[0])
+            } catch (Exception ex) {
+                upList[instance] = null
             }
         }
     }
+    return upList
 }
 
-def grabStuffFromSlaves(distList, masterDiff, whoami, auth, action){
+def grabStuffFromSlaves(golden, upList, whoami, auth) {
     def bigDiff = []
-    
-    if (verbose == true) {
-        log.debug("MASTER: masterDiff is ${masterDiff.toString()}")
-    }
-
-    //only add masterDiff if it not empty
-    if (!masterDiff.isEmpty()){
-        bigDiff << masterDiff
-    }
-
-    for (i = 0; i < distList.size(); i++) {
-        def instance = distList[i]
-        if (MASTER == instance && MASTER == whoami){
-            log.debug("MASTER: This is myself (the Master), don't need to do any work here")
-        } else if (DOWN_INSTANCE.contains(instance)) {
-            log.debug("MASTER: ${instance} is down, no need to do anything")
+    for (inst in upList.entrySet()) {
+        log.debug("MASTER: Accessing $inst.key, give me your stuff")
+        def resp = null
+        def data = wrapData('jo', golden)
+        if (golden.fingerprint && golden.fingerprint.cs == inst.value?.cs) {
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve')
         } else {
-            log.debug("MASTER: Accessing ${instance}, give me your stuff")
-            def resp = remoteCall(instance, auth, 'data_retrieve', action)
-            if (resp[1] != 200) {
-                log.error("MASTER: Error accessing ${instance}, failed to retrieve data")
-                break
-            }
-
-            //get response message
-            newDiff = resp[0]
-
-            //removing brackets to detect null strings
-            def indexOfOpenBracket = newDiff.indexOf("[")
-            def indexOfLastBracket = newDiff.lastIndexOf("]")
-            tempNewDiff = newDiff.substring(indexOfOpenBracket+1, indexOfLastBracket)
-
-            newDiff = new JsonSlurper().parseText(newDiff.toString())
-
-            if (verbose == true) {
-                log.debug("MASTER: Slaves stuff in newDiff: ${newDiff.toString()}")
-                log.debug("MASTER: tempNewDiff without bracket: ${tempNewDiff.toString()}")
-            }
-
-            if (!tempNewDiff.isEmpty()) {
-                bigDiff << newDiff
-            } else {
-                log.debug("MASTER: newDiff is empty moving on")
-            }
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data)
         }
+        if (resp[1] != 200) {
+            throw new RuntimeException("failed to retrieve data from $inst.key")
+        }
+        def newDiff = unwrapData('jo', resp[0])
+        if (verbose == true) {
+            log.debug("MASTER: Slaves stuff in newDiff: $newDiff")
+        }
+        bigDiff << newDiff
     }
-
     if (verbose == true) {
-        log.debug("MASTER: slave bigdiff return: ${bigDiff.toString()}")
+        log.debug("MASTER: slave bigdiff return: $bigDiff")
     }
-
     return bigDiff
+}
+
+// Sometimes we generate json objects, other times we pull json strings from the
+// database, other times we need to look inside a json object or write a string
+// to the database. Sometimes we need to convert to or from a string to send
+// over a network, and sometimes we don't. All of these systems interacting in
+// various ways would require either many different special case handling
+// scenarios, or else some unnecessary and potentially costly conversions
+// between json object and string. This wrapper system allows us to avoid both
+// of those issues. It works like so:
+// - When a value is created, wrap it. This saves the value with its type, and
+//   they will be passed around together wherever the value goes.
+// - When you need to use a value, unwrap it. This converts the value to the
+//   required type if necessary.
+// Supported types are 'ji' (json input stream), 'js' (json string), and 'jo'
+// (json object).
+
+def wrapData(typ, data) {
+    if (data && data instanceof Iterable && data[0] == 'datawrapper') {
+        throw new RuntimeException("Cannot wrap wrapped data: $data")
+    }
+    if (!(typ in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $typ not recognized")
+    }
+    return ['datawrapper', typ, data]
+}
+
+def unwrapData(rtyp, wdata) {
+    if (!wdata || !(wdata instanceof Iterable) || wdata[0] != 'datawrapper') {
+        throw new RuntimeException("Cannot unwrap non-wrapped data: $wdata")
+    }
+    if (!(rtyp in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $rtyp not recognized")
+    }
+    def (kw, typ, data) = wdata
+    if (!(typ in ['ji', 'js', 'jo'])) {
+        throw new RuntimeException("Data type $typ not recognized")
+    }
+    if (typ == rtyp) return data
+    if (typ == 'js' && rtyp == 'jo') {
+        return new JsonSlurper().parseText(data)
+    } else if (typ == 'jo' && rtyp == 'js') {
+        return new JsonBuilder(data).toString()
+    } else if (typ == 'ji' && rtyp == 'js') {
+        return data.text
+    } else if (typ == 'ji' && rtyp == 'jo') {
+        return new JsonSlurper().parse(data)
+    } else {
+        throw new RuntimeException("Cannot convert $typ to $rtyp")
+    }
+}
+
+// Each of the following functions contains the logic for one of the execution
+// hooks. The idea is that the master is going to want to call the same code on
+// itself as on any of the other instances, so to avoid code duplication, we
+// separate the implementations out here. When the Master makes a call to any
+// execution hook, there is intermediate code that checks if it's calling it on
+// itself, and if so, it runs one of these functions directly instead of making
+// a REST call. This way we can avoid making HTTP requests to ourselves without
+// resorting to more obtuse logic.
+
+def getGoldenFile() {
+    def is = null
+    try {
+        is = readFile('golden')
+        if (is) return [wrapData('js', unwrapData('js', is)), 200]
+        else return [wrapData('js', "The golden user file does not exist"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+}
+
+def getPingAndFingerprint() {
+    def is = null
+    try {
+        is = readFile('fingerprint')
+        if (is) return [wrapData('js', unwrapData('js', is)), 200]
+        else return [wrapData('jo', null), 200]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+}
+
+def getRecentPatch(newgolden) {
+    def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
+    def newgoldenuw = unwrapData('jo', newgolden)
+    def goldenDB = newgoldenuw?.golden
+    def extracted = extract()
+    def is = null
+    if (!newgoldenuw) {
+        try {
+            is = readFile('golden')
+            if (!is) throw new JsonException("Golden file not found.")
+            goldenDB = unwrapData('jo', is)
+        } catch (JsonException ex) {
+            log.error("Problem parsing JSON: $ex.message")
+            return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+        } finally {
+            if (is) unwrapData('ji', is).close()
+        }
+    } else {
+        def goldendiff = buildDiff(baseSnapShot, goldenDB)
+        def extractdiff = buildDiff(baseSnapShot, extracted)
+        def mergeddiff = merge([goldendiff, extractdiff])
+        extracted = applyDiff(baseSnapShot, mergeddiff)
+        updateDatabase(null, extracted)
+        writeFile('fingerprint', wrapData('jo', newgoldenuw.fingerprint))
+        writeFile('golden', wrapData('jo', goldenDB))
+    }
+    if (verbose == true) {
+        log.debug("SLAVE: goldenDB is $goldenDB")
+    }
+    writeFile('recent', wrapData('jo', extracted))
+    if (verbose == true) {
+        log.debug("SLAVE: slaveExract is: $extracted")
+    }
+    log.debug("SLAVE: secRepDataGet diff")
+    def slavePatch = buildDiff(goldenDB, extracted)
+    if (verbose == true) {
+        log.debug("SLAVE: slavePatch is: $slavePatch")
+    }
+    return [wrapData('jo', slavePatch), 200]
+}
+
+def applyAggregatePatch(newpatch) {
+    def goldenDB = null, oldGoldenDB = null
+    def patch = unwrapData('jo', newpatch)
+    if (verbose == true) {
+        log.debug("SLAVE: newpatch: $patch")
+    }
+    def is = null
+    try {
+        is = readFile('golden')
+        if (!is) throw new JsonException("Golden file not found.")
+        oldGoldenDB = unwrapData('jo', is)
+    } catch (JsonException ex) {
+        log.error("Problem parsing JSON: $ex.message")
+        return [wrapData('js', "Problem parsing JSON: $ex.message"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+    if (verbose == true) {
+        log.debug("SLAVE: original slave Golden is $oldGoldenDB")
+    }
+    goldenDB = applyDiff(oldGoldenDB, patch.patch)
+    if (verbose == true) {
+        log.debug("SLAVE: new slave Golden is $goldenDB")
+    }
+    patch.fingerprint.cs = getHash(goldenDB)
+    writeFile('fingerprint', wrapData('jo', patch.fingerprint))
+    writeFile('golden', wrapData('jo', goldenDB))
+    is = null
+    try {
+        is = readFile('recent')
+        if (!is) throw new JsonException("Recent file not found.")
+        def extracted = unwrapData('jo', is)
+        updateDatabase(extracted, goldenDB)
+    } catch (JsonException ex) {
+        log.error("Could not parse recent.json: $ex.message")
+        return [wrapData('js', "Could not parse recent.json: $ex.message"), 400]
+    } finally {
+        if (is) unwrapData('ji', is).close()
+    }
+    return [wrapData('jo', patch.fingerprint), 200]
 }
 
 // TODO see if this can be a normal function in the plugin
@@ -939,7 +650,17 @@ writesort = { left, right ->
 }
 
 def mastercrypt(json, encrypt) {
-    if (!CryptoHelper.hasMasterKey()) return
+    def home = null, cryptoHelper = null
+    try {
+        def art4ch = "org.artifactory.security.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art4ch)
+        if (!cryptoHelper.hasMasterKey()) return
+    } catch (ClassNotFoundException ex) {
+        home = ArtifactoryHome.get()
+        def art5ch = "org.artifactory.common.crypto.CryptoHelper"
+        cryptoHelper = Class.forName(art5ch)
+        if (!cryptoHelper.hasMasterKey(home)) return
+    }
     def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
                     'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
     def masterWrapper = ArtifactoryHome.get().masterEncryptionWrapper
@@ -947,15 +668,30 @@ def mastercrypt(json, encrypt) {
     for (user in json.users.values()) {
         if (user.privatekey && user.publickey) {
             def pair = new EncodedKeyPair(user.privatekey, user.publickey)
-            pair = pair.decode(masterWrapper)
+            try {
+                pair = pair.decode(masterWrapper, new DecryptionStatusHolder())
+            } catch (MissingMethodException ex) {
+                pair = pair.decode(masterWrapper)
+            }
             pair = new EncodedKeyPair(pair, wrapper)
             user.privatekey = pair.encodedPrivateKey
             user.publickey = pair.encodedPublicKey
         }
         user.properties.each { k, v ->
             if (!(k in encprops)) return
-            if (encrypt) user.properties[k] = CryptoHelper.encryptIfNeeded(v)
-            else user.properties[k] = CryptoHelper.decryptIfNeeded(v)
+            if (home) {
+                if (encrypt) {
+                    user.properties[k] = cryptoHelper.encryptIfNeeded(home, v)
+                } else {
+                    user.properties[k] = cryptoHelper.decryptIfNeeded(home, v)
+                }
+            } else {
+                if (encrypt) {
+                    user.properties[k] = cryptoHelper.encryptIfNeeded(v)
+                } else {
+                    user.properties[k] = cryptoHelper.decryptIfNeeded(v)
+                }
+            }
         }
     }
 }
