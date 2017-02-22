@@ -97,7 +97,7 @@
             },
             "privatekey": null,
             "properties": {
-                "passwordCreated": "1478813721932"
+                
             },
             "publickey": null,
             "salt": "CAFEBABEEBABEFAC",
@@ -120,7 +120,7 @@
             },
             "privatekey": null,
             "properties": {
-                "passwordCreated": "1476819553101"
+                
             },
             "publickey": null,
             "salt": "CAFEBABEEBABEFAC",
@@ -145,7 +145,7 @@
             },
             "privatekey": null,
             "properties": {
-                "passwordCreated": "1476819553119"
+                
             },
             "publickey": null,
             "salt": null,
@@ -170,7 +170,6 @@
             },
             "privatekey": null,
             "properties": {
-                "passwordCreated": "1478813995156",
                 "sshPublicKey": "ssh-rsa foobar"
             },
             "publickey": null,

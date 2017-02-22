@@ -15,10 +15,10 @@ class SecurityReplicationTest extends Specification {
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
     def textFile = '{"securityReplication":{"urls":'
-    textFile += '["http://localhost:8080/artifactory",'
+    textFile += '["http://localhost:8088/artifactory",'
     textFile += '"http://localhost:8081/artifactory",'
     textFile += '"http://localhost:8082/artifactory"],'
-    textFile += '"whoami":"http://localhost:8088/artifactory",'
+    textFile += '"filter":3,"whoami":"http://localhost:8088/artifactory",'
     textFile += '"authorization":{"username":"admin","password":"password"}}}'
     conn.outputStream.write(textFile.bytes)
     assert conn.responseCode == 200
@@ -52,6 +52,7 @@ class SecurityReplicationTest extends Specification {
     conn.requestMethod = 'POST'
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
+    conn.setRequestProperty('Content-Type', 'application/json')
     file = new File("./src/test/groovy/SecurityReplicationTest/sec1.json")
     conn.outputStream << file.text
     assert conn.responseCode == 200
@@ -72,6 +73,7 @@ class SecurityReplicationTest extends Specification {
     conn.requestMethod = 'POST'
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
+    conn.setRequestProperty('Content-Type', 'application/json')
     file = new File("./src/test/groovy/SecurityReplicationTest/sec2.json")
     conn.outputStream << file.text
     assert conn.responseCode == 200
@@ -92,6 +94,7 @@ class SecurityReplicationTest extends Specification {
     conn.requestMethod = 'POST'
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
+    conn.setRequestProperty('Content-Type', 'application/json')
     conn.outputStream << original
     assert conn.responseCode == 200
     conn.disconnect()
