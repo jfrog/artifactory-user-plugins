@@ -1,6 +1,8 @@
 Artifactory Slashed AD Realm User Plugin
 ========================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin introduces an LDAP realm that allows for a login style similar to
 the old ActiveDirectory "domain\name" format (or "slashed" format). Due to some
 restrictions of the Artifactory realm plugin system, this plugin does not
