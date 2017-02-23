@@ -1,7 +1,7 @@
 import groovyx.net.http.HttpResponseException
-import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class YumCalculateTest extends Specification {
@@ -9,9 +9,15 @@ class YumCalculateTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def builder = RepositoryBuildersImpl.create()
-        def yum = builder.localRepositoryBuilder().key('yum').yumRootDepth(2).calculateYumMetadata(false).build()
-        artifactory.repositories().create(0, yum)
+
+        def builder = artifactory.repositories().builders()
+        def settings = new YumRepositorySettingsImpl()
+        settings.yumRootDepth = 2
+        settings.calculateYumMetadata = false
+        def local = builder.localRepositoryBuilder().key('yum')
+        .repositorySettings(settings).build()
+        artifactory.repositories().create(0, local)
+
         artifactory.repository('yum').folder('org/mod1').create()
         artifactory.repository('yum').folder('org/mod2').create()
 

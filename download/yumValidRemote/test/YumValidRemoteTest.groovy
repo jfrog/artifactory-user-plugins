@@ -1,5 +1,6 @@
 import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import spock.lang.Specification
+import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 
 import java.security.MessageDigest
 
@@ -9,20 +10,23 @@ import static org.jfrog.artifactory.client.model.impl.RemoteRepoChecksumPolicyTy
 class YumValidRemoteTest extends Specification {
     def 'check valid yum remote test'() {
         setup:
-        def builder = RepositoryBuildersImpl.create()
-        // local yum repo
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
+
+        def builder = artifactory.repositories().builders()
+        
         def local = builder.localRepositoryBuilder().key('yum-local')
-        local.yumRootDepth(0).calculateYumMetadata(false)
-        // remote yum repo, points to local
+        .repositorySettings(new YumRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
         def remote = builder.remoteRepositoryBuilder().key('yum-remote')
+        .repositorySettings(new YumRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, remote)
+
         remote.url('http://localhost:8088/artifactory/yum-local')
         remote.remoteRepoChecksumPolicyType(pass_thru)
         remote.username('admin').password('password')
-        // create the new repos
-        def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
-        artifactory.repositories().create(0, local.build())
-        artifactory.repositories().create(0, remote.build())
+        
         def localrepo = artifactory.repository('yum-local')
         def remoterepo = artifactory.repository('yum-remote')
         def remoterepocache = artifactory.repository('yum-remote-cache')

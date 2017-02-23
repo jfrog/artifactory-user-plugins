@@ -1,6 +1,7 @@
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class PreventUnapprovedTest extends Specification {
@@ -8,18 +9,22 @@ class PreventUnapprovedTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def repo = artifactory.repository('libs-release-local')
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
 
         when:
         def artifact = new ByteArrayInputStream("$status artifact".bytes)
-        repo.upload(status, artifact).doUpload()
-        repo.file(status).properties().addProperty('approver.status', status).doSet()
+        artifactory.repository('maven-local').upload(status, artifact).doUpload()
+        artifactory.repository('maven-local').file(status).properties().addProperty('approver.status', status).doSet()
 
         then:
-        testDownload(repo, status, "$status artifact", approved)
+        testDownload(artifactory.repository('maven-local'), status, "$status artifact", approved)
 
         cleanup:
-        repo.delete(status)
+        artifactory.repository('maven-local').delete()
 
         where:
         status     | approved
