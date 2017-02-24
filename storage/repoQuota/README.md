@@ -1,6 +1,8 @@
 Artifactory Storage Quota User Plugin
 =============================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin is used to limit storage under a repository path.
 
 Installation

@@ -1,6 +1,8 @@
 Artifactory Yum Valid Remote User Plugin
 ========================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 Older versions of yum will update the repodata files without changing their
 filenames. This can lead to caching issues, which can cause version and checksum
 mismatch. This plugin attempts to alleviate this issue, by transforming repodata

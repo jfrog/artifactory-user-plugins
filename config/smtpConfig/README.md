@@ -1,6 +1,8 @@
 Artifactory SMTP Config User Plugin
 ===================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 Allows REST access to the SMTP configuration. This plugin exposes two
 executions:
 

@@ -1,6 +1,8 @@
 Artifactory Config Plugins User Plugin
 =====================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin contains two execution commands that can be run manually from the REST API.
 
 1. Command listPlugins returns to the user a list of all installed plugins on

@@ -1,6 +1,8 @@
 Artifactory Build Sync User Plugin
 ==================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 BuildSync is only supported from version 3.1.0
 
 Build Sync is a (which license?) user plugin for Artifactory.

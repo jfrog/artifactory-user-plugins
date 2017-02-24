@@ -1,6 +1,8 @@
 Artifactory Artifact Cleanup User Plugin
 ========================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin deletes all artifacts that have not been downloaded for the past n
 months. It can be run manually from the REST API, or automatically as a
 scheduled job.

@@ -1,6 +1,8 @@
 Artifactory Create-Copy User Plugin
 ========================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin mimics push replication between repos in a single Artifactory
 instance. Source and destination repositories are defined in
 createCopy.properties. The destination repository needs to be created before

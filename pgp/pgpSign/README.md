@@ -1,6 +1,8 @@
 Artifactory PGP Sign User Plugin
 ================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 Artifactory user plugin that signs all incoming artifacts using the key and
 passphrase specified in `$ARTIFACTORY_HOME/etc/plugins/pgpSign.properties`, and
 deploys the resulting signature in typical fashion as an .asc file parallel to

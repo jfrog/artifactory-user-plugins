@@ -1,3 +1,5 @@
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 #Artifactory support to old DESede encrypted password  Plugin
 
 This plugin provides you the ability to temporally support DESede encrypted password as base64 encryption has been decrypted with 4.9.1 Artifactory version. As part of this plugin, you can identify all DESede encrypted user’s by looking into private key’s and if any private key’s start with ‘M’ then get those user id’s and their encrypted passwords. Add those user id’s and DESede encrypted passwords in users.json file. Once added to users.json file then Artifactory should still allow those users to login into Artifactory.

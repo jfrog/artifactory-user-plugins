@@ -1,6 +1,8 @@
 Artifactory Download Directory Content User Plugin
 ==================================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin allows you to download a directory tree from Artifactory, in the
 form of a zip file. To do this, you must include the matrix parameter
 `downloadDirectory+=true` in your request, like so:

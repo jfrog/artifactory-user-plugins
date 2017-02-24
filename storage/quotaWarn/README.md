@@ -1,6 +1,8 @@
 Artifactory Storage Quota Warning User Plugin
 =============================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin is used to send email notifications when the storage quota warning / limit is reached.
 This is configured in the Artifactory UI at Admin > Advanced > Maintenance > Storage Quota.
 

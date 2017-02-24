@@ -1,6 +1,8 @@
 Artifactory Property Sets Config User Plugin
 ============================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 Allows REST access to the property set configuration. This plugin exposes five
 executions:
 

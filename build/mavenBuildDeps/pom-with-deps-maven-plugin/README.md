@@ -1,3 +1,5 @@
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 Maven Plugin to create global pom.xml for all artifacts of parent build and child builds.
  
  Steps to build this plugin:

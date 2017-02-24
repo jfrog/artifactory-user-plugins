@@ -1,6 +1,8 @@
 Artifactory Security Replication User Plugin
 ============================================
 
+*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+
 This plugin continuously synchronizes security data between multiple Artifactory
 instances. So, any change made to any instance's security data will be
 automatically replicated to the others. This allows, for example, a user to
