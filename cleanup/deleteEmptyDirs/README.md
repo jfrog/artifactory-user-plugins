@@ -1,8 +1,6 @@
 Artifactory Delete Empty Dirs User Plugin
 =========================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
-
 This plugin deletes all empty directories found inside any of a given set of
 paths.
 

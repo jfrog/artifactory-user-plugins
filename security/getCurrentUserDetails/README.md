@@ -1,8 +1,6 @@
 Artifactory Get Current User Details User Plugin
 ================================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
-
 This plugin allows a user to retrieve their own detailed user information via a
 REST call. This information includes the user's public and private keys, Bintray
 authentication info, and user properties, on top of all the data provided by the
