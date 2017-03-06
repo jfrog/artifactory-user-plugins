@@ -1,7 +1,7 @@
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Artifactory Before Symbol Server User Plugin
 ============================================
+
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 The Artifactory Symbol Server Plugin listens for requests for symbol files and then redirects them to the Microsoft Symbol Server.
 
