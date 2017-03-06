@@ -1,7 +1,7 @@
 Artifactory Before Build Save User Plugin
 =========================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 Whenever a build is submitted, this plugin removes any parameters from the MIME
 types of any of the artifacts in the build.

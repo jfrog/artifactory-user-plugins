@@ -1,7 +1,7 @@
 Artifactory Build Property Setter User Plugin
 =============================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 Whenever a build is published, the artifacts from the most recent run of the
 build are all marked with the property `latest:true`.

@@ -1,4 +1,4 @@
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 This is Example project for Maven Plugin to generate global pom.xml from list of artifacts of Parent build as well as all Child builds.
 

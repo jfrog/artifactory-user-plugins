@@ -1,7 +1,7 @@
 Artifactory Storage Quota Warn Slack User Plugin
 =============================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 This plugin is used to send notification messages to a Slack channel when the storage quota warning / limit is reached.
 Storage quotas are configured in the Artifactory UI at Admin > Advanced > Maintenance > Storage Quota.

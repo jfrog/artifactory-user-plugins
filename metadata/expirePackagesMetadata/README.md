@@ -1,3 +1,3 @@
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 Plugin is used to expire metadata files called PACKAGES.gz based on timestamp which exist in CRAN and Debian repositories

@@ -1,4 +1,4 @@
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 Artifactory User Plugin to create list of AGV (artifactId, groupId, Version) for all artifacts of build with their buildDependencies.
 A REST executable artifact's AGV List builder.

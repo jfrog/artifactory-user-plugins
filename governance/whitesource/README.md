@@ -1,7 +1,7 @@
 Artifactory WhiteSource User Plugin
 ===================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 This plugin integrates Artifactory artifacts with WhiteSource. This Artifactory
 plugin adds additional information to your artifacts.

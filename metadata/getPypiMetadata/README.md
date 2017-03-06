@@ -1,7 +1,7 @@
 Artifactory Get Pypi Metadata User Plugin
 =========================================
 
-*This plugin is currently only working in Artifactory 4.x. We are working on updating it to work in Artifactory 5.x.*
+*This plugin is currently being tested for Artifactory 5.x releases.*
 
 This execution is named 'getPypiMetadata' and it will be called by REST by this
 name. Map parameters provide extra information about this execution, such as
