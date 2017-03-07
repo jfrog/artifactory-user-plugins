@@ -20,12 +20,21 @@ class YumValidRemoteTest extends Specification {
         artifactory.repositories().create(0, local)
 
         def remote = builder.remoteRepositoryBuilder().key('yum-remote')
-        .repositorySettings(new YumRepositorySettingsImpl()).build()
-        artifactory.repositories().create(0, remote)
-
+        remote.repositorySettings(new YumRepositorySettingsImpl())
         remote.url('http://localhost:8088/artifactory/yum-local')
-        remote.remoteRepoChecksumPolicyType(pass_thru)
         remote.username('admin').password('password')
+        artifactory.repositories().create(0, remote.build())
+
+        def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
+        def conn = new URL("${baseurl}/api/repositories/yum-remote").openConnection()
+        conn.requestMethod = 'POST'
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        def textFile = "{\"remoteRepoChecksumPolicyType\":\"pass-thru\"}"
+        conn.outputStream.write(textFile.bytes)
+        assert conn.responseCode == 200
+        conn.disconnect()
         
         def localrepo = artifactory.repository('yum-local')
         def remoterepo = artifactory.repository('yum-remote')
