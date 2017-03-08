@@ -1,6 +1,8 @@
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class RepoStatsTest extends Specification {
@@ -8,7 +10,14 @@ class RepoStatsTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def repo = artifactory.repository('libs-release-local')
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
+        def repo = artifactory.repository('maven-local')
+
         def strm1 = new ByteArrayInputStream('first text'.bytes)
         def strm2 = new ByteArrayInputStream('second text'.bytes)
         def strm3 = new ByteArrayInputStream('third text'.bytes)
@@ -17,23 +26,23 @@ class RepoStatsTest extends Specification {
         repo.upload('dir/path2/foo.txt', strm3).doUpload()
 
         when:
-        def path1 = 'libs-release-local/dir/path1'
-        def path2 = 'libs-release-local/dir/path2'
+        def path1 = 'maven-local/dir/path1'
+        def path2 = 'maven-local/dir/path2'
         def handle = artifactory.plugins().execute('repoStats')
         def response = handle.withParameter('paths', path1, path2).sync()
         def json = new JsonSlurper().parseText(response)
 
         then:
-        json.stats[0].repoPath == 'libs-release-local/dir/path1'
+        json.stats[0].repoPath == 'maven-local/dir/path1'
         json.stats[0].count == 2
         json.stats[0].size == 21
         json.stats[0].sizeUnit == "bytes"
-        json.stats[1].repoPath == 'libs-release-local/dir/path2'
+        json.stats[1].repoPath == 'maven-local/dir/path2'
         json.stats[1].count == 1
         json.stats[1].size == 10
         json.stats[1].sizeUnit == "bytes"
 
         cleanup:
-        repo.delete('dir')
+        repo.delete()
     }
 }

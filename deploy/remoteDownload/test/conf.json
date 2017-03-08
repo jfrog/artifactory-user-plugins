@@ -1,7 +1,7 @@
 {
 "repo": "maven-local",
-"path": "my/new/path/docker.png",
-"url": "https://d3oypxn00j2a10.cloudfront.net/0.18.0/img/nav/docker-logo-loggedout.png",
+"path": "my/new/path/artifactory.png",
+"url": "https://www.jfrog.com/wp-content/uploads/2016/05/artifactory.png",
 "username": "admin",
 "password": "password"
 }

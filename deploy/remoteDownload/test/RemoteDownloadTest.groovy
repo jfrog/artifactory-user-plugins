@@ -4,7 +4,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.MavenReposito
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class RemoteDownloadTest extends Specification {
-    def 'example remote download plugin test'() {
+    def 'remote download plugin test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
@@ -15,10 +15,10 @@ class RemoteDownloadTest extends Specification {
         artifactory.repositories().create(0, local)
 
         when:
-        "curl -X POST -uadmin:password -T ./src/test/groovy/remoteDownloadTest/conf.json http://localhost:8088/artifactory/api/plugins/execute/remoteDownload".execute().waitFor()
+        "curl -XPOST -uadmin:password -T ./src/test/groovy/RemoteDownloadTest/conf.json http://localhost:8088/artifactory/api/plugins/execute/remoteDownload".execute().waitFor()
 
         then:
-        artifactory.repository('maven-local').file('my/new/path/docker.png').info()
+        artifactory.repository('maven-local').file('my/new/path/artifactory.png').info()
 
         cleanup:
         artifactory.repository('maven-local').delete()
