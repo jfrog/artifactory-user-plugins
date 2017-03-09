@@ -53,7 +53,7 @@ download {
 
             charts.each { k, v ->
                 v.each { version ->
-                    version.urls[0] = version.urls[0].replace("http://storage.googleapis.com/kubernetes-charts",
+                    version.urls[0] = version.urls[0].replace("https://kubernetes-charts.storage.googleapis.com",
                             url + repo.key);
                 }
             }
