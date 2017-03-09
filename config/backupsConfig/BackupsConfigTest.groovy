@@ -2,15 +2,24 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class BackupsConfigTest extends Specification {
     def 'backups plugin test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory/api/plugins/execute'
+        
         def params = '?params=key=newbackup'
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def conn = null
+
+        def artifactory = create('http://localhost:8088/artifactory', 'admin', 'password')
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
 
         when:
         // get an initial list of backups
@@ -57,7 +66,7 @@ class BackupsConfigTest extends Specification {
         conn.disconnect()
         // update the new backup
         def json2diff = [cronExp: '* * * * * ?', createArchive: true,
-                         excludedRepositories: ['libs-release-local']]
+                         excludedRepositories: ['maven-local']]
         def json2 = json1 + json2diff
         conn = new URL("$baseurl/updateBackup$params").openConnection()
         conn.doOutput = true
@@ -104,5 +113,9 @@ class BackupsConfigTest extends Specification {
         jsonlist2 == jsonlist2r
         !('newbackup' in jsonlist1)
         'newbackup' in jsonlist2
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+        
     }
 }
