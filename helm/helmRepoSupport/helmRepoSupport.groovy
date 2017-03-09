@@ -47,7 +47,6 @@ download {
 
             YamlReader reader = new YamlReader(streamhandle.inputStream.text);
             Object object = reader.read();
-            System.out.println(object);
             Map map = (Map) object;
             def charts = map.get("entries");
 
