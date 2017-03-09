@@ -1,7 +1,7 @@
 Artifactory Black Duck Config User Plugin
 =========================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
+NOTE: This plugin is deprecated as of Artifactory v5.0.
 
 Allows REST access to the Black Duck configuration. This plugin exposes two
 executions:
