@@ -41,10 +41,10 @@ download {
         def artifactStatus = repositories.getProperties(responseRepoPath).getFirst(APPROVE_STATUS_NAME)
         if (!responseRepoPath.name.endsWith('.pom') && (!artifactStatus || artifactStatus != APPROVE_STATUS_APPROVED)) {
             status = 403
-            if (artifactStatus && artifactStatus == APPROVE_STATUS_REJECTED) {
-                message = 'This artifact wasn\'t approved yet.'
-            } else {
+            if (artifactStatus == APPROVE_STATUS_REJECTED) {
                 message = 'This artifact was rejected due to its license.'
+            } else {
+                message = 'This artifact wasn\'t approved yet.'
             }
             log.warn "You asked for an unapproved artifact: $responseRepoPath. 403 in da face!"
         }
