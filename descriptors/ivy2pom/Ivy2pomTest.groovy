@@ -2,6 +2,8 @@ import groovy.xml.MarkupBuilder
 import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class Ivy2pomTest extends Specification {
@@ -12,6 +14,11 @@ class Ivy2pomTest extends Specification {
         def builder = RepositoryBuildersImpl.create()
         def ivy = builder.localRepositoryBuilder().key('ivy').repoLayoutRef('ivy-default').build()
         artifactory.repositories().create(0, ivy)
+
+        def maven = builder.localRepositoryBuilder().key('ext-release-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, maven)
+
         def ivypath = 'myorg/mymodule/2.0/nulls/ivy-2.0.xml'
         def pompath = 'myorg/mymodule/2.0/mymodule-2.0.pom'
         def xml = new StringWriter()
@@ -29,7 +36,7 @@ class Ivy2pomTest extends Specification {
         pomfile.version.text() == '2.0'
 
         cleanup:
-        artifactory.repository('ext-release-local').delete('myorg')
+        artifactory.repository('ext-release-local').delete()
         artifactory.repository('ivy').delete()
     }
 }
