@@ -1,6 +1,8 @@
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class PommerTest extends Specification {
@@ -8,7 +10,13 @@ class PommerTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def repo = artifactory.repository('plugins-release-local')
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
+        def repo = artifactory.repository('maven-local')
         def filepath = "foo/bar/baz/1.0/baz-1.0.txt"
         def pompath = "foo/bar/baz/1.0/baz-1.0.pom"
 
@@ -21,14 +29,20 @@ class PommerTest extends Specification {
         notThrown(HttpResponseException)
 
         cleanup:
-        repo.delete('foo')
+        repo.delete()
     }
 
     def 'pommer pommify execution test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def repo = artifactory.repository('plugins-release-local')
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
+        def repo = artifactory.repository('maven-local')
         def filepath = "foo/bar/baz/1.0/baz-1.0.txt"
         def pompath = "foo/bar/baz/1.0/baz-1.0.pom"
 
@@ -37,13 +51,13 @@ class PommerTest extends Specification {
         repo.upload(filepath, filecontents).doUpload()
         repo.delete(pompath)
         def plugin = artifactory.plugins().execute('pommify')
-        plugin.withParameter('repos', 'plugins-release-local').sync()
+        plugin.withParameter('repos', 'maven-local').sync()
         repo.file(pompath).info()
 
         then:
         notThrown(HttpResponseException)
 
         cleanup:
-        repo.delete('foo')
+        repo.delete()
     }
 }
