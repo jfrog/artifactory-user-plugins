@@ -32,22 +32,41 @@ executions {
     // The expected (and mandatory) parameter is comma separated list of paths from which empty folders will be searched.
     // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirsPlugin?params=paths=repo,otherRepo/some/path"
     deleteEmptyDirsPlugin(version: '1.1', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
-        def totalDeletedDirs = 0
         if (!params || !params.paths) {
             def errorMessage = 'Paths parameter is mandatory, please supply it.'
             log.error errorMessage
             status = 400
             message = errorMessage
         } else {
-            params.paths.each {
-                log.info "Beginning deleting empty directories for path($it)"
-                def deletedDirs = deleteEmptyDirsRecursively create(it)
-                log.info "Deleted($deletedDirs) empty directories for given path($it)"
-                totalDeletedDirs += deletedDirs
-            }
-            log.info "Finished deleting total($totalDeletedDirs) directories"
+            deleteEmptyDirectories(params.paths as String[])
         }
     }
+}
+
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/${this.class.name}.properties").toURL())
+log.info "Schedule job policy list: $config.policies"
+
+config.policies.each{ policySettings ->
+    def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
+    def paths = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+
+    jobs {
+        "scheduledDeleteEmptyDirs_$cron"(cron: cron) {
+            log.info "Policy settings for scheduled run at($cron): path list($paths)"
+            deleteEmptyDirectories( paths )
+        }
+    }
+}
+
+private def deleteEmptyDirectories(String[] paths) {
+    def totalDeletedDirs = 0
+    paths.each {
+        log.info "Beginning deleting empty directories for path($it)"
+        def deletedDirs = deleteEmptyDirsRecursively create(it)
+        log.info "Deleted($deletedDirs) empty directories for given path($it)"
+        totalDeletedDirs += deletedDirs
+    }
+    log.info "Finished deleting total($totalDeletedDirs) directories"
 }
 
 def deleteEmptyDirsRecursively(RepoPath path) {
