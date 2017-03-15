@@ -103,7 +103,10 @@ executions {
         model = model.fromDescriptor(builder, repoDescriptor)
 
         def p2Repos = Arrays.asList(input.urls).collect {
-            new P2Repo(null, null, it)
+            def key = null
+            if (it.startsWith('local://')) key = it - 'local://'
+            else key = new URL(it).host
+            new P2Repo(null, key, it)
         }
 
         model.typeSpecific.p2Repos = p2Repos
