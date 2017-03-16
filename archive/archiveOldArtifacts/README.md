@@ -1,8 +1,6 @@
 Artifactory Archive Old Artifacts User Plugin
 =============================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin is used to archive artifacts from a given source repository in
 Artifactory to a given destination repository. The artifacts are chosen based on
 a mixture of available parameters.

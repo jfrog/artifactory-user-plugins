@@ -1,8 +1,6 @@
 Artifactory Repo Stats User Plugin
 ==================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin displays certain statistics about requested files via the REST API.
 Given one or more file paths, this plugin will show the number of artifacts and
 the combined filesize of those artifacts at each of those locations.

@@ -1,8 +1,6 @@
 Artifactory YUM Calculate User Plugin
 =====================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin synchronously calculates the YUM metadata at a given repository
 path.
 

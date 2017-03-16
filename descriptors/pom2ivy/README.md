@@ -1,8 +1,6 @@
 Artifactory pom2ivy User Plugin
 ===============================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Whenever there is an attempt to download a nonexistant `ivy.xml` file, this
 plugin checks if there is an equivalent `pom.xml` file. If the pom file exists,
 the plugin converts it to an ivy file and deploys it.

@@ -1,8 +1,6 @@
 Artifactory Pommer User Plugin
 ==============================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin autogenerates `.pom` files for all artifacts that don't have them
 already. This can be useful, for example, when running a version search on a
 very large repository: since metadata searches are much faster than full

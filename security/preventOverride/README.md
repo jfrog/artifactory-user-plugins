@@ -1,8 +1,6 @@
 Artifactory Backup Folders User Plugin
 ======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Provides you the ability to prevent override of existing artifacts to non admin users.
 
 Adding to Artifactory

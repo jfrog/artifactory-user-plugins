@@ -1,8 +1,6 @@
 Artifactory Remote Download User Plugin
 =======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin recieves a remote file URL and deploys the file into Artifactory.
 
 Dependencies
