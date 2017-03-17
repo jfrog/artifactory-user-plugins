@@ -16,8 +16,8 @@ class DownloadDirectoryContentTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-        def xmlfile = new File('./src/test/maven-metadata.xml')
-        def jarfile = new File('./src/test/lib-aopalliance-1.0.jar')
+        def xmlfile = new File('./src/test/groovy/DownloadDirectoryContentTest/maven-metadata.xml')
+        def jarfile = new File('./src/test/groovy/DownloadDirectoryContentTest/lib-aopalliance-1.0.jar')
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('my-test-download')
         artifactory.repositories().create(0, local.build())
@@ -32,7 +32,7 @@ class DownloadDirectoryContentTest extends Specification {
                 .upload("test/lib-aopalliance-1.0.jar", jarfile)
                 .withProperty("prop", "test")
                 .doUpload()
-        sleep(3000)
+        //sleep(3000)
         when:
         def proc = "curl -X GET -uadmin:password \"http://localhost:8088/artifactory/my-test-download/test;downloadDirectory+=true\" > ~/result.zip"
         def process = new ProcessBuilder([ "sh", "-c", proc])
@@ -43,9 +43,9 @@ class DownloadDirectoryContentTest extends Specification {
         process.inputStream.eachLine {println it}
         process.waitFor();
         //repositoryRequest(request)
-        sleep(3000)
+        //sleep(3000)
         File zipfile = new File("~/result.zip")
-        sleep(2000)
+        //sleep(2000)
 
         then:
         //def some = "false"
