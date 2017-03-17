@@ -16,8 +16,8 @@ class DownloadDirectoryContentTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-        def xmlfile = new File('./src/test/groovy/maven-metadata.xml')
-        def jarfile = new File('./src/test/groovy/lib-aopalliance-1.0.jar')
+        def xmlfile = new File('./src/test/maven-metadata.xml')
+        def jarfile = new File('./src/test/lib-aopalliance-1.0.jar')
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('my-test-download')
         artifactory.repositories().create(0, local.build())
