@@ -80,7 +80,7 @@ def runBackup(repos) {
     def src = repopair.key, dest = repopair.value
     def quer = new JsonBuilder([type: 'file', repo: src]).toString()
     def aql = "items.find($quer).include(\"repo\",\"path\",\"name\")"
-    searches.aql(aql) {
+    searches.aql(aql.toString()) {
       for (item in it) {
         def path = item.path + '/' + item.name
         def srcpath = RepoPathFactory.create(src, path)
