@@ -2,6 +2,7 @@ import groovyx.net.http.HttpResponseException
 import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.model.PackageType
 import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
+import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
@@ -11,12 +12,16 @@ class YumCalculateAsyncTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def builder = RepositoryBuildersImpl.create()
-        builder = builder.localRepositoryBuilder().key('yum')
-        builder = builder.packageType(PackageType.yum)
-        builder = builder.yumRootDepth(2).calculateYumMetadata(false)
-        def yum = builder.build()
-        artifactory.repositories().create(0, yum)
+
+        def builder = artifactory.repositories().builders()
+        def settings = new YumRepositorySettingsImpl()
+        settings.yumRootDepth = 2
+        settings.calculateYumMetadata = false
+        
+        def local = builder.localRepositoryBuilder().key('yum')
+        .repositorySettings(settings).build()
+        artifactory.repositories().create(0, local)
+
         artifactory.repository('yum').folder('org/mod1').create()
 
         when:
