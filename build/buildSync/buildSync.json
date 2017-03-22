@@ -1,5 +1,6 @@
 {
     "ignoreStartDate": true,
+    "maxThreads": 10,
     "servers": [
         {
             "key": "local-1",

@@ -38,11 +38,18 @@ import org.jfrog.build.api.Build
 import org.slf4j.Logger
 
 import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.DELETE
 import static groovyx.net.http.Method.PUT
+
+import java.util.List
+import org.apache.http.impl.client.AbstractHttpClient
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.conn.PoolingClientConnectionManager
+import org.apache.http.params.HttpParams
 
 /**
  * Build Synchronization plugin replicates some build info json from one
@@ -167,7 +174,7 @@ executions {
                 new RemoteBuildService(pullConf.source, log, baseConf.ignoreStartDate),
                 new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins, baseConf.ignoreStartDate),
                 pullConf.buildNames,
-                pullConf.delete, max, force
+                pullConf.delete, max, force, baseConf.maxThreads
             )
             if (!res) {
                 status = 404
@@ -210,7 +217,7 @@ executions {
                     localBuildService,
                     new RemoteBuildService(destServer, log, baseConf.ignoreStartDate),
                     pushConf.buildNames,
-                    pushConf.delete, 0, force
+                    pushConf.delete, 0, force, baseConf.maxThreads
                 ))
             }
             if (!res) {
@@ -268,39 +275,56 @@ def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String build
     }
 }
 
-def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boolean delete, int max, boolean force) {
+def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boolean delete, int max, boolean force, int maxThreads) {
     List res = []
     NavigableSet<BuildRun> buildNamesToSync = src.filterBuildNames(buildNames)
+    def buildThreadPool = Executors.newFixedThreadPool(maxThreads)
     def set = max == 0 ? buildNamesToSync : buildNamesToSync.descendingSet()
-    set.each { BuildRun srcBuild ->
-        if (!force && srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
-            log.debug "Build ${srcBuild} is already sync!"
-            res << "${srcBuild.name}:already-synched"
-        } else {
-            String buildName = srcBuild.name
-            def srcBuilds = src.getBuildNumbers(buildName)
-            def destBuilds = dest.getBuildNumbers(buildName)
-            def common = srcBuilds.intersect(destBuilds)
-            log.info "Found ${common.size()} identical builds"
-            destBuilds.removeAll(common)
-            srcBuilds.removeAll(common)
-            int added = 0
-            def iter = max == 0 ? srcBuilds.iterator() : srcBuilds.descendingIterator()
-            for (BuildRun b : iter) {
-                Build buildInfo = src.getBuildInfo(b)
-                if (buildInfo) {
-                    dest.addBuild(buildInfo)
-                    added++
-                    if (max != 0 && added >= max) break
+
+    try {
+        set.each { BuildRun srcBuild ->
+            if (!force && srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
+                log.debug "Build ${srcBuild} is already sync!"
+                res << "${srcBuild.name}:already-synched"
+            } else {
+                String buildName = srcBuild.name
+                def srcBuilds = src.getBuildNumbers(buildName)
+                def destBuilds = dest.getBuildNumbers(buildName)
+                def common = srcBuilds.intersect(destBuilds)
+                log.info "Found ${common.size()} identical builds"
+                destBuilds.removeAll(common)
+                srcBuilds.removeAll(common)
+                int added = 0
+                int submitted = 0
+
+                def futures = srcBuilds.collect { sb ->
+                    if (max == 0 || submitted < max) {
+                        submitted++
+                        buildThreadPool.submit( {
+                            Build buildInfo = src.getBuildInfo(sb)
+                            if (buildInfo) {
+                                dest.addBuild(buildInfo)
+                            }
+                        } as Callable)
+                    }
                 }
-            }
-            if (delete) {
-                destBuilds.each { BuildRun b ->
-                    dest.deleteBuild(b)
+                futures.each { future ->
+                    if (future) {
+                        future.get()
+                        added++
+                    }
                 }
+
+                if (delete) {
+                    destBuilds.each { BuildRun b ->
+                        dest.deleteBuild(b)
+                    }
+                }
+                res << "${srcBuild.name}:${common.size()}:$added:${srcBuilds.size()}:${destBuilds.size()}"
             }
-            res << "${srcBuild.name}:${common.size()}:$added:${srcBuilds.size()}:${destBuilds.size()}"
         }
+    } finally {
+        buildThreadPool.shutdown()
     }
     res
 }
@@ -362,6 +386,15 @@ abstract class BuildListBase {
     abstract def deleteBuild(BuildRun buildRun)
 }
 
+class ThreadSafeHTTPBuilder extends HTTPBuilder {
+    protected AbstractHttpClient createClient(HttpParams params) {
+        PoolingClientConnectionManager cm = new PoolingClientConnectionManager()
+        cm.setMaxTotal(200) // Increase max total connection to 200
+        cm.setDefaultMaxPerRoute(20) // Increase default max connection per route to 20
+        new DefaultHttpClient(cm, params)
+    }
+}
+
 class RemoteBuildService extends BuildListBase {
     Server server
     HTTPBuilder http
@@ -371,7 +404,8 @@ class RemoteBuildService extends BuildListBase {
     RemoteBuildService(Server server, log, ignoreStartDate) {
         super(log, ignoreStartDate)
         this.server = server
-        http = new HTTPBuilder(server.url)
+        http = new ThreadSafeHTTPBuilder()
+        http.uri = server.url
         // http.auth.basic(server.user, server.password)
         http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
             httpRequest.addHeader('Authorization',
@@ -648,6 +682,7 @@ class BaseConfigurationHolder {
 
 class BaseConfiguration {
     boolean ignoreStartDate = false
+    int maxThreads = 10
     Map<String, Server> servers = [:]
     Map<String, PullConfig> pullConfigs = [:]
     Map<String, PushConfig> pushConfigs = [:]
@@ -659,6 +694,8 @@ class BaseConfiguration {
             reader = new FileReader(confFile)
             def slurper = new JsonSlurper().parse(reader)
             ignoreStartDate = slurper.ignoreStartDate as boolean
+            maxThreads = slurper.maxThreads as int
+            log.info "BuildSync maxThreads=${maxThreads}"
             slurper.servers.each {
                 def s = new Server(it)
                 log.info "Adding Server ${s.key} : ${s.url}"
