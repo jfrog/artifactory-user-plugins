@@ -60,6 +60,7 @@ class YumValidRemoteTest extends Specification {
             String path = it.location.@href[0]
             if (path == null) return
             // try downloading the file, get the real checksum
+            sleep(1000)
             def istream = remoterepo.download(path).doDownload()
             def digest = MessageDigest.getInstance('SHA1')
             def buf = new byte[4096]
@@ -102,6 +103,7 @@ class YumValidRemoteTest extends Specification {
             String path = it.location.@href[0]
             if (path == null) return
             // try downloading the file, get the real checksum
+            sleep(1000)
             def istream = remoterepo.download(path).doDownload()
             def digest = MessageDigest.getInstance('SHA1')
             def buf = new byte[4096]
