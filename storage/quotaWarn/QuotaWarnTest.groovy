@@ -1,5 +1,6 @@
 import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetup
+
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 import org.jfrog.artifactory.client.model.User
@@ -64,6 +65,8 @@ class QuotaWarnTest extends Specification {
     }
 
     private void updateConfigurationWithMailAndQuota(String savedConfig, int pctUsedInt) {
+        savedConfig -= ~'(?s)<mailServer>.*</mailServer>'
+        savedConfig -= ~'(?s)<quotaConfig>.*</quotaConfig>'
         String conf = savedConfig.replace('</addons>',
                 """
             </addons>
@@ -96,7 +99,7 @@ class QuotaWarnTest extends Specification {
                 .method(ArtifactoryRequest.Method.GET)
         Map<String, Object> result = artifactory.restCall(storageRequest)
         String pctUsedFullStr = result.fileStoreSummary.usedSpace
-        def pctUsed = pctUsedFullStr[pctUsedFullStr.indexOf('(') + 1..pctUsedFullStr.indexOf(',') - 1]
+        def pctUsed = ((pctUsedFullStr =~ '\\(([0-9]+)')[0][1])
         def pctUsedInt = (pctUsed as Integer) - 1
         return pctUsedInt
     }
@@ -163,5 +166,53 @@ class QuotaWarnTest extends Specification {
         then: 'next 1 should send mail'
         assert sendingMailStrategy.shouldSendMail()
     }
+
+}
+
+interface EmailNotificationsStrategy {
+    boolean shouldSendMail()
+    void reset()
+}
+
+class LimitAlertEmailsStrategy implements EmailNotificationsStrategy {
+
+    private int currentNumberOfSuccessiveSentEmails
+    int maxNumberOfSuccessiveEmails
+
+    boolean shouldSendMail() {
+        boolean shouldSendMail = false
+        if (currentNumberOfSuccessiveSentEmails < maxNumberOfSuccessiveEmails) {
+            shouldSendMail = true
+            currentNumberOfSuccessiveSentEmails++
+        }
+        return shouldSendMail
+    }
+
+    void reset() {
+        currentNumberOfSuccessiveSentEmails = 0
+    }
+
+}
+
+class SendAlertEmailsAtSomeRateStrategy implements EmailNotificationsStrategy {
+
+    private int currentNumberOfAlerts
+
+    int alertEmailRate = 10
+
+    boolean shouldSendMail() {
+        boolean shouldSendMail = false
+        if (currentNumberOfAlerts == 0) {
+            shouldSendMail = true
+        } else if (currentNumberOfAlerts % alertEmailRate == 0) {
+            shouldSendMail = true
+        }
+        currentNumberOfAlerts++
+        return shouldSendMail
+    }
+    void reset() {
+        currentNumberOfAlerts = 0
+    }
+
 
 }
