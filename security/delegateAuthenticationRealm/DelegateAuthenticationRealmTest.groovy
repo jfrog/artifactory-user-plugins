@@ -1,5 +1,4 @@
 import spock.lang.Specification
-import org.artifactory.security.User
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.jfrog.artifactory.client.model.builder.UserBuilder

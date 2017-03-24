@@ -12,12 +12,12 @@ class Ivy2pomTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
         def builder = RepositoryBuildersImpl.create()
-        def ivy = builder.localRepositoryBuilder().key('ivy').repoLayoutRef('ivy-default').build()
+        def ivy = builder.localRepositoryBuilder().key('ivy-local').repoLayoutRef('ivy-default').build()
         artifactory.repositories().create(0, ivy)
 
-        def maven = builder.localRepositoryBuilder().key('ext-release-local')
+        def pom = builder.localRepositoryBuilder().key('pom-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
-        artifactory.repositories().create(0, maven)
+        artifactory.repositories().create(0, pom)
 
         def ivypath = 'myorg/mymodule/2.0/nulls/ivy-2.0.xml'
         def pompath = 'myorg/mymodule/2.0/mymodule-2.0.pom'
@@ -25,10 +25,10 @@ class Ivy2pomTest extends Specification {
         new MarkupBuilder(xml).'ivy-module'(version: 2.0) {
             info(organisation: "myorg", module: "mymodule", revision: 2.0)
         }
-        artifactory.repository('ivy').upload(ivypath, new ByteArrayInputStream(xml.toString().bytes)).doUpload()
+        artifactory.repository('ivy-local').upload(ivypath, new ByteArrayInputStream(xml.toString().bytes)).doUpload()
 
         when:
-        def pomfile = new XmlParser().parse(artifactory.repository('ext-release-local').download(pompath).doDownload())
+        def pomfile = new XmlParser().parse(artifactory.repository('pom-local').download(pompath).doDownload())
 
         then:
         pomfile.groupId.text() == 'myorg'
@@ -36,7 +36,7 @@ class Ivy2pomTest extends Specification {
         pomfile.version.text() == '2.0'
 
         cleanup:
-        artifactory.repository('ext-release-local').delete()
-        artifactory.repository('ivy').delete()
+        artifactory.repository('pom-local').delete()
+        artifactory.repository('ivy-local').delete()
     }
 }

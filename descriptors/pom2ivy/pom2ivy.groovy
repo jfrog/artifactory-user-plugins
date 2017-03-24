@@ -25,9 +25,9 @@ import static java.io.File.createTempFile
 import static org.apache.commons.io.FileUtils.deleteQuietly
 import static org.artifactory.repo.RepoPathFactory.create
 
-final String TARGET_RELEASES_REPOSITORY = 'ext-release-local'
-final String TARGET_SNAPSHOTS_REPOSITORY = 'ext-snapshot-local'
-final String MAVEN_DESCRIPTORS_REPOSITORY = 'maven'
+final String TARGET_RELEASES_REPOSITORY = 'ivy-local'
+final String TARGET_SNAPSHOTS_REPOSITORY = 'ivy-local'
+final String MAVEN_DESCRIPTORS_REPOSITORY = 'pom-local'
 
 download {
     afterDownloadError { Request request ->

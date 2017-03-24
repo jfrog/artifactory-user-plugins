@@ -10,11 +10,11 @@ class Pom2ivyTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
         def builder = RepositoryBuildersImpl.create()
-        def ivy = builder.localRepositoryBuilder().key('ext-release-local').repoLayoutRef('ivy-default').build()
+        def ivy = builder.localRepositoryBuilder().key('ivy-local').repoLayoutRef('ivy-default').build()
         artifactory.repositories().create(0, ivy)
         
-        def maven = builder.localRepositoryBuilder().key('maven').repoLayoutRef('maven-2-default').build()
-        artifactory.repositories().create(0, maven)
+        def pom = builder.localRepositoryBuilder().key('pom-local').repoLayoutRef('maven-2-default').build()
+        artifactory.repositories().create(0, pom)
         
         def ivypath = 'com.mycompany.app/my-app/1.0/nulls/ivy-1.0.xml'
         def pompath = 'com/mycompany/app/my-app/1.0/my-app-1.0.pom'
@@ -26,10 +26,10 @@ class Pom2ivyTest extends Specification {
             artifactId('my-app')
             version(1.0)
         }
-        artifactory.repository('maven').upload(pompath, new ByteArrayInputStream(xml.toString().bytes)).doUpload()
+        artifactory.repository('pom-local').upload(pompath, new ByteArrayInputStream(xml.toString().bytes)).doUpload()
 
         when:
-        def ivyfile = new XmlParser().parse(artifactory.repository('ext-release-local').download(ivypath).doDownload())
+        def ivyfile = new XmlParser().parse(artifactory.repository('ivy-local').download(ivypath).doDownload())
 
         then:
         ivyfile.info[0].@organisation == 'com.mycompany.app'
@@ -37,7 +37,7 @@ class Pom2ivyTest extends Specification {
         ivyfile.info[0].@revision == '1.0'
 
         cleanup:
-        artifactory.repository('ext-release-local').delete()
-        artifactory.repository('maven').delete()
+        artifactory.repository('ivy-local').delete()
+        artifactory.repository('pom-local').delete()
     }
 }
