@@ -1,8 +1,6 @@
 Artifactory Build Replication User Plugin
 =======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Build Replication plugin replicates all build info json from master Artifactory to slave Artifactory instance.
 
 Installation

@@ -1,8 +1,6 @@
 Artifactory Storage Summary User Plugin
 =======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Exposes a summary of the storage info via the REST api.
 
 Usage
