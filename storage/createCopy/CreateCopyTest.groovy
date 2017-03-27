@@ -28,11 +28,11 @@ class CreateCopyTest extends Specification {
 
         then:
         //make sure the item was copied to copy repo with path/info
-        artifactory.repository("maven-copy").file("file").info();
+        artifactory.repository("maven-copy").file("file").info()
 
         cleanup:
         //delete items
-        artifactory.repository("maven-local").delete();
-        artifactory.repository("maven-copy").delete();
+        artifactory.repository("maven-local").delete()
+        artifactory.repository("maven-copy").delete()
     }
 }
