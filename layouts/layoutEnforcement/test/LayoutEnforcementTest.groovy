@@ -22,7 +22,7 @@ class LayoutEnforcementTest extends Specification {
         artifactory.repository('maven-local').upload('com/google/guava/guava/18.0/guava-18.0.jar', jarfile).doUpload()
     
         then:
-        notthrown(HttpResponseException)
+        notThrown(HttpResponseException)
         
         when:
         artifactory.repository('maven-local').upload('some/path/file', new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
