@@ -1,7 +1,5 @@
-Artifactory Semantic Versioning Check User Plugin
+Binary Compatibility Check User Plugin
 =======================================
-
-*This plugin is currently being tested for Artifactory 5.x releases.*
 
 This plugin performs binary compatibility checks when artifact is created in Artifactory. Property binaryCompatibleWith or binaryIncompatibleWith will be added with the version of artifact that the check was performed against as a value.
 

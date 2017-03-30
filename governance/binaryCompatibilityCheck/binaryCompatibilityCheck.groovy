@@ -21,20 +21,21 @@ import org.artifactory.repo.RepoPath
 import org.codehaus.mojo.versions.ordering.VersionComparator
 import org.codehaus.mojo.versions.ordering.VersionComparators
 @Grapes([
-    @Grab(group = 'org.semver', module = 'api', version = '0.9.20'),
-    @Grab(group = 'org.semver', module = 'api', classifier = 'sources', version = '0.9.20'),
-    @GrabExclude('asm:asm'),
-    @GrabExclude('asm:asm-tree'),
-    @GrabExclude('asm:asm-commons'),
+    @Grab(group = 'org.semver', module = 'api', version = '0.9.29'),
+    @Grab(group = 'org.semver', module = 'api', classifier = 'sources', version = '0.9.29'),
+    //@GrabExclude('asm:asm'),
+    //@GrabExclude('asm:asm-tree'),
+    //@GrabExclude('asm:asm-commons'),
     @GrabExclude('commons-lang:commons-lang')
 ])
 import org.semver.Comparer
 import org.semver.Delta
+import org.osjava.jardiff.SimpleDiffCriteria
 
 import java.nio.file.Path
 
 import static java.nio.file.Files.*
-import static org.semver.Delta.CompatibilityType.BACKWARD_COMPATIBLE_USER
+import static org.semver.Delta.CompatibilityType.NON_BACKWARD_COMPATIBLE
 
 @Field final String COMPATIBLE_PROPERTY_NAME = 'approve.binaryCompatibleWith'
 @Field final String INCOMPATIBLE_PROPERTY_NAME = 'approve.binaryIncompatibleWith'
@@ -47,6 +48,7 @@ import static org.semver.Delta.CompatibilityType.BACKWARD_COMPATIBLE_USER
 
 storage {
     afterCreate { ItemInfo item ->
+        if (item.isFolder()) return
         FileLayoutInfo currentLayout = repositories.getLayoutInfo(item.repoPath)
         if (currentLayout.organization) {
             if (currentLayout.ext == 'jar') {
@@ -63,11 +65,10 @@ storage {
                         try {
                             newOutputStream(currentTempFile) << repositories.getContent(item.repoPath).inputStream
                             newOutputStream(previousTempFile) << repositories.getContent(previousVersion).inputStream
-
-                            Delta delta = new Comparer(previousTempFile.toFile(), currentTempFile.toFile(), [] as Set,
+                            def criteria = new SimpleDiffCriteria()
+                            Delta delta = new Comparer(criteria, previousTempFile.toFile(), currentTempFile.toFile(), [] as Set,
                                 [] as Set).diff()
-                            boolean compatible = delta.computeCompatibilityType().compareTo(
-                                BACKWARD_COMPATIBLE_USER) > 0
+                            boolean compatible = delta.computeCompatibilityType().compareTo(NON_BACKWARD_COMPATIBLE) != 0
                             repositories.setProperty(item.repoPath,
                                 compatible ? COMPATIBLE_PROPERTY_NAME : INCOMPATIBLE_PROPERTY_NAME,
                                 previousLayout.baseRevision)
