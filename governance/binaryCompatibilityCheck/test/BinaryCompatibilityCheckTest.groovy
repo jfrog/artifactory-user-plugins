@@ -15,8 +15,8 @@ class BinaryCompatibilityCheck extends Specification {
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
         
-        def jarfile1 = new File('./src/test/groovy/BinaryCompatibilityCheck/guava-16.0.jar')
-        def jarfile2 = new File('./src/test/groovy/BinaryCompatibilityCheck/guava-16.0.1.jar')
+        def jarfile1 = new File('./src/test/groovy/BinaryCompatibilityCheckTest/guava-16.0.jar')
+        def jarfile2 = new File('./src/test/groovy/BinaryCompatibilityCheckTest/guava-16.0.1.jar')
 
         when:
         artifactory.repository('maven-local').upload('com/google/guava/guava/16.0/guava-16.0.jar', jarfile1).doUpload()
@@ -47,8 +47,8 @@ class BinaryCompatibilityCheck extends Specification {
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
         
-        def jarfile1 = new File('./src/test/groovy/BinaryCompatibilityCheck/guava-10.0.jar')
-        def jarfile2 = new File('./src/test/groovy/BinaryCompatibilityCheck/guava-10.1.jar')
+        def jarfile1 = new File('./src/test/groovy/BinaryCompatibilityCheckTest/guava-10.0.jar')
+        def jarfile2 = new File('./src/test/groovy/BinaryCompatibilityCheckTest/guava-10.1.jar')
 
         when:
         artifactory.repository('maven-local').upload('com/google/guava/guava/10.0/guava-10.0.jar', jarfile1).doUpload()

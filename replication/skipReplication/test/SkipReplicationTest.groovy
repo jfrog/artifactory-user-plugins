@@ -13,8 +13,8 @@ class SkipReplicationTest extends Specification {
         def artifactory1 = create(baseurl1, 'admin', 'password')
         def artifactory2 = create(baseurl2, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-        def xmlfile = new File('./src/test/groovy/skipReplicationTest/maven-metadata.xml')
-        def jarfile = new File('./src/test/groovy/skipReplicationTest/lib-aopalliance-1.0.jar')
+        def xmlfile = new File('./src/test/groovy/SkipReplicationTest/maven-metadata.xml')
+        def jarfile = new File('./src/test/groovy/SkipReplicationTest/lib-aopalliance-1.0.jar')
 
         def builder1 = artifactory1.repositories().builders()
         def local = builder1.localRepositoryBuilder().key('maven-local')
