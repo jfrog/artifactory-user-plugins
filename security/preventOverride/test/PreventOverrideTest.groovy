@@ -21,7 +21,7 @@ class PreventOverrideTest extends Specification {
         artifactory1.security().createOrUpdate(user1)
 
         def artifactory2 = create(baseurl, 'non-admin', 'password')
-        def xmlfile = new File('./src/test/groovy/preventOverrideTest/maven-metadata.xml')
+        def xmlfile = new File('./src/test/groovy/PreventOverrideTest/maven-metadata.xml')
 
         def builder = artifactory1.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
