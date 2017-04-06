@@ -42,10 +42,10 @@ class YumValidRemoteTest extends Specification {
 
         when:
         // upload some yum repo files
-        def repomd = new File('./src/test/groovy/yumValidRemoteTest/test1/repomd.xml')
-        def primary = new File('./src/test/groovy/yumValidRemoteTest/test1/primary.xml.gz')
-        def flists = new File('./src/test/groovy/yumValidRemoteTest/test1/filelists.xml.gz')
-        def other = new File('./src/test/groovy/yumValidRemoteTest/test1/other.xml.gz')
+        def repomd = new File('./src/test/groovy/YumValidRemoteTest/test1/repomd.xml')
+        def primary = new File('./src/test/groovy/YumValidRemoteTest/test1/primary.xml.gz')
+        def flists = new File('./src/test/groovy/YumValidRemoteTest/test1/filelists.xml.gz')
+        def other = new File('./src/test/groovy/YumValidRemoteTest/test1/other.xml.gz')
         localrepo.folder('repodata').create()
         localrepo.upload('repodata/repomd.xml', repomd).doUpload()
         localrepo.upload('repodata/primary.xml.gz', primary).doUpload()
@@ -85,10 +85,10 @@ class YumValidRemoteTest extends Specification {
         localrepo.delete('repodata')
         remoterepocache.delete('repodata/repomd.xml')
         // upload some yum repo files
-        repomd = new File('./src/test/groovy/yumValidRemoteTest/test2/repomd.xml')
-        primary = new File('./src/test/groovy/yumValidRemoteTest/test2/primary.xml.gz')
-        flists = new File('./src/test/groovy/yumValidRemoteTest/test2/filelists.xml.gz')
-        other = new File('./src/test/groovy/yumValidRemoteTest/test2/other.xml.gz')
+        repomd = new File('./src/test/groovy/YumValidRemoteTest/test2/repomd.xml')
+        primary = new File('./src/test/groovy/YumValidRemoteTest/test2/primary.xml.gz')
+        flists = new File('./src/test/groovy/YumValidRemoteTest/test2/filelists.xml.gz')
+        other = new File('./src/test/groovy/YumValidRemoteTest/test2/other.xml.gz')
         localrepo.folder('repodata').create()
         localrepo.upload('repodata/repomd.xml', repomd).doUpload()
         localrepo.upload('repodata/primary.xml.gz', primary).doUpload()
