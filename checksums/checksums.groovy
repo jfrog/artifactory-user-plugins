@@ -16,6 +16,7 @@
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.artifactory.repo.RepoPath
+import org.artifactory.request.NullRequestContext
 import org.artifactory.request.Request
 
 import static org.apache.commons.io.FilenameUtils.*
@@ -31,6 +32,9 @@ download {
         if (isExtension(requestedPath, knownAlogrithms)) {
             // we only support what DigestUtils supports, look for sha*Hex() methods in http://commons.apache.org/codec/apidocs/org/apache/commons/codec/digest/DigestUtils.html
             RepoPath targetRepoPath = create(request.repoPath.repoKey, removeExtension(requestedPath))
+            // resolve virtual repos/dynamic versions/etc appropriately
+            def reqctx = new NullRequestContext(targetRepoPath)
+            targetRepoPath = ctx.repositoryService.repositoryByKey(targetRepoPath.repoKey).getInfo(reqctx).repoPath
             String extension = getExtension(requestedPath)
             def checksumPropertyName = "checksum.$extension"
             String savedChecksum = repositories.getProperty(targetRepoPath, checksumPropertyName)
