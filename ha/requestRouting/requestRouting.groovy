@@ -15,6 +15,7 @@
  */
 
 import groovy.json.JsonSlurper
+import java.util.concurrent.TimeUnit
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
@@ -26,6 +27,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.util.EntityUtils
 import org.artifactory.api.context.ContextHelper
 import org.artifactory.common.ArtifactoryHome
+import org.artifactory.common.ConstantValues
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.rest.resource.system.SystemResource
 import org.artifactory.rest.resource.system.VersionResource
@@ -107,8 +109,9 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
         return ["Server $serverId does not exist", 400]
     }
 
-    def heartbeat = ArtifactoryServersCommonService.hasHeartbeat(targetServer)
-    if (!heartbeat) {
+    def lasthb = System.currentTimeMillis() - targetServer.lastHeartbeat
+    def heartbeat = TimeUnit.MILLISECONDS.toSeconds(lasthb)
+    if (heartbeat > ConstantValues.haHeartbeatStaleIntervalSecs.getInt()) {
         return ["Server $serverId is unreachable", 400]
     }
 
