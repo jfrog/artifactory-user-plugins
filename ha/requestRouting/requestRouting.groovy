@@ -128,20 +128,21 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
     url.append(apiEndpoint);
     log.debug("Target URL: " + url.toString())
 
-    HttpClient client = createHttpClient(url.toString())
-    if (client == null) {
-        return
-    }
-
-    base.setURI(URI.create(url.toString()));
-    def headerValue = org.artifactory.request.RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("authorization")
-    if (headerValue == null) {
-        return;
-    }
-
-    base.addHeader("authorization", headerValue);
-
+    HttpClient client = null
     try {
+        client = createHttpClient(url.toString())
+        if (client == null) {
+            return
+        }
+
+        base.setURI(URI.create(url.toString()));
+        def headerValue = org.artifactory.request.RequestThreadLocal.context.get().requestThreadLocal.request.getHeader("authorization")
+        if (headerValue == null) {
+            return;
+        }
+
+        base.addHeader("authorization", headerValue);
+
         HttpResponse response = client.execute(base);
         String responseBody = EntityUtils.toString(response.getEntity())
         if(response.getStatusLine().statusCode == 400) {
@@ -154,6 +155,8 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
     } catch (IOException ioe) {
         log.error("Target Server error respons: $ioe.message")
         return [ioe.getMessage(), 500]
+    } finally {
+        client?.close()
     }
 }
 
