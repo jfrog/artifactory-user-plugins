@@ -31,9 +31,6 @@ import org.artifactory.security.SaltedPassword
 import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.util.HttpUtils
 
-import org.jfrog.security.crypto.EncodedKeyPair
-import org.jfrog.security.crypto.result.DecryptionStatusHolder
-
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
         <level value="debug"/>
@@ -736,6 +733,36 @@ writesort = { left, right ->
 }
 
 def encryptDecrypt(json, encrypt) {
+    def encodedKeyPair = null, decodedKeyPair = null
+    def decryptionStatusHolder = null
+    try {
+        def statpath = "org.jfrog.security.crypto.result.DecryptionStatusHolder"
+        def keypairpath = "org.jfrog.security.crypto.EncodedKeyPair"
+        decryptionStatusHolder = Class.forName(statpath)
+        def keypairclass = Class.forName(keypairpath)
+        encodedKeyPair = keypairclass.getConstructor(String, String)
+        for (constructor in keypairclass.getConstructors()) {
+            if (constructor.parameterCount != 2) continue;
+            if (constructor.parameterTypes[0] == String) continue;
+            decodedKeyPair = constructor
+        }
+        if (decodedKeyPair == null) {
+            def msg = "Could not find classes required for encryption, assuming"
+            msg += " an old version of Artifactory."
+            log.debug(msg)
+            return
+        }
+    } catch (ClassNotFoundException ex) {
+        def msg = "Could not find classes required for encryption, assuming"
+        msg += " an old version of Artifactory."
+        log.debug(msg)
+        return
+    } catch (NoSuchMethodException ex) {
+        def msg = "Could not find classes required for encryption, assuming"
+        msg += " an old version of Artifactory."
+        log.debug(msg)
+        return
+    }
     def home = ArtifactoryHome.get()
     def is5x = false, cryptoHelper = null
     try {
@@ -754,13 +781,14 @@ def encryptDecrypt(json, encrypt) {
     def wrapper = encrypt ? masterWrapper : null
     for (user in json.users.values()) {
         if (user.privatekey && user.publickey) {
-            def pair = new EncodedKeyPair(user.privatekey, user.publickey)
+            def pair = encodedKeyPair.newInstance(user.privatekey, user.publickey)
             try {
-                pair = pair.decode(masterWrapper, new DecryptionStatusHolder())
+                def status = decryptionStatusHolder.newInstance()
+                pair = pair.decode(masterWrapper, status)
             } catch (MissingMethodException ex) {
                 pair = pair.decode(masterWrapper)
             }
-            pair = new EncodedKeyPair(pair, wrapper)
+            pair = decodedKeyPair.newInstance(pair, wrapper)
             user.privatekey = pair.encodedPrivateKey
             user.publickey = pair.encodedPublicKey
         }
