@@ -43,14 +43,17 @@ There is also ability to control the running script. The following operations ca
 Operation
 ---------
 
-- `stop`: When detected, the loop deleting artifacts is exited and the script ends.
-- `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest
-- `resume`: Resume normal execution
-- `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value.
+The plugin have 4 control options:
 
-To control the plugin:
+- `stop`: When detected, the loop deleting artifacts is exited and the script ends. Example:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"`
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
+- `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest. Example:
+
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=pause"`
+- `resume`: Resume normal execution. Example:
+
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
+- `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
+
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
