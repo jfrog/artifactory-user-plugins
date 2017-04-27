@@ -16,6 +16,8 @@
 
 // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50|dryRun"
 
+@Field final String PROPERTIES_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties"
+
 executions {
     cleanBuilds() { params ->
         def days = params['days'] ? params['days'][0] as int : 2
@@ -26,7 +28,7 @@ executions {
 
 jobs {
     buildCleanup(cron: "0 0 12 1/1 * ? *") {
-        def config = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties").toURI().toURL())
+        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURI().toURL())
         buildCleanup(config.days, config.dryRun)
     }
 }

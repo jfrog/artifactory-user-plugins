@@ -16,6 +16,8 @@
 
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 
+@Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
+
 class Global {
     static Boolean stopCleaning = false;
     static Boolean pauseCleaning = false;
@@ -68,7 +70,7 @@ executions {
     }
 }
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/${this.class.name}.properties").toURL())
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
 log.info "Schedule job policy list: $config.policies"
 
 config.policies.each{ policySettings ->
