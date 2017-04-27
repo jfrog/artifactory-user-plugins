@@ -69,10 +69,10 @@ class UserPwdConfigurationHolder {
     long confFileLastChecked = 0L
     long confFileLastModified = 0L
     List<String> errors
-
+    String dir = "${ctx.artifactoryHome.getHaAwareEtcDir()}/plugins"
     UserPwdConfigurationHolder(ctx, log) {
         this.log = log
-        this.confFile = new File("${ctx.artifactoryHome.getHaAwareEtcDir()}/plugins", "users.json")
+        this.confFile = new File(dir, "users.json")
     }
 
     UserPwdConfiguration getCurrent() {

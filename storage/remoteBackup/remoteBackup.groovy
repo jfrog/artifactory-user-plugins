@@ -19,6 +19,8 @@ import groovy.json.JsonBuilder
 
 import org.artifactory.repo.RepoPathFactory
 
+@Field final String REMOTE_BACKUP = "plugins/remoteBackup.json"
+
 // A cron expression describing how often to run the backup. Modify this
 // variable to customize the timing.
 cronExpression = "0 0 0/1 * * ?"
@@ -47,7 +49,7 @@ executions {
 storage {
   afterCreate { item ->
     def etcdir = ctx.artifactoryHome.haAwareEtcDir
-    def cfgfile = new File(etcdir, "plugins/remoteBackup.json")
+    def cfgfile = new File(etcdir, REMOTE_BACKUP)
     def cfg = new JsonSlurper().parse(cfgfile)
     if (item.repoKey in cfg && !item.isFolder()) {
       asSystem {
@@ -65,7 +67,7 @@ storage {
 
 def runBackup(repos) {
   def etcdir = ctx.artifactoryHome.haAwareEtcDir
-  def cfgfile = new File(etcdir, "plugins/remoteBackup.json")
+  def cfgfile = new File(etcdir, REMOTE_BACKUP)
   def cfg = new JsonSlurper().parse(cfgfile)
   if (repos) {
     def cfgtmp = [:]
