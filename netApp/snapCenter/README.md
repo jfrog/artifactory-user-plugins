@@ -3,7 +3,7 @@ Artifactory NetApp SnapCenter User Plugin
 
 A REST to trigger NetApp SnapCenter backup using from Artifactory.
 ---
-###Steps to trigger SpanCenter Backup
+### Steps to trigger SpanCenter Backup
 
 1. create **body.json** with SanpCenter url, token (Non expirable), policy and resourcegroups.
     ```
