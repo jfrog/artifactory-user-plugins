@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@Field final String REPO_PATH_CONTAINS = "/repodata/"
+@Field final String REPO_PATH_CONTAINS = "repodata/"
 @Field final String FILE_NAME = "repomd.xml"
 @Field final String FILE_END = ".xml.gz"
 
@@ -22,7 +22,7 @@ replication {
     beforeFileReplication { localRepoPath ->
         if ((localRepoPath.getName().endsWith(FILE_END) ||
                 localRepoPath.getName().equals(FILE_NAME)) &&
-                (localRepoPath.getPath().contains(REPO_PATH_CONTAINS) ||
+                (localRepoPath.getPath().contains("/" + REPO_PATH_CONTAINS) ||
                         localRepoPath.getPath().startsWith(REPO_PATH_CONTAINS))) {
             log.info("Skipping replication of a file:" +
                     " ${localRepoPath.getPath()} as it is a YUM metadata file")
@@ -32,7 +32,7 @@ replication {
     beforeDeleteReplication { localRepoPath ->
         if ((localRepoPath.getName().endsWith(FILE_END) ||
                 localRepoPath.getName().equals(FILE_NAME)) &&
-                (localRepoPath.getPath().contains(REPO_PATH_CONTAINS) ||
+                (localRepoPath.getPath().contains("/" + REPO_PATH_CONTAINS) ||
                         localRepoPath.getPath().startsWith(REPO_PATH_CONTAINS))) {
             log.info("Skipping replication of delete a file:" +
                     " ${localRepoPath.getPath()} as it is a YUM metadata file")
