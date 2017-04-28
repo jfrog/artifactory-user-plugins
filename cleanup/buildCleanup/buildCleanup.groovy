@@ -16,7 +16,7 @@
 
 // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50|dryRun"
 
-@Field final String PROPERTIES_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/buildCleanup.properties"
+@Field final String PROPERTIES_FILE_PATH = "plugins/buildCleanup.properties"
 
 executions {
     cleanBuilds() { params ->
