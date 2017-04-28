@@ -7,7 +7,7 @@ import org.artifactory.exception.CancelException
 class ReposName {
 
     public ArrayList<String> name = new ArrayList();
-
+    public final String PROPERTIES_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/reposName.properties"
     /**
      * Initialize the repos list.
      * The list is taken from the properties file.
@@ -16,7 +16,7 @@ class ReposName {
 
     public void init(){
 
-        def configFile = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/reposName.properties").toURL())
+        def configFile = new ConfigSlurper().parse(new File(PROPERTIES_FILE_PATH).toURL())
         String[] repos = configFile.repos;
         for(int i=0; i<repos.length; i++){
             name.add(repos[i]);

@@ -17,6 +17,8 @@
 import groovy.json.JsonSlurper
 import org.artifactory.exception.CancelException
 
+@Field final String FILE_PATH = 'plugins/restrictOverwrite.json'
+
 storage {
     beforeCreate { item ->
         restrictOverwrite(item.repoPath)
@@ -31,7 +33,7 @@ storage {
 
 def restrictOverwrite(rpath) {
     def artetc = ctx.artifactoryHome.haAwareEtcDir
-    def config = new File(artetc, 'plugins/restrictOverwrite.json')
+    def config = new File(artetc, FILE_PATH)
     def repos = new JsonSlurper().parse(config)
     // if the repository is not in our list, we don't deal with it
     if (!(rpath.repoKey in repos)) return

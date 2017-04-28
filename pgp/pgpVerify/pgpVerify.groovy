@@ -118,7 +118,7 @@ def verify(rp) {
         try {
             signature = getSignature(asc)
             hexPublicKeyId = Long.toHexString(signature.getKeyID())
-            log.debug "Found public key: $hexPublicKeyId"
+            log.debug "Found public key: ($hexPublicKeyId)"
         } finally {
             asc.close()
         }
@@ -158,7 +158,7 @@ def verify(rp) {
             }
 
             response.'404' = { resp ->
-                log.warn("No public key found for $rp: ${resp.statusLine}")
+                log.warn("No public key found for ($rp): ${resp.statusLine}")
                 false
             }
 
@@ -168,7 +168,7 @@ def verify(rp) {
         }
 
         if (verified) {
-            log.info "Artifact $rp successfully verified!"
+            log.info "Artifact ($rp) successfully verified!"
         }
         verified
     }
@@ -179,10 +179,10 @@ private void fetchAsc(RepoPath ascRepoPath, request) {
     def http = new HTTPBuilder("${request.servletContextUrl}/$key/$ascRepoPath.path")
     http.request(GET, BINARY) { req ->
         response.success = {
-            log.info("Downloaded $ascRepoPath")
+            log.info("Downloaded ($ascRepoPath)")
         }
         response.failure = { resp ->
-            log.warn("Could not downloaded $ascRepoPath")
+            log.warn("Could not downloaded ($ascRepoPath)")
         }
     }
 }
