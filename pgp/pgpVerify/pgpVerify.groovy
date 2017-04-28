@@ -25,8 +25,6 @@ import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.Method.GET
 
 @Field repos
-@Field final String HTTPBUILDER_VERIFY_URL = "http://pgp.mit.edu:11371//pks/lookup?op=get&search=0x$hexPublicKeyId"
-@Field final String HTTPBUILDER_FETCHASC_URL = "${request.servletContextUrl}/$key/$ascRepoPath.path"
 
 /**
  * Verifies downloaded files against their asc signature, by using the
@@ -126,7 +124,7 @@ def verify(rp) {
         }
 
         // Try to get the public key for the detached asc signature
-        def http = new HTTPBuilder(HTTPBUILDER_VERIFY_URL)
+        def http = new HTTPBuilder("http://pgp.mit.edu:11371//pks/lookup?op=get&search=0x$hexPublicKeyId")
         def verified = http.request(GET, BINARY) { req ->
             response.success = { resp, inputStream ->
                 PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(inputStream))
@@ -178,7 +176,7 @@ def verify(rp) {
 
 private void fetchAsc(RepoPath ascRepoPath, request) {
     def key = ascRepoPath.repoKey.endsWith('-cache') ? ascRepoPath.repoKey[0..-7] : ascRepoPath.repoKey
-    def http = new HTTPBuilder(HTTPBUILDER_FETCHASC_URL)
+    def http = new HTTPBuilder("${request.servletContextUrl}/$key/$ascRepoPath.path")
     http.request(GET, BINARY) { req ->
         response.success = {
             log.info("Downloaded ($ascRepoPath)")
