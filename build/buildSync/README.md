@@ -65,6 +65,7 @@ To install Build Sync:
    `${ARTIFACTORY_HOME}/etc/plugins/lib`:
    * [HTTPBuilder](https://bintray.com/bintray/jcenter/org.codehaus.groovy.modules.http-builder%3Ahttp-builder/_latestVersion)
    * [Json-lib](https://bintray.com/bintray/jcenter/net.sf.json-lib%3Ajson-lib/_latestVersion)
+   * [Xml-resolver](https://bintray.com/bintray/jcenter/xml-resolver%3Axml-resolver/_latestVersion)
    * [EZMorph](https://bintray.com/bintray/jcenter/net.sf.ezmorph%3Aezmorph/_latestVersion)
 3. Edit the `buildSync.json` file. See the example `buildSync.json` provided or
    the details below on how `buildSync.json` works.
