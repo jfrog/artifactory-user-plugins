@@ -1,0 +1,6 @@
+{
+    "cronjob": "0 0 0 * * ?",
+    "dryRun": false,
+    "host": "<org name>.okta.com",
+    "apitoken": "<okta api token>"
+}
