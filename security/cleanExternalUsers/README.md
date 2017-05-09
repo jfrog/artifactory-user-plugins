@@ -46,8 +46,15 @@ that are used outside of `usersToClean` are the following:
 The default Okta implementation of `usersToClean` uses the following
 configuration options:
 
+- `keepUsers`: A list of Artifactory users to preserve. All admin users and the
+  `anonymous` user will also be preserved, even if they are not on this list.
 - `host`: The hostname of the Okta server. For example, `"orgname.okta.com"`.
 - `apitoken`: The API token to use for authentication with the Okta server.
+- `appid`: The id of your app in the Okta server. This is the `id` field for the
+  app when you run [this API call][1]. Note that this call will list all the
+  apps, you need to find the correct one in the resulting list.
+
+[1]: http://developer.okta.com/docs/api/resources/apps.html#list-applications
 
 Execution
 ---------

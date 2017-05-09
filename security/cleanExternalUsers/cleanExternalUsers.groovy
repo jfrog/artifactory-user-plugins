@@ -27,8 +27,7 @@ import groovy.json.JsonException
 // this does not fit your needs, you need to implement your own function and use
 // that instead.
 def usersToClean(config) {
-    def filt = "filter=status%20eq%20%22DEPROVISIONED%22"
-    def url = "https://$config.host/api/v1/users?$filt"
+    def url = "https://$config.host/api/v1/apps/$config.appid/users"
     def conn = null, resp = null
     try {
         conn = new URL(url).openConnection()
@@ -43,7 +42,9 @@ def usersToClean(config) {
     } finally {
         conn?.disconnect()
     }
-    return resp.collect { it.profile.login }
+    def names = resp.collect { it.credentials.userName.toLowerCase() }
+    def allusrs = ctx.securityService.getAllUsers(false).collect { it.username }
+    return allusrs - config.keepUsers - ['anonymous'] - names
 }
 
 executions {
@@ -108,7 +109,7 @@ def cleanUsers(params) {
                 log.warn("Deleting user $user (dry run)")
             } else {
                 log.warn("Deleting user $user")
-                secserv.deleteUser(user);
+                secserv.deleteUser(user)
             }
         }
     }
