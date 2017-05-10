@@ -2,7 +2,7 @@
     "cronjob": "0 0 0 * * ?",
     "dryRun": false,
     "host": "<org name>.okta.com",
-    "apitoken": "<okta api token>"
+    "apitoken": "<okta api token>",
     "keepUsers": [],
     "appid": "1234567890abcdefghij"
 }
