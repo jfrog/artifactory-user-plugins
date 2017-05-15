@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import groovy.transform.Field
 import groovy.json.JsonSlurper
 import org.artifactory.exception.CancelException
 

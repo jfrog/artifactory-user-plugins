@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import groovy.transform.Field
 import org.artifactory.repo.RepoPathFactory
 
 @Field final String PROPERTIES_FILE_PATH = 'plugins/createCopy.properties'

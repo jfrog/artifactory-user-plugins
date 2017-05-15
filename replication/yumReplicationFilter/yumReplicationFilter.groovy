@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import groovy.transform.Field
+
 @Field final String REPO_PATH_CONTAINS = "repodata/"
 @Field final String FILE_NAME = "repomd.xml"
 @Field final String FILE_END = ".xml.gz"

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import groovy.transform.Field
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"

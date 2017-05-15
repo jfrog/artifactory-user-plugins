@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import groovy.transform.Field
 import org.artifactory.repo.RepoPath
 
 import static java.lang.Thread.sleep
