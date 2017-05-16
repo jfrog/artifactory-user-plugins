@@ -12,3 +12,8 @@ complete, the correct metadata files should always be available, even when there
 are updates on the remote server. This is because the plugin refuses to index
 new metadata until after all the required metadata files are cached, and it will
 continue to use the old metadata in the meantime.
+
+Installation
+---------------------
+
+This plugin needs to be added to the `$ARTIFACTORY_HOME/etc/plugins` directory.

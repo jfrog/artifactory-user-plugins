@@ -10,3 +10,8 @@ Executing
 To execute this plugin:
 
 `curl -X POST -u admin:password http://localhost:8088/artifactory/api/plugins/execute/yumCalculate?params=path=yum-repository/path/to/dir`
+
+Installation
+---------------------
+
+This plugin needs to be added to the `$ARTIFACTORY_HOME/etc/plugins` directory.
