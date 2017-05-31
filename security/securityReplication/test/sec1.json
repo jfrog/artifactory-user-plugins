@@ -1,6 +1,7 @@
 {
     "groups": {
         "changeme": {
+            "admin": false,
             "description": "update this group",
             "isdefault": false,
             "permissions": {
@@ -11,6 +12,7 @@
             "realmattrs": null
         },
         "deleteme": {
+            "admin": false,
             "description": "delete this group",
             "isdefault": false,
             "permissions": {
@@ -21,6 +23,7 @@
             "realmattrs": null
         },
         "readers": {
+            "admin": false,
             "description": "A group for read-only users",
             "isdefault": true,
             "permissions": {

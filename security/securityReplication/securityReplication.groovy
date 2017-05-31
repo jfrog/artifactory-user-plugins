@@ -636,6 +636,7 @@ def applyAggregatePatch(newpatch) {
 //       "isdefault": <boolean>,
 //       "realm": <string>,
 //       "realmattrs": <string>,
+//       "admin": <boolean>,
 //       "permissions": {
 //         "<permission name>": <dmnrw string>,
 //         "<another permission name>": <dmnrw string>,
@@ -854,13 +855,23 @@ def extract() {
     }
     // groups
     if (filter >= 2) {
-        def groups = [:], grps = secserv.allGroups
+        def groups = [:], grps = null
+        try {
+            grps = secserv.allGroups
+        } catch (MissingPropertyException ex) {
+            grps = secserv.getAllGroups(true)
+        }
         for (grp in grps) {
             def group = [:]
             group.description = grp.description
-            group.isdefault = grp.newUserDefault
+            group.isdefault = grp.isNewUserDefault()
             group.realm = grp.realm
             group.realmattrs = grp.realmAttributes
+            try {
+                group.admin = grp.isAdminPrivileges()
+            } catch (MissingMethodException ex) {
+                group.admin = false
+            }
             if (filter >= 3) {
                 def perms = secserv.getGroupsPermissions([grp.groupName])
                 try {
@@ -930,10 +941,20 @@ def modifyProp(secserv, op, user, key, val) {
         if (op == 'create') {
             secserv.addUserProperty(user, key, val)
         } else if (op == 'delete') {
-            secserv.deleteProperty(user, key)
+            try {
+                secserv.deleteUserProperty(user, key)
+            } catch (MissingMethodException ex) {
+                secserv.deleteProperty(user, key)
+            }
         } else if (op == 'update') {
-            if (secserv.deleteProperty(user, key)) {
-                secserv.addUserProperty(user, key, val)
+            try {
+                if (secserv.deleteUserProperty(user, key)) {
+                    secserv.addUserProperty(user, key, val)
+                }
+            } catch (MissingMethodException ex) {
+                if (secserv.deleteProperty(user, key)) {
+                    secserv.addUserProperty(user, key, val)
+                }
             }
         }
     }
@@ -1030,6 +1051,9 @@ def update(ptch) {
                 group.newUserDefault = val.isdefault
                 group.realm = val.realm
                 group.realmAttributes = val.realmattrs
+                try {
+                    group.adminPrivileges = val.admin ?: false
+                } catch (MissingPropertyException ex) {}
                 secserv.createGroup(group)
                 for (perm in val.permissions?.entrySet()) {
                     def ace = infact.createAce()
@@ -1117,6 +1141,10 @@ def update(ptch) {
                 group.realm = key
             } else if (path[2] == 'realmattrs') {
                 group.realmAttributes = key
+            } else if (path[2] == 'admin') {
+                try {
+                    group.adminPrivileges = key
+                } catch (MissingPropertyException ex) {}
             }
             secserv.updateGroup(group)
         }
