@@ -1,6 +1,6 @@
 {
-    "srcRepo": "gems-local",
+    "srcRepo": "maven-local",
     "srcDir": "",
-    "destLocalDir": "/work/test/plugin",
+    "destLocalDir": "/tmp",
     "params": "-type f"
 }

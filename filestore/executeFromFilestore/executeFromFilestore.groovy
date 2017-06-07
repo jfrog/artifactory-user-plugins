@@ -37,8 +37,8 @@ import java.nio.file.Files
  */
 
 class ExecuteConstants {
-    static String copyCommand = 'cp -pu'
-    static String baseExecute = 'find {destLocalDir} {params}'
+    static String copyCommand = 'cp -p'
+    static String baseExecute = 'find {destLocalDir}/ {params}'
     static String[] excludeExtensions = ['.txt', '.log']
 }
 
