@@ -51,7 +51,11 @@ executions {
         // get the list of users who are in the group
         def users = []
         def usersInGroup = userGroupService.findUsersInGroup(groupName)
-        for (def user : usersInGroup) users.add([name: user.username])
+        try {
+            for (def user : usersInGroup) users.add([name: user.username])
+        } catch (MissingPropertyException ex){
+            for (def user : usersInGroup) users.add([name: user])
+        }
         // print the message to the requesting user
         message = new JsonBuilder([groupName, users]).toPrettyString()
         log.info("Finished getting the users of the group '$groupName'")

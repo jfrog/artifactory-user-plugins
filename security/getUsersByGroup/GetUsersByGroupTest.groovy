@@ -2,6 +2,7 @@ import spock.lang.Specification
 import org.jfrog.artifactory.client.model.Group
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.jfrog.artifactory.client.model.builder.UserBuilder
+import groovy.json.JsonBuilder
 
 class GetUsersByGroupTest extends Specification {
     def 'get users by group test'() {
@@ -11,21 +12,23 @@ class GetUsersByGroupTest extends Specification {
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
 
         when:
+
+        Group group = artifactory.security().builders().groupBuilder()
+        .name("group")
+        .autoJoin(true)
+        .description("new group")
+        .build()
+        artifactory.security().createOrUpdateGroup(group)
+
         UserBuilder userBuilder = artifactory.security().builders().userBuilder()
         def user = userBuilder.name("user")
         .email("user@jfrog.com")
         .admin(true)
         .profileUpdatable(true)
         .password("password")
-        .build();
+        .addGroup("group")
+        .build()
         artifactory.security().createOrUpdate(user)
-
-        Group group = artifactory.security().builders().groupBuilder()
-        .name("group")
-        .autoJoin(true)
-        .description("new group")
-        .build();
-        artifactory.security().createOrUpdateGroup(group);
 
         def conn = new URL(baseurl + '/api/plugins/execute/getUsersByGroup?params=group=group').openConnection()
         conn.setRequestMethod('GET')
@@ -36,7 +39,7 @@ class GetUsersByGroupTest extends Specification {
         conn.disconnect()
 
         then:
-        output.contains('\"group\"')
+        output.contains('\"user\"')
 
         cleanup:
         String result = artifactory.security().deleteUser("user")
