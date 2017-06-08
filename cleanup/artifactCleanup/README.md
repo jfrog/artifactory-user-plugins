@@ -2,16 +2,16 @@ Artifactory Artifact Cleanup User Plugin
 ========================================
 
 This plugin deletes all artifacts that have not been downloaded for the past n
-months. It can be run manually from the REST API, or automatically as a
-scheduled job.
+months. It can be ran manually from the REST API, or automatically as a
+scheduled job. Job schedule is read from a similarly named property file.
 
 Many delete operations can affect performance due to disk I/O occurring. A new parameter now allows a delay per delete operation. See below.
 
-To ensure logging for this plugin, edit ${ARTIFACTORY_HOME}/etc/logback.xml to add:
+To ensure logging for this plugin, edit `${ARTIFACTORY_HOME}/etc/logback.xml` to add:
 ```xml
-    <logger name="artifactCleanup">
-        <level value="info"/>
-    </logger>
+<logger name="artifactCleanup">
+    <level value="info"/>
+</logger>
 ```
 
 Parameters
@@ -22,38 +22,42 @@ Parameters
 - `dryRun`: If this parameter is passed, artifacts will not actually be deleted.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default 0.
 
-Properties
-----------
-
-- `monthsUntil`: The number of months back to look before deleting an artifact.
-- `repos`: A list of repositories to clean.
-- `paceTimeMS`: The number of milliseconds to delay between delete operations.
-
-Executing
+Execution
 ---------
 
-To execute the plugin:
+To execute the plugin manually:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun|paceTimeMS=2000"`
+```
+curl -v -G -u admin:password -X POST \
+--data-urlencode "params=months=1|repos=libs-release,libs-snapshot" \
+"http://localhost:8081/artifactory/api/plugins/execute/cleanup"
+```
 
+There is also ability to control the running script.
 
+```
+curl -v -G -u admin:password -X POST \
+--data-urlencode "params=command=<command>" \
+"http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl"
+```
 
-There is also ability to control the running script. The following operations can occur
+where `command` is one of the following:
 
-Operation
+Operations
 ---------
 
-The plugin have 4 control options:
+The plugin has 4 control options:
 
-- `stop`: When detected, the loop deleting artifacts is exited and the script ends. Example:
+- `stop`: When detected, the loop deleting artifacts is exited and the script ends.
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"`
-- `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest. Example:
+- `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest.
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=pause"`
-- `resume`: Resume normal execution. Example:
+- `resume`: Resume normal execution.
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
 - `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
+```
+curl -v -G -u admin:password -X POST \
+--data-urlencode "params=command=adjustPaceTimeMS|value=-1000" \
+"http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl"
+```
