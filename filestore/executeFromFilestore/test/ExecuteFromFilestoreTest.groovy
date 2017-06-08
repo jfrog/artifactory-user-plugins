@@ -1,7 +1,6 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import groovy.json.JsonSlurper
 
 class ExecuteFromFilestoreTest extends Specification {
     def 'execute from filestore test'() {
