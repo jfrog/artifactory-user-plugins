@@ -1,8 +1,6 @@
 Artifactory Execute From Filestore User Plugin
 ==============================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 When called from the REST API, this plugin will copy a specified file tree from
 the Artifactory server to the local filesystem, and execute a specified command
 on that file tree. The executed command takes the form of a `find` call at the

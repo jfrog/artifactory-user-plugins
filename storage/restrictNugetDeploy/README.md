@@ -1,8 +1,6 @@
 Artifactory Restrict NuGet Deploy User Plugin
 =============================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin restricts NuGet packages from being deployed to a local repository,
 if packages with the same name already exist in other NuGet repositories (say,
 nuget.org). This ensures that NuGet doesn't accidentally fetch the wrong
