@@ -1,19 +1,41 @@
 import spock.lang.Specification
-
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import groovy.json.JsonSlurper
 
 class FilestoreIntegrityTest extends Specification {
-    def 'test name'() {
+    def 'filestore integrity test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
+        def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
+
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('maven-local')
+        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+
+        artifactory.repository('maven-local').upload('foo/bar/file', new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        String sha1 = artifactory.repository('maven-local').file('foo/bar/file').info().getChecksums().getSha1()
+        String folder = sha1.take(2)
+        new File('./artifactory/artifactory/data/filestore/'+folder + '/' + sha1).renameTo(new File('./artifactory/artifactory/data/filestore/' + folder + '/changed'))  
 
         when:
-        null
+        def conn = new URL(baseurl + '/api/plugins/execute/filestoreIntegrity').openConnection()
+        conn.setRequestMethod('GET')
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        conn.getResponseCode()
+        def output = new JsonSlurper().parse(conn.getInputStream())
+
 
         then:
-        false
+        output.missing[0].repoPath == 'maven-local:foo/bar/file'
+        output.missing[0].sha1 == sha1
+        output.extra[0] == folder + '/changed'
 
-        //cleanup:
+        cleanup:
+        artifactory.repository('maven-local').delete()
     }
 }

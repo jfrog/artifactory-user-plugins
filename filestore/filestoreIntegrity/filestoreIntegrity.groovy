@@ -8,7 +8,14 @@ executions {
   // of files that appear in the filesystem, but not the database.
   filestoreIntegrity(httpMethod: 'GET') { params ->
     // find the filestore directory, if one exists
-    def bindir = new File(ctx.artifactoryHome.haAwareDataDir, 'filestore')
+    def bindir = null
+    try {
+      bindir = new File(ctx.artifactoryHome.haAwareDataDir, 'filestore')
+    } catch (MissingPropertyException ex) {
+      bindir = new File(ctx.artifactoryHome.dataDir, 'filestore')
+    }
+    
+
     log.debug("Reading from filestore at '$bindir'")
     if (!bindir.list()) {
       def err = "Error reading files from '$bindir': the directory is either"

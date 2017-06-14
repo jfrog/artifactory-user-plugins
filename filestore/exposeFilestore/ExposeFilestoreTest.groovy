@@ -8,10 +8,9 @@ class ExposeFilestoreTest extends Specification {
     def 'expose filestore test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         def artifactory = create(baseurl, 'admin', 'password')
+        def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         
-
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
@@ -20,7 +19,6 @@ class ExposeFilestoreTest extends Specification {
         artifactory.repository('maven-local').upload('foo/bar/file', new ByteArrayInputStream('test'.getBytes('utf-8')))
         .withProperty("expose", "true")
         .doUpload()
-
 
         when:
         def conn = new URL(baseurl + '/api/plugins/execute/exposeRepository?params=repo=maven-local%7Cdest=/tmp').openConnection()
