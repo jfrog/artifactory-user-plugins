@@ -37,8 +37,8 @@ String syncAdminPassword = 'password'
 
 String getOtherHostRootUrl(HttpServletRequest request) {
     def port = request.getServerPort()
-    if (port == 8080) 'http://localhost:8081/artifactory'
-    else 'http://localhost:8080/artifactory'
+    if (port == 8088) 'http://localhost:8081/artifactory'
+    else 'http://localhost:8088/artifactory'
 }
 
 executions {
@@ -71,7 +71,7 @@ executions {
         newUser.setEmail(email)
         newUser.setPrivateKey(privateKey)
         newUser.setPublicKey(publicKey)
-        userService.updateUser(newUser)
+        userService.updateUser(newUser, false)
 
         status = 200
         message = "User $username synchronized sucessfully"
