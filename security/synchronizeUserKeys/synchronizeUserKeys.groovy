@@ -71,7 +71,11 @@ executions {
         newUser.setEmail(email)
         newUser.setPrivateKey(privateKey)
         newUser.setPublicKey(publicKey)
-        userService.updateUser(newUser, false)
+        try {
+            userService.updateUser(newUser, false)
+        } catch (MissingMethodException ex) {
+            userService.updateUser(newUser)
+        }
 
         status = 200
         message = "User $username synchronized sucessfully"
