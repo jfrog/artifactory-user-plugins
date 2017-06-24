@@ -16,10 +16,7 @@
  * Created by Madhu Reddy on 6/16/17.
  */
 
-@Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
 
-
-import groovy.transform.Field
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 
@@ -43,13 +40,9 @@ executions{
         listEndReached=false
         imagesCount = new TreeMap<String, Integer>()
         imagesPathMap = new HashMap<String, List<RepoPath>>()
-        //
 
-        log.debug "Starting the docker images cleanup plugin with" + imagesCount
-        log.debug "Starting the docker images cleanup plugin with" + imagesPathMap
         dockerRepos.each {
             log.debug "Call Delete Docker Images: $it"
-            //deleteDockerImages create(it)
             buildParentRepoPaths create(it)
         }
         message = '{"status":"okay"}'
@@ -63,13 +56,12 @@ def private void buildParentRepoPaths(RepoPath artifactoryRepoPath){
 
     def List<RepoPath> grandParentReposList = new ArrayList()
     simpleTraverse(repositories.getItemInfo(artifactoryRepoPath), grandParentReposList)
-    //printImagesMaxCount(imagesCount)
-    deletTagsFromConsolidation(imagesPathMap)
+    removeImagesMaxCount(imagesPathMap)
 
 }
 
 
-def private void deletTagsFromConsolidation(Map repoMap){
+def private void removeImagesMaxCount(Map repoMap){
 
     Iterator repoIterator = repoMap.keySet().iterator()
     while(repoIterator.hasNext()){
@@ -116,6 +108,12 @@ def private void printImagesMaxCount(Map repoMap){
 }
 
 
+/*
+ * Traverse through the docker repo(directories and sub-directories) and
+ * 1) delete the images immediately if the maxDays policy applies
+ * 2) Aggregate the images that qualify for maxCount policy (to get deleted in the execution closure)
+ *
+ */
 def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
 
     def RepoPath parentRepoPath = parentInfo.getRepoPath()
@@ -129,16 +127,13 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
         //skipOtherDockerReposAfterManifestFound(parentRepoPath)
         //return
     }
-    log.debug "Calling getChildren for " + parentRepoPath.getName()
     List<ItemInfo> childItems = repositories.getChildren(parentRepoPath)
 
 
     if (!childItems.isEmpty()) {
 
         def listSize = childItems.size()
-        log.debug "List Size is : " + listSize
         listEndReached=false
-
         for (int i=0;i<listSize;i++){
 
             if(i==(listSize-1)){
@@ -148,7 +143,6 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
             def RepoPath currentPath = childItem.getRepoPath()
 
             if (childItem.isFolder()) {
-                log.debug "Found a folder " + currentPath.getName()
                 simpleTraverse(childItem, revistFoldersList)
 
             }
@@ -157,6 +151,8 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
                 if(isThisManifestFile(currentPath)){
                     foundManifest=true
                     //Get the properties here and delete based on policies
+                    //Implement DaysPassed Policy First and delete the images that qualify
+                    // And then aggregate the images info to group by image and sorted by create date for MaxCount policy
                     if(checkDaysPassedForDelete(childItem)){
                         log.debug("***** DELETE THE DOCKER IMAGE AS DAYS PASSED POLICY APPLIES " + parentRepoPath.getName())
                         //Implement days passed policy and delete any docker images(tags) first
@@ -164,12 +160,10 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
                     } else{
 
                         def int maxCount = getMaxCountForDelete(childItem)
+                        // if maxCount property is zero then don't delete any!!
                         if(maxCount >0){
                             log.debug "Adding to IMAGES MAP :" + parentRepoPath
-
                             def long parentCreatedDate = parentInfo.getCreated()
-
-                            //imagesCount.put(parentRepoPath.getId(), new Integer(maxCount))
                             def String parentId = parentRepoPath.getParent().getId()
                             imagesCount.put(parentId, new Integer(maxCount))
 
@@ -184,13 +178,11 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
                                 revistFoldersList.add(parentRepoPath)
                                 imagesPathMap.put(parentId,revistFoldersList)
                             }
-                            //imagesPathMap.put(parentRepoPath.getParent().getId(),parentRepoPath.getId())
 
-                            //revistFoldersList.add(parentRepoPath)
                         }
 
                     }
-                    log.debug "*******SKIP SHA FILES AFTER MANIFEST FOUND****** "
+                    // Once manifest.json file is found in a folder ignore other SHA files
                     skipOtherFilesAfterManifestFound(parentRepoPath)
                     break
                 }
@@ -198,6 +190,7 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
             }
 
         }
+        // Handle the case if there is only subfolder in a folder to reset the skip mode (foundManifest=false)
         if(listSize==1){
             //reset skip mode when there is only one docker repo as we are breaking out of the for loop. End of the list reached!
             foundManifest=false
@@ -235,39 +228,27 @@ def skipOtherDockerReposAfterManifestFound(RepoPath repPath){
      */
 }
 
-def resetSkipMode(){
-    foundManifest = false
-}
-
-def getSkipMode(){
-    return foundManifest
-}
-
-def setSkipMode(){
-    foundManifest = true
-}
 
 def private boolean isThisManifestFile(RepoPath repPath){
 
-    def manifestFound = false
+    def isManifestFile = false
     if (repPath.getName().equals("manifest.json")){
-        manifestFound = true
-        //RepoPath tagPath = repPath.getParent()
-        //RepoPath dockerRepoPath = tagPath.getParent()
+        isManifestFile = true
         foundManifest=true
     }
-    return manifestFound
+    return isManifestFile
 }
 
+/*
+ * This method checks if the docker image's manifest has the property "com.jfrog.artifactory.retention.maxDays" for purge
+ *
+ */
 
 def private boolean checkDaysPassedForDelete(ItemInfo manifestItem ){
 
     boolean daysPassed = false
     if(manifestItem){
         createDateOfDockerImage = manifestItem.getCreated()
-        //def lastModifedDateOfDockerImage = manifestItem.getLastModified()
-        //repositories.getProperty(itemInfo.getRepoPath(), "docker.label.com.jfrog.artifactory.retention.maxDays")
-        //def policyToKeepDockerImageDays = repositories.getProperties(manifestItem.getRepoPath()).getFirst("docker.label.com.jfrog.artifactory.retention.maxDays")
         def policyToKeepDockerImageDays = repositories.getProperty(manifestItem.getRepoPath(),maxDaysProperty)
         if(policyToKeepDockerImageDays){
             log.debug "PROPERTY " + maxDaysProperty + " FOUND = " + policyToKeepDockerImageDays + " IN MANIFEST FILE"
@@ -286,6 +267,11 @@ def private boolean checkDaysPassedForDelete(ItemInfo manifestItem ){
     return daysPassed
 }
 
+
+/*
+ * This method checks if the docker image's manifest has the property "com.jfrog.artifactory.retention.maxCount" for purge
+ *
+ */
 def private int getMaxCountForDelete(ItemInfo manifestItem ){
 
     int maxCount = 0
