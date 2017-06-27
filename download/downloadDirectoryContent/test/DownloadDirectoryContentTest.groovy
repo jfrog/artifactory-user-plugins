@@ -10,7 +10,7 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 
 class DownloadDirectoryContentTest extends Specification {
-    def 'check Downloaded directory and its contents'() {
+    def 'download directory contest test'() {
 
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
