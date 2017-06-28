@@ -1,6 +1,8 @@
 Artifactory Xray Compatibility User Plugin
 ==============================
 
+**This plugin is no longer supported. If you would like to use Artifactory with Xray, please upgrade to version 4.12 or higher.**
+
 This plugin tests for an Artifactory version to see if all the Xray features are supported by this particular Artifactiory version. It checks for all the rest points which are accessible to Xray from Artifactory.
 
 1. Print plugin version
