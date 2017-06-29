@@ -1,4 +1,3 @@
-/* JFrog Inc. */
 /*
  * Copyright (C) 2016 JFrog Ltd.
  *
@@ -29,12 +28,12 @@ import com.google.common.collect.HashMultimap
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonException
-  
+
 storage {
   afterCreate { item ->
     // when an artifact is created, make a pom file for it
-    ArrayList<String> exclusionList = returnExclusionList()
-    def ext = getExtension(item)
+    def exclusionList = readExclusionList()
+    def ext = getExtension(item.repoPath)
     if (checkRepo(item.repoKey) && !exclusionList.contains(ext)) {
       upload(item)
     }
@@ -60,48 +59,46 @@ executions {
       }
     }
     // otherwise, pommify each repository in turn, and return success
+    def exclusionList = readExclusionList()
     for (repo in repos) {
-      pommifyRepo(repo)
+      pommifyRepo(repo, exclusionList)
     }
     status = 200
     message = "Successfully added poms to all specified repositories"
   }
 }
 
-def returnExclusionList() {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
-    // This function reads the file and creates an arraylist that can be compared against the uploaded items.
-    try {
-        def extfile = new File(etcdir, "plugins/pommerv2.json")
-        String exttext = extfile.getText('UTF-8')
-        Object jsonObject = new JsonSlurper().parseText(exttext)
-        Map jsonResult = (Map)jsonObject
-        // Add extensions from the file to the arraylist
-        ArrayList<String> extensions = (ArrayList)jsonResult.get("fileExtensions")
-        extensions.add("pom")
-        log.debug("json found, returning exlusionlist")
-        return extensions;
-        // catch IO or JSON exception and create a list with pom only
-    } catch (FileNotFoundException | JsonException ex) {
-        log.warn("file not found or json exception, checking against .pom extension only")
-        ArrayList<String> extensions = new ArrayList()
-        extensions.add("pom")
-        return extensions;
-    }
+def readExclusionList() {
+  def etcdir = ctx.artifactoryHome.haAwareEtcDir
+  // This function reads the file and creates an arraylist that can be compared against the uploaded items.
+  try {
+    def extfile = new File(etcdir, "plugins/pommer.json")
+    def jsonResult = new JsonSlurper().parse(extfile)
+    // Add extensions from the file to the arraylist
+    def extensions = jsonResult.fileExtensions
+    extensions << "pom"
+    log.debug("json found, returning exlusionlist")
+    return extensions
+    // catch IO or JSON exception and create a list with pom only
+  } catch (FileNotFoundException | JsonException ex) {
+    log.warn("file not found or json exception, checking against .pom extension only")
+    return ["pom"]
+  }
 }
 
 def getExtension(item) {
   // get the extension for the item to be uploaded
-  def relpath = (String)item.relPath
-  def matcher = (relpath =~ /[^\.]*$/)
-  if (matcher.size() < 0) {
+  def file = new File(item.path).name
+  def dotidx = file.lastIndexOf('.')
+  if (dotidx < 0) {
     log.debug("no extension found")
+    return ''
   }
-  return matcher[0]
+  return file[dotidx + 1 .. -1]
 }
 
 // given a repository name, create pom files for all artifacts in the repository
-def pommifyRepo(repo) {
+def pommifyRepo(repo, exclusionList) {
   // a multimap of module ids -> module infos
   def modules = HashMultimap.create()
   def reposerv = ctx.beanForType(InternalRepositoryService)
@@ -109,6 +106,9 @@ def pommifyRepo(repo) {
   for (node in getNodesList(repo)) {
     // if the file is a maven metdata, we don't care about it
     if (node.endsWith('/maven-metadata.xml')) continue
+    // check extension of file and comapre it with list from JSON file
+    def ext = getExtension(RepoPathFactory.create(repo, node))
+    if (exclusionList.contains(ext)) continue
     // if the file does not follow the layout, we don't care about it
     def repopath = RepoPathFactory.create(repo, node)
     def modinf = reposerv.getItemModuleInfo(repopath)
@@ -117,17 +117,12 @@ def pommifyRepo(repo) {
     modules.put(modinf.prettyModuleId, [repopath, modinf])
   }
   // iterate over each module id in the multimap
-  ArrayList<String> exclusionList = returnExclusionList()
   modules.asMap().each { key, values ->
     // if there is already a pom file at this location, don't bother
-    // check extension of file and comapre it with list from JSON file
     def item = repositories.getItemInfo(values[0][0])
-    def ext = getExtension(item)
-    if (!exclusionList.contains(ext))
-      upload(item)
     // otherwise, make a pom file
+    upload(item)
   }
-
 }
 
 // query the database and select a list of all files in a repository
@@ -165,21 +160,18 @@ def checkRepo(reponame) {
 
 // given an ItemInfo object, create and deploy a pom file for that artifact
 def upload(item) {
-    // extract the maven data from the path
-    def layout = RepoLayoutUtils.MAVEN_2_DEFAULT
-    def modinf = ModuleInfoUtils.moduleInfoFromArtifactPath(item.relPath, layout)
-    //log.info(modinf)
-    if (!modinf.isValid()) return
-    // build a path to the pom file
-    def pompath = ModuleInfoUtils.constructDescriptorPath(modinf, layout, true)
-    //log.info(pompath)
-    def pom = RepoPathFactory.create(item.repoKey, pompath)
-    //log.info(pom)
-    if (repositories.exists(pom)) return
-    // build and deploy the pom file
-    def info = MavenArtifactInfo.fromRepoPath(item.repoPath)
-    def model = MavenModelUtils.toMavenModel(info)
-    def pomstring = MavenModelUtils.mavenModelToString(model)
-    log.info("Deploying pom file to '{}'", pom)
-    repositories.deploy(pom, new ByteArrayInputStream(pomstring.bytes))
+  // extract the maven data from the path
+  def layout = RepoLayoutUtils.MAVEN_2_DEFAULT
+  def modinf = ModuleInfoUtils.moduleInfoFromArtifactPath(item.relPath, layout)
+  if (!modinf.isValid()) return
+  // build a path to the pom file
+  def pompath = ModuleInfoUtils.constructDescriptorPath(modinf, layout, true)
+  def pom = RepoPathFactory.create(item.repoKey, pompath)
+  if (repositories.exists(pom)) return
+  // build and deploy the pom file
+  def info = MavenArtifactInfo.fromRepoPath(item.repoPath)
+  def model = MavenModelUtils.toMavenModel(info)
+  def pomstring = MavenModelUtils.mavenModelToString(model)
+  log.info("Deploying pom file to '{}'", pom)
+  repositories.deploy(pom, new ByteArrayInputStream(pomstring.bytes))
 }
