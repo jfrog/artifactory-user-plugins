@@ -26,10 +26,15 @@ import org.artifactory.util.RepoLayoutUtils
 
 import com.google.common.collect.HashMultimap
 
+import groovy.json.JsonSlurper
+import groovy.json.JsonException
+
 storage {
   afterCreate { item ->
     // when an artifact is created, make a pom file for it
-    if (checkRepo(item.repoKey)) {
+    def exclusionList = readExclusionList()
+    def ext = getExtension(item.repoPath)
+    if (checkRepo(item.repoKey) && !exclusionList.contains(ext)) {
       upload(item)
     }
   }
@@ -54,16 +59,46 @@ executions {
       }
     }
     // otherwise, pommify each repository in turn, and return success
+    def exclusionList = readExclusionList()
     for (repo in repos) {
-      pommifyRepo(repo)
+      pommifyRepo(repo, exclusionList)
     }
     status = 200
     message = "Successfully added poms to all specified repositories"
   }
 }
 
+def readExclusionList() {
+  def etcdir = ctx.artifactoryHome.haAwareEtcDir
+  // This function reads the file and creates an arraylist that can be compared against the uploaded items.
+  try {
+    def extfile = new File(etcdir, "plugins/pommer.json")
+    def jsonResult = new JsonSlurper().parse(extfile)
+    // Add extensions from the file to the arraylist
+    def extensions = jsonResult.fileExtensions
+    extensions << "pom"
+    log.debug("json found, returning exlusionlist")
+    return extensions
+    // catch IO or JSON exception and create a list with pom only
+  } catch (FileNotFoundException | JsonException ex) {
+    log.warn("file not found or json exception, checking against .pom extension only")
+    return ["pom"]
+  }
+}
+
+def getExtension(item) {
+  // get the extension for the item to be uploaded
+  def file = new File(item.path).name
+  def dotidx = file.lastIndexOf('.')
+  if (dotidx < 0) {
+    log.debug("no extension found")
+    return ''
+  }
+  return file[dotidx + 1 .. -1]
+}
+
 // given a repository name, create pom files for all artifacts in the repository
-def pommifyRepo(repo) {
+def pommifyRepo(repo, exclusionList) {
   // a multimap of module ids -> module infos
   def modules = HashMultimap.create()
   def reposerv = ctx.beanForType(InternalRepositoryService)
@@ -71,6 +106,9 @@ def pommifyRepo(repo) {
   for (node in getNodesList(repo)) {
     // if the file is a maven metdata, we don't care about it
     if (node.endsWith('/maven-metadata.xml')) continue
+    // check extension of file and comapre it with list from JSON file
+    def ext = getExtension(RepoPathFactory.create(repo, node))
+    if (exclusionList.contains(ext)) continue
     // if the file does not follow the layout, we don't care about it
     def repopath = RepoPathFactory.create(repo, node)
     def modinf = reposerv.getItemModuleInfo(repopath)
@@ -81,9 +119,9 @@ def pommifyRepo(repo) {
   // iterate over each module id in the multimap
   modules.asMap().each { key, values ->
     // if there is already a pom file at this location, don't bother
-    if (values.any { it[1].ext == 'pom' }) return
+    def item = repositories.getItemInfo(values[0][0])
     // otherwise, make a pom file
-    upload(repositories.getItemInfo(values[0][0]))
+    upload(item)
   }
 }
 
@@ -122,8 +160,6 @@ def checkRepo(reponame) {
 
 // given an ItemInfo object, create and deploy a pom file for that artifact
 def upload(item) {
-  // only handle this upload if it is not itself a pom file
-  if (item.relPath.endsWith('.pom')) return
   // extract the maven data from the path
   def layout = RepoLayoutUtils.MAVEN_2_DEFAULT
   def modinf = ModuleInfoUtils.moduleInfoFromArtifactPath(item.relPath, layout)
