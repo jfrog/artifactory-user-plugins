@@ -200,7 +200,7 @@ def uploadToStagingRepo(searchResults) {
     def referenceFileRepoPath = null
     def backupFileRepoPath = null
     searchResults.each { repoPath ->
-        def artifactUrl = "${stagingProps.stagingUrl}/service/local/staging/deploy/maven2/${repoPath.path}"
+        def artifactUrl = "${stagingProps.stagingUrl}/content/repositories/${repoPath.toPath()}"
         ResourceStreamHandle content = repositories.getContent(repoPath)
         def http = new HTTPBuilder(artifactUrl)
         // we don't want to send big jar only to get auth challenge back, so we need preemptive authentication
