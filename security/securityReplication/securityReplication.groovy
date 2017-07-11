@@ -26,8 +26,10 @@ import org.apache.http.impl.client.HttpClients
 
 import org.artifactory.common.ArtifactoryHome
 import org.artifactory.factory.InfoFactoryHolder
+import org.artifactory.request.RequestThreadLocal
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.util.HttpUtils
 
@@ -62,6 +64,20 @@ executions {
     //Usage: curl -X PUT http://localhost:8081/artifactory/api/plugins/execute/securityReplication -T <textfile>
     //External Use
     securityReplication(httpMethod: 'PUT') { ResourceStreamHandle body ->
+        if (ArtifactoryHome.get().isHaConfigured()) {
+            def sserv = ctx.beanForType(ArtifactoryServersCommonService)
+            def primary = sserv.runningHaPrimary
+            if (primary != null && primary != sserv.currentMember) {
+                def baseurl = primary.contextUrl - ~'/$'
+                def tctx = RequestThreadLocal.context.get().requestThreadLocal
+                def auth = tctx.request.getHeader('Authorization')
+                def data = wrapData('ji', body.inputStream)
+                def resp = remoteCall(null, baseurl, auth, 'json', data)
+                message = unwrapData('js', resp[0])
+                status = resp[1]
+                return
+            }
+        }
         def targetFile = new File(artHome, '/plugins/securityReplication.json')
         try {
             targetFile.withOutputStream { it << body.inputStream }
@@ -173,24 +189,16 @@ jobs {
         }
         def whoami = slurped.securityReplication.whoami
         def distList = slurped.securityReplication.urls
+        if (distList.size() <= 1) {
+            log.debug("ALL: I'm all alone here, no need to do work")
+            return
+        }
         def username = slurped.securityReplication.authorization.username
         def password = slurped.securityReplication.authorization.password
         def encoded = "$username:$password".getBytes().encodeBase64().toString()
         def auth = "Basic $encoded"
-        def master = findMaster(distList, whoami, auth)
-        log.debug("ALL: whoami: $whoami")
-        log.debug("ALL: Master: $master")
-        if (whoami != master) {
-            log.debug("SLAVE: I am a slave, going back to sleep")
-            return
-        }
-        if (distList.size() <= 1) {
-            log.debug("MASTER: I'm all alone here, no need to do work")
-            return
-        }
-        log.debug("MASTER: I am the Master, starting to do work")
-        log.debug("MASTER: Checking my slave instances")
-        def upList = checkSlaveInstances(distList, whoami, auth)
+        def upList = checkInstances(distList, whoami, auth)
+        if (upList == null) return
         log.debug("MASTER: upList size: ${upList.size()}, distList size: ${distList.size()}")
         if (2*upList.size() <= distList.size()) {
             log.debug("MASTER: Cannot continue, majority of instances unavailable")
@@ -364,39 +372,39 @@ def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
     }
 }
 
-def findMaster(distList, whoami, auth) {
+def checkInstances(distList, whoami, auth) {
     log.debug("ALL: I don't know who I am, checking if Master is up")
+    def upList = [:], master = false
     for (instance in distList) {
         log.debug("ALL: Checking if $instance is up")
         def resp = remoteCall(whoami, instance, auth, 'ping')
         log.debug("ALL: ping statusCode: ${resp[1]}")
         if (resp[1] != 200) {
-            log.warn("ALL: $instance instance is down, finding new master\r")
+            log.warn("ALL: $instance instance is down")
         } else {
-            log.debug("ALL: $instance is up, setting Master \r")
-            return instance
-        }
-    }
-    def msg = "Cannot find master. Please check the configuration file and"
-    msg += " ensure that $whoami is in the urls list."
-    throw new RuntimeException(msg)
-}
-
-def checkSlaveInstances(distList, whoami, auth) {
-    def upList = [:]
-    for (instance in distList) {
-        def resp = remoteCall(whoami, instance, auth, 'ping')
-        log.debug("MASTER: ping statusCode: ${resp[1]}")
-        if (resp[1] != 200) {
-            log.warn("MASTER: Slave: $instance instance is down")
-        } else {
-            log.debug("MASTER: Slave: $instance instance is up")
+            log.debug("ALL: $instance is up")
+            if (!master) {
+                log.debug("ALL: whoami: $whoami")
+                log.debug("ALL: Master: $instance")
+                if (whoami != instance) {
+                    log.debug("SLAVE: I am a slave, going back to sleep")
+                    return null
+                }
+                log.debug("MASTER: I am the Master, starting to do work")
+                log.debug("MASTER: Checking my slave instances")
+                master = true
+            }
             try {
                 upList[instance] = unwrapData('jo', resp[0])
             } catch (Exception ex) {
                 upList[instance] = null
             }
         }
+    }
+    if (!master) {
+        def msg = "Cannot find master. Please check the configuration file and"
+        msg += " ensure that $whoami is in the urls list."
+        throw new RuntimeException(msg)
     }
     return upList
 }
