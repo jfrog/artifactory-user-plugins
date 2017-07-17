@@ -50,13 +50,6 @@ class StagingTest extends Specification {
         moduleInfo.nextDevelopment == '1.1.1-SNAPSHOT'
     }
 
-    private void createLocalMavenRepository(Artifactory artifactory, String name) {
-        def builder = artifactory.repositories().builders()
-        def local = builder.localRepositoryBuilder().key(name)
-                .repositorySettings(new MavenRepositorySettingsImpl()).build()
-        artifactory.repositories().create(0, local)
-    }
-
     private void addBuild(String file) {
         def conn = new URL("${baseurl}/api/build").openConnection()
         conn.requestMethod = 'PUT'
