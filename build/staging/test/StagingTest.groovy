@@ -9,9 +9,9 @@ class StagingTest extends Specification {
     static final auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
 
     def setupSpec() {
-        addBuild('build1.json')
-        addBuild('build2.json')
-        addBuild('build3.json')
+        addBuild('build-1.0.0.json')
+        addBuild('build-1.0.1.json')
+        addBuild('build-1.1.0.json')
     }
 
     def cleanupSpec() {
