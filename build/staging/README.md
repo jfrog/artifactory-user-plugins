@@ -28,7 +28,7 @@ The built-in strategies provided by this plugin are:
 
 Considering a module which has 1.1.0 as its latest release, below is an output example:
 
-```
+```json
 {
   "defaultModuleVersion" : {
     "moduleId" : "org.jfrog.test:my-project",
@@ -53,7 +53,7 @@ Considering a module which has 1.1.0 as its latest release, below is an output e
 
 Considering a build with one module which has 1.1.0 as its latest release, below is an output example:
 
-```
+```json
 {
   "moduleVersionsMap" : {
     "org.jfrog.test:my-project" : {
@@ -80,7 +80,7 @@ Considering a build with one module which has 1.1.0 as its latest release, below
 
 Considering a build with one module which has 1.1.0 as its latest relase, below is an output example:
 
-```
+```json
 {
   "moduleVersionsMap" : {
     "modulex" : {
