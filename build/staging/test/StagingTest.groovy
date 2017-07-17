@@ -88,8 +88,8 @@ class StagingTest extends Specification {
         conn.requestMethod = 'GET'
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 200
-        def retorno = conn.getInputStream().text
+        def strategy = conn.getInputStream().text
         conn.disconnect()
-        return retorno
+        return strategy
     }
 }
