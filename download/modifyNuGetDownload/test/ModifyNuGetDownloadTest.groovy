@@ -4,7 +4,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.NugetReposito
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class ModifyNuGetDownloadTest extends Specification {
-    def 'test name'() {
+    def 'modify NuGet download test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
@@ -24,19 +24,16 @@ class ModifyNuGetDownloadTest extends Specification {
             .upload("nugethello/nugethello/nugethello.1.0.0.nupkg", nupkgfile)
             .doUpload()
         
-        // request file
         when:
+        // request file
         def reader = artifactory.repository("nuget-gallery")
                 .download("nugethello.1.0.0.nupkg")
                 .doDownload();
         def downloadFile = reader.text
-        //repositoryRequest(request)
-        //sleep(3000)\
 
         then:
         // should find file two levels down the requested path
         downloadFile
-        // try
         
         cleanup:
         // remove test file
