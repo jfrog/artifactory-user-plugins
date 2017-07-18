@@ -22,8 +22,10 @@ Settings (before the plugin is deployed):
 
 2) Set labels for docker images. Example lines from Dockerfile to set the label are below:
 	LABEL com.jfrog.artifactory.retention.maxCount="10" \
-	com.jfrog.artifactory.retention.maxDays="7")
+	com.jfrog.artifactory.retention.maxDays="7"
 
+	Currently, the names of the labels have to be the above. If you change the names of the maxCount and maxDays labels, the appropriate property names have to be changes in the plugin code. 
+	
 	The docker labels will set as properties inside Artifactory once the images is deployed into a docker repository. The best practice is not to touch the properties once the image is created. This plugin uses these properties to perform cleanup. The below
 
 
