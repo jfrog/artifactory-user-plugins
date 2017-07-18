@@ -1,7 +1,7 @@
 Artifactory Expires Package Metadata User Plugin
 ==============================================
 
-This plugin expires files called Packages.gz when they are requested if the local cache is older than 30 minutes.
+This plugin expires files called Packages.gz when they are requested.
 
 Installation
 ------------
@@ -14,13 +14,13 @@ To install this plugin:
 Features
 --------
 
-This plugin runs every time a download request is received. It will expire the artifact local cache when:
+This plugin runs every time a download request is received. It will force a check for expiry when:
 
 - Artifact belongs to a remote repository
 - Artifact local cache is older than 30 minutes
 - Artifact name ends with `PACKAGES.gz` or `Packages.gz`
 
-The expiry mechanism will force the artifact to be downloaded again from the remote repository. This can fix issues with CRAN metadata sync and with Debian metadata. 
+The expiry mechanism may force the artifact to be downloaded again from the remote repository. This can fix issues with CRAN metadata sync and with Debian metadata. 
 
 Execution
 ---------
