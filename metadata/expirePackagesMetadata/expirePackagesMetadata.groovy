@@ -40,8 +40,8 @@ executions {
 // This can fix issues with CRAN metadata sync and with Debian metadata
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
-        if (repoPath.path.endsWith("PACKAGES.gz") || repoPath.path.endsWith("Packages.gz")){
-            if (isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
+        if (isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
+            if (repoPath.path.endsWith("PACKAGES.gz") || repoPath.path.endsWith("Packages.gz")){
                 log.warn 'DEBUG: Expiring PACKAGES.gz'
                 expired = true
             } else {
