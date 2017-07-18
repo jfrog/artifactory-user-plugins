@@ -21,16 +21,27 @@ import static CacheConstants.PACKAGES_GZ_CACHE_MILLIS
  */
 
 class CacheConstants {
-    static final long PACKAGES_GZ_CACHE_MILLIS = 1800 * 1000L
+    static long PACKAGES_GZ_CACHE_MILLIS = 1800 * 1000L
+}
+
+executions {
+    /*
+     *   This execution provide the ability to change the cache time.
+     *   It is used by the test script to set a value lower than the default so this plugin
+     *   can be automatically tested in an acceptable time.
+     */
+    setPackageMetadataCacheTime (params: ['cache_millis':'1800']) { params ->
+        CacheConstants.PACKAGES_GZ_CACHE_MILLIS = (params['cache_millis'][0] as Long) * 1000L
+        log.warn "PACKAGES.gz cache time set to $CacheConstants.PACKAGES_GZ_CACHE_MILLIS millis"
+    }
 }
 
 // This plugin will expire files called PACKAGES.gz when they are requested if the remote file is older.
 // This can fix issues with CRAN metadata sync and with Debian metadata
-
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
-        if (isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
-            if (repoPath.path.endsWith("PACKAGES.gz") || repoPath.path.endsWith("Packages.gz")){
+        if (repoPath.path.endsWith("PACKAGES.gz") || repoPath.path.endsWith("Packages.gz")){
+            if (isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
                 log.warn 'DEBUG: Expiring PACKAGES.gz'
                 expired = true
             } else {
