@@ -1,0 +1,30 @@
+{
+  "version" : "1.0.1",
+  "name" : "my-project",
+  "number" : "1",
+  "type" : "MAVEN",
+  "buildAgent" : {
+    "name" : "Maven",
+    "version" : "3.0.5"
+  },
+  "agent" : {
+    "name" : "Jenkins",
+    "version" : "1.554.2"
+  },
+  "modules": [{
+    "id" : "org.jfrog.test:my-project:1.0.0",
+    "artifacts" : [{
+      "type" : "jar",
+      "sha1" : "2ed52ad1d864aec00d7a2394e99b3abca6d16639",
+      "md5" : "844920070d81271b69579e17ddc6715c",
+      "name" : "my-project-1.0.0.jar"
+    }]
+  }],
+  "started" : "2017-01-01T12:00:19.893+0300",
+  "artifactoryPluginVersion" : "2.3.1",
+  "durationMillis" : 9762,
+  "artifactoryPrincipal" : "james",
+  "url" : "http://my-ci-server/jenkins/job/My-project-name/1/",
+  "vcsRevision" : "e4ab2e493afd369ae7bdc90d69c912e8346a3463",
+  "vcsUrl" : "https://github.com/github-user/my-project.git"
+}
