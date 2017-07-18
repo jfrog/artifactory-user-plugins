@@ -1,18 +1,12 @@
 # Artifactory modifyNuGetDownlaod User Plugin
-====================================================
-*This plugin was tested for Artifactory 4.x releases.*
-*This plugin was tested for Artifactory 5.x releases.*
 
 ## Features
-====================================================
 This plugins rewrite downlaod request for nupkg packages in nuget-gallery repo 2 levels down from it's original request path
 
-## Installation
-====================================================
+For example, if you are requesting a package from
 
-To install pluging, put your groovy file under `${ARTIFACTORY_HOME}/etc/plugins` and restart your artifactory instance
+`nuget-gallery/example.1.0.0.nupkg`
 
-You can enable autoreload at `${ARTIFACTORY_HOME}/etc/artifactory.system.properties` by changing this property:
+the download request will be redirect to
 
-
-        artifactory.plugin.scripts.refreshIntervalSecs=0
+`nuget-galllery/example/example/example.1.0.0.nupkg`
