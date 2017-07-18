@@ -26,7 +26,8 @@ class ExpirePackagesMetadataTest extends Specification {
     static final baseUrl = 'http://localhost:8088/artifactory'
     static final remoteRepoKey = 'debian-remote'
     static final virtualRepoKey = 'debian-virtual'
-    static final packagesPath = 'dists/yakkety-backports/restricted/binary-i386/Packages.gz'
+    static final remoteRepoUrl = 'http://jfrog.bintray.com/artifactory-pro-debs/'
+    static final packagesPath = 'dists/xenial/main/binary-i386/Packages.gz'
 
     def 'Packages.gz not expired download test'() {
         setup:
@@ -84,9 +85,10 @@ class ExpirePackagesMetadataTest extends Specification {
     }
 
     private RepositoryHandleImpl createRemoteDebianRepo(Artifactory artifactory, String key) {
-        def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder().key(key)
-        remoteBuilder.repositorySettings(new DebianRepositorySettingsImpl())
-        remoteBuilder.url('http://archive.ubuntu.com/ubuntu/')
+        def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder()
+                .key(key)
+                .repositorySettings(new DebianRepositorySettingsImpl())
+                .url(remoteRepoUrl)
         artifactory.repositories().create(0, remoteBuilder.build())
         return artifactory.repository(key)
     }
