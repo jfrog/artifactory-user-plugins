@@ -22,7 +22,7 @@ class NugetFolderMoverTest extends Specification {
         null
 
         then:
-        sleep(6100)
+        sleep(10100)
         repo.file("/angularjs/angularjs/1.4.8/angularjs-1.4.8.nupkg").info()
 
         cleanup:

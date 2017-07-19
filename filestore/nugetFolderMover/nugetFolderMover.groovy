@@ -22,7 +22,7 @@ import org.artifactory.repo.RepoPathFactory
 
 
 jobs {
-    nugetMover(cron: "0/6 0/1 * 1/1 * ? *") {
+    nugetMover(cron: "0/10 0/1 * 1/1 * ? *") {
 
         //get the local nuget repos and store the keys in ArrayList
         List<String> localRepoKeys = getLocalNugetRepositories()
