@@ -7,7 +7,6 @@ class NugetFolderMoverTest extends Specification {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-        def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('nuget-local')
@@ -20,11 +19,10 @@ class NugetFolderMoverTest extends Specification {
         repo.upload(name, file).doUpload()
 
         when:
-        artifactory.plugins().execute('folderMover')
-        def conn = new URL("${baseurl}").openConnection()
+        null
 
         then:
-        sleep(30000)
+        sleep(6100)
         repo.file("/angularjs/angularjs/1.4.8/angularjs-1.4.8.nupkg").info()
 
         cleanup:
