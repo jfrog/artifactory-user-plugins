@@ -8,7 +8,7 @@ following example:
 `nuget-local/NHibernate.3.3.1.4000.nupkg` &rarr;
 `nuget-local/NHibernate/NHibernate/NHibernate.3.3.1.4000.nupkg`
 
-This plugin has a cron job scheduled to run every **five** minutes.
+This plugin has a cron job scheduled to run every **10** seconds.
 
 #### Installation
 To install this plugin:
