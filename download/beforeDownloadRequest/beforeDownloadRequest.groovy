@@ -21,22 +21,25 @@ import org.artifactory.request.Request
 import static CacheConstants.JSON_CACHE_MILLIS
 
 class CacheConstants {
-    // Cache *.json files for 1 hour
+
     static final long JSON_CACHE_MILLIS = 3600 * 1000L
+
 }
 
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (repoPath.path.endsWith(".json") && isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
-            log.info 'Expiring json file: ${repoPath.name}'
+            log.info 'Extpiring json file: ${repoPath.name}'
             expired = true
         }
     }
 }
 
+
 def isRemote(String repoKey) {
     return repositories.getRemoteRepositories().contains(repoKey)
 }
+
 
 def shouldExpire(RepoPath repoPath) {
     if (!repositories.exists(repoPath)) {
@@ -46,6 +49,7 @@ def shouldExpire(RepoPath repoPath) {
     long cacheAge = getCacheAge(fileInfo)
     return cacheAge > JSON_CACHE_MILLIS || cacheAge == -1
 }
+
 
 def getCacheAge(FileInfo fileInfo) {
     long lastUpdated = fileInfo.lastUpdated
