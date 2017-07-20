@@ -28,7 +28,7 @@ import org.artifactory.request.Request
 
 download {
     beforeDownloadRequest { Request request, RepoPath path ->
-        if (path.repoKey == "npm" && path.path.endsWith('.md5')) {  //Modify path.repokey according to the repo you want the plugin to work 
+        if (path.repoKey == "md5-test-remote" && path.path.endsWith('.md5')) {  //Modify path.repokey according to the repo you want the plugin to work 
             // modify the extension of the file and add '.txt' to it
             modifiedRepoPath = RepoPathFactory.create(path.repoKey, path.path + '.txt')
         }
