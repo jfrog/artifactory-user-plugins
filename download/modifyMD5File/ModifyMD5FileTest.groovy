@@ -9,28 +9,27 @@ class ModifyMD5FileTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory/'
         def artifactory = create(baseurl, 'admin', 'password')
         def builder = artifactory.repositories().builders()
-        def local = builder.localRepositoryBuilder().key('md5-test-repo')  
+        def local = builder.localRepositoryBuilder().key('md5-test-remote')
         .repositorySettings(new NpmRepositorySettingsImpl()).build()
 
         artifactory.repositories().create(0, local)
-         
-        def repo = artifactory.repository('list/md5-test-repo')          
+
+        def repo = artifactory.repository('md5-test-remote')
 
         def file = repo.upload('artifactory.txt', new ByteArrayInputStream('helloWorld'.bytes)).doUpload()
 
         def testfile = repo.upload('artifactory.txt.md5.txt', new ByteArrayInputStream('helloWorldall'.bytes)).doUpload()
-       
-        when:
-        def testdownload = artifactory.repository('list/md5-test-repo')
-        .download("artifactory.txt.md5")
-        .doDownload()
 
-        def validatechecksum = artifactory.repository('list/md5-test-repo')
-        .download("artifactory.txt.md5.txt")
-        .doDownload()            
-        
+        when:
+        def testdownload = repo.download("artifactory.txt.md5").doDownload()
+
+        def validatechecksum = repo.download("artifactory.txt.md5.txt").doDownload()
+
         then:
-        testdownload == validatechecksum           //comparing both the String Values
+        testdownload.text == validatechecksum.text           //comparing both the String Values
+
+        cleanup:
+        repo.delete()
     }
 }
 
