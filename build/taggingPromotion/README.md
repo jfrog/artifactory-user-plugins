@@ -21,7 +21,7 @@ This plugin defines a promotion named `cloudPromote`. This promotion expects the
 - oss: Value for tag `oss`
 - prod: Value for tag `prod`
 
-After receiving a promotion request, the plugin will copy the build's artifacts to the designated target repository. For each value of tag parameters, a new property called `aol.<flag>` will be added to the promoted artifacts.
+After receiving a promotion request, the plugin will copy the build's war file artifacts to the designated target repository. For each value of tag parameters, a new property called `aol.<flag>` will be added to the promoted artifacts.
 
 Execution
 ---------
