@@ -31,10 +31,7 @@ class BeforeDownloadRequestTest extends Specification {
         def localrepo = artifactory.repository('test-local')
 
         // Make a json file and upload it
-        def content = '{ "name": "John Doe" }'
-        new File('test.json').write(new JsonBuilder(content).toPrettyString())
-        File file = new File("test.json")
-        localrepo.upload("test.json", file).doUpload();
+        localrepo.upload("test.json", new ByteArrayInputStream('{ "name": "John Doe" }'.bytes)).doUpload();
 
         // Download the file from the remote repo
         def filepath = 'test.json'
@@ -49,9 +46,7 @@ class BeforeDownloadRequestTest extends Specification {
         def checksum_first_file = first_file.getChecksums().getMd5()
 
         // Let's create another json file with different md5 and upload it
-        def new_content = '{ "name": "John Roe" }'
-        new java.io.File('test.json').write(new JsonBuilder(new_content).toPrettyString())
-        localrepo.upload("test.json", file).doUpload();
+        localrepo.upload("test.json", new ByteArrayInputStream('{ "name": "John Roe" }'.bytes)).doUpload();
 
         // Download the new file from the remote repo
         remoterepo.download(filepath).doDownload().text
