@@ -29,7 +29,7 @@ class CacheConstants {
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (repoPath.path.endsWith(".json") && isRemote(repoPath.repoKey) && shouldExpire(repoPath)) {
-            log.info 'Extpiring json file: ${repoPath.name}'
+            log.info 'Extpiring json fileCA: ${repoPath.name}'
             expired = true
         }
     }
