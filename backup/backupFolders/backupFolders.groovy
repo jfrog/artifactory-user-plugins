@@ -58,7 +58,7 @@ jobs {
      * Parameters:
      * cron (java.lang.String) - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)
      */
-    backUpFolder(cron: "0 0/12 * 1/1 * ? *") {
+    backUpFolder(cron: "0 0 1 1/1 * ? *") {
         try {
             //getting the information from the properties file
             def configFile = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/folders.properties").toURL())
