@@ -1,14 +1,16 @@
 Artifactory Backup Folders User Plugin
 ======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Provides you the ability to backup specific path within the repository.
 
-Adding to Artifactory
+Installation
 ---------------------
 
-This plugin need to be added to the `$ARTIFACTORY_HOME/etc/plugins` directory.
+To install this plugin:
+
+1. Place file `backupFolders.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
+2. Verify in the `${ARTIFACTORY_HOME}/logs/artifactory.log` that the plugin loaded correctly.
+3. If you want to use the scheduled job execution, place file `folders.properties` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins` and set the properties values properly.
 
 Log information
 ---------------
@@ -33,15 +35,15 @@ For log level info:
 
 This would not require restart of the Artifactory Server.
 
-Firing up the plugin
---------------------
+Execution
+---------
 
 This plugin has the ability to be executed in two ways:
 
-1. At a specific time with the job section (uses cron expression).
-2. By REST command.
+1. By REST Call.
+2. By schedule job execution (uses cron expression).
 
-Executing
+REST Call
 ---------
 
 To execute this plugin:
@@ -55,12 +57,11 @@ When the `properties.json` file need to include two parameters:
 1. Destination folder. For example: For windows use two backslashes: `"destinationFolder":"c:\\Work\\Test"`.
 2. Path to back up. For example: `"pathToFolder":"{repository_name}/{path}/{to}/{backup}"`.
 
-Jobs
-----
+Scheduled Job
+-------------
 
-This plugin by default is set to be fired up each day at 1:00 AM
-(`0 0 1 1/1 * ? *`). You can modify this within the plugin. The job execution
-point uses the properties file to retrieve the destination folder and the path:
+This plugin by default is set to be fired up each day at 1:00 AM (`0 0 1 1/1 * ? *`). You can modify this within the plugin. The job execution point uses the `folders.properties` file to retrieve the destination folder and the path:
 
 1. Destination folder. For example: For windows use two back slashes: `"destinationFolder":"c:\\Work\\Test"`
 2. Path to back up. For example: `"pathToFolder":"{repository_name}/{path}/{to}/{backup}"`
+
