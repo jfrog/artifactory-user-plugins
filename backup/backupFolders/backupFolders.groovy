@@ -61,7 +61,8 @@ jobs {
     backUpFolder(cron: "0 0 1 1/1 * ? *") {
         try {
             //getting the information from the properties file
-            def configFile = new ConfigSlurper().parse(new File("${System.properties.'artifactory.home'}/etc/plugins/folders.properties").toURL())
+            def etcdir = ctx.artifactoryHome.haAwareEtcDir
+            def configFile = new ConfigSlurper().parse(new File(etcdir, "plugins/backupFolders.properties").toURL())
             startBackup(configFile.destinationFolder as String, configFile.pathToFolder as String)
 
         } catch (FileNotFoundException e) {

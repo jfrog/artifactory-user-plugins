@@ -10,7 +10,7 @@ To install this plugin:
 
 1. Place file `backupFolders.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
 2. Verify in the `${ARTIFACTORY_HOME}/logs/artifactory.log` that the plugin loaded correctly.
-3. If you want to use the scheduled job execution, place file `folders.properties` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins` and set the properties values properly.
+3. If you want to use the scheduled job execution, place file `backupFolders.properties` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins` and set the properties values properly.
 
 Log information
 ---------------
@@ -60,7 +60,7 @@ When the `properties.json` file need to include two parameters:
 Scheduled Job
 -------------
 
-This plugin by default is set to be fired up each day at 1:00 AM (`0 0 1 1/1 * ? *`). You can modify this within the plugin. The job execution point uses the `folders.properties` file to retrieve the destination folder and the path:
+This plugin by default is set to be fired up each day at 1:00 AM (`0 0 1 1/1 * ? *`). You can modify this within the plugin. The job execution point uses the `backupFolders.properties` file to retrieve the destination folder and the path:
 
 1. Destination folder. For example: For windows use two back slashes: `"destinationFolder":"c:\\Work\\Test"`
 2. Path to back up. For example: `"pathToFolder":"{repository_name}/{path}/{to}/{backup}"`
