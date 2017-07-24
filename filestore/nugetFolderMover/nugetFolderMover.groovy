@@ -32,7 +32,7 @@ jobs {
         localRepoKeys.each { String repoKey ->
             log.debug "Looking for Nuget packages in the root of repo $repoKey"
 
-            //guessing** this forms a path into string
+            //this forms a path into a string
             RepoPath repoRoot = RepoPathFactory.create(repoKey, '/')
 
             //get all the children of the specific nuget repo where it is not a folder
@@ -46,7 +46,6 @@ jobs {
 
                 //get the properties for the specific child repo
                 org.artifactory.md.Properties properties = repositories.getProperties(itemInfo.repoPath)
-                // log.debug "${itemInfo}"
 
                 //check for nuget id and version and assign
                 if (properties.containsKey('nuget.id') && properties.containsKey('nuget.version')) {
@@ -54,8 +53,6 @@ jobs {
                     String version = properties.getFirst('nuget.version')
                     if (id && version) {
                         log.debug "Found a new Nuget package '${itemInfo.repoPath.toPath()}'"
-
-                        //set the layout based on the id and version
                         FileLayoutInfo layout = new NugetLayoutInfo(id, version)
 
                         //set an updated path for each child repo
