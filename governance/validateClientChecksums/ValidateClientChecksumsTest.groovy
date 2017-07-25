@@ -68,7 +68,7 @@ class ValidateClientChecksumsTest extends Specification {
         thrown(HttpResponseException)
 
         cleanup:
-        artifactory.repository('local-repo').delete()
+        repo.repository('local-repo').delete()
        
         
      }
