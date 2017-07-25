@@ -2,6 +2,9 @@ import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
+import org.apache.http.client.HttpResponseException
+
+
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -73,34 +76,28 @@ class ValidateClientChecksumsTest extends Specification {
         def rest_file_checksum  = rest_local_repo.getOriginalChecksums().getMd5()
 
 
-        
-      
+        // make sure repo with original checksum doesn't throw an error
         when: 
-            
-            try {
-
-            def rest_file_upload = repo.download('text.txt').doDownload()
-            def manual_file_upload = manual_local.download('file.txt').doDownload()
-
-                 
-                 } 
-
-            catch(HttpResponseException) {
-                if(HttpResponseException.getStatusCode() == 409) {
-                    println "print failed because original checksum is null"
-                }
-            }
+                
+         artifactory.repository('manual-repo').download('file.txt').doDownload()
                      
         then:
         
+         notThrown(HttpResponseException)
          
-        assert manual_file_checksum != null
-        assert rest_file_checksum == null
-        
-        
-       cleanup:
+        // make sure repo without original checksum throws error
+        when: 
+
+        repo.download('text.txt').doDownload()
+
+        then:
+
+        thrown(HttpResponseException)
+
+        cleanup:
         artifactory.repository('local-repo').delete()
         artifactory.repository('manual-repo').delete()
 
-    }
+        
+     }
 }
