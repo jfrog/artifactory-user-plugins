@@ -42,7 +42,7 @@ class BeforeSymbolServerDownloadTest extends Specification {
 	sleep(5000)
 
         when :
-	def logfile ='http://localhost:8088/logs/artifactory.log'
+	def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
   	def conn 
         conn = new URL (logfile).openConnection()
         conn.requestMethod = 'GET'
@@ -53,7 +53,7 @@ class BeforeSymbolServerDownloadTest extends Specification {
         conn.disconnect()
 	
 	then:
-	assert textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")==true
+	assert textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")
  
         cleanup:
 	artifactory.repository(repokey).delete()
