@@ -8,7 +8,7 @@ root folder of the repository.
 ## Features
 In this example, this only works in the `dist-local` repository. However, this script will work for any local repo by:
 	- Changing `.repositorySettings(new GenericRepositorySettingsImpl()).build()` to the package type you're using (e.g. if you are creating a Maven repository -> `.repositorySettings(new MavenRepositorySettingsImpl()).build()`
-	- Changing the `dist-local` repo name 
+	- Changing  the `dist-local` repo name 
 
 #### Installation
 To install this plugin:
