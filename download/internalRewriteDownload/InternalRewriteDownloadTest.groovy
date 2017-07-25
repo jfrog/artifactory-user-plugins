@@ -4,7 +4,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.GenericReposi
 
 class InternalRewriteDownloadTest extends Specification {
 
-    def 'test'() {
+    def 'internalRewriteDownloadTest'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
