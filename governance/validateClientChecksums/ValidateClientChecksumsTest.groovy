@@ -52,7 +52,6 @@ class ValidateClientChecksumsTest extends Specification {
 
 
 
-        // get file info from first and second repo
         def manual_local_repo = artifactory.repository('local-repo').file('file.txt').info()
         def rest_local_repo = artifactory.repository('local-repo').file('text.txt').info()
 
