@@ -32,11 +32,12 @@ download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         if (repoPath.repoKey == "nuget-gallery" && repoPath.path.endsWith('.nupkg')) {
             // api/v2/package/jQuery/2.0.1
-            String[] pathElements = request.alternativeRemoteDownloadUrl.split("/")
-            String pkgName = pathElements[pathElements.length - 2]
-            String pkgVersion = pathElements[pathElements.length - 1]
 
-            String finalPath = pkgName + '/' + pkgName + '/' + pkgName + '.' + pkgVersion + '.nupkg'
+            String pkgFullName = request.getRepoPath().getName()
+            def matcher = pkgFullName =~ (/^.+?(?=(\.\d))/)
+            String pkgName = matcher[0][0]
+            String finalPath = pkgName + '/' + pkgName + '/' + pkgFullName
+
             log.info "Transforming NuGet download from ${repoPath.path} to ${finalPath}"
             modifiedRepoPath = RepoPathFactory.create(repoPath.repoKey, finalPath)
         }
