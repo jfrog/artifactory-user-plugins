@@ -14,6 +14,7 @@ For more information on how to use this plugin, please go to: https://www.jfrog.
 
 
  To enable logging for the plugin, add the below logger to your ${ARTIFACTORY.HOME}/etc/ logback.xml:
+ ```XML
    <logger name="beforeSymbolServerDownload">
         <level value="debug"/>
    </logger>
@@ -22,7 +23,9 @@ For more information on how to use this plugin, please go to: https://www.jfrog.
    <logger name="org.apache.http.wire">  
       <level value="debug"/>
    </logger>
-
+```
 
 To enable downloading http://localhost:port/logs/artifactory.log for the test purpose, you need to make logs.xml file as below under ${ARTIFACTORY-HOME}/tomcat/conf/Catalina/localhost/  
+```XML
     <Context override="true" path="/logs" docBase="${artifactory.home}/logs" ></Context>
+```
