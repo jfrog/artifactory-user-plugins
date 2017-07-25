@@ -24,8 +24,6 @@ class ValidateClientChecksumsTest extends Specification {
 
          
             artifactory.repositories().create(0, local.build())
-
-           
         
 
         def repo = artifactory.repository('local-repo')
@@ -53,7 +51,7 @@ class ValidateClientChecksumsTest extends Specification {
 
         when: 
                 
-         repo.repository('local-repo').download('file.txt').doDownload()
+        repo.download('file.txt').doDownload()
                      
         then:
         
@@ -68,7 +66,7 @@ class ValidateClientChecksumsTest extends Specification {
         thrown(HttpResponseException)
 
         cleanup:
-        repo.repository('local-repo').delete()
+        repo.delete()
        
         
      }
