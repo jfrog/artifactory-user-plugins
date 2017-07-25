@@ -25,7 +25,3 @@ For more information on how to use this plugin, please go to: https://www.jfrog.
    </logger>
 ```
 
-To enable downloading `http://localhost:port/logs/artifactory.log` for the test purpose, you need to make logs.xml file as below under `${ARTIFACTORY-HOME}/tomcat/conf/Catalina/localhost/` 
-```XML
-    <Context override="true" path="/logs" docBase="${artifactory.home}/logs" ></Context>
-```
