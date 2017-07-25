@@ -18,8 +18,6 @@ class ValidateClientChecksumsTest extends Specification {
         def artifactory = create(baseurl, 'admin', 'password')
 
         def builder = artifactory.repositories().builders()
-
-        // create 1st repo
         def local = builder.localRepositoryBuilder().key('local-repo')
             
             local.repositorySettings(new MavenRepositorySettingsImpl())
@@ -31,20 +29,9 @@ class ValidateClientChecksumsTest extends Specification {
         
 
         def repo = artifactory.repository('local-repo')
-        // upload first file to first repo
         def file1 = repo.upload("text.txt", new ByteArrayInputStream('helloworld'.bytes)).doUpload(); 
 
-        // create second repo
-        def manual_local = builder.localRepositoryBuilder().key('manual-repo')
-            
-            manual_local.repositorySettings(new MavenRepositorySettingsImpl())
-
-         
-            artifactory.repositories().create(0, manual_local.build())
-    
-
-        // upload second file to second repo t    
-        URL new_url = new URL("http://localhost:8088/artifactory/manual-repo/file.txt");
+        URL new_url = new URL("http://localhost:8088/artifactory/local-repo/file.txt");
         URLConnection newConnection = new_url.openConnection();
 
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
@@ -66,26 +53,18 @@ class ValidateClientChecksumsTest extends Specification {
 
 
         // get file info from first and second repo
-        def manual_local_repo = artifactory.repository('manual-repo').file('file.txt').info()
+        def manual_local_repo = artifactory.repository('local-repo').file('file.txt').info()
         def rest_local_repo = artifactory.repository('local-repo').file('text.txt').info()
 
-         
 
-        def manual_file_checksum = manual_local_repo.getChecksums().getMd5()
-
-        def rest_file_checksum  = rest_local_repo.getOriginalChecksums().getMd5()
-
-
-        // make sure repo with original checksum doesn't throw an error
         when: 
                 
-         artifactory.repository('manual-repo').download('file.txt').doDownload()
+         artifactory.repository('local-repo').download('file.txt').doDownload()
                      
         then:
         
          notThrown(HttpResponseException)
          
-        // make sure repo without original checksum throws error
         when: 
 
         repo.download('text.txt').doDownload()
@@ -96,8 +75,7 @@ class ValidateClientChecksumsTest extends Specification {
 
         cleanup:
         artifactory.repository('local-repo').delete()
-        artifactory.repository('manual-repo').delete()
-
+       
         
      }
 }
