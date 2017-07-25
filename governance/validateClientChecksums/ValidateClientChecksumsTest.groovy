@@ -51,11 +51,6 @@ class ValidateClientChecksumsTest extends Specification {
         newConnection.getInputStream();
 
 
-
-        def manual_local_repo = artifactory.repository('local-repo').file('file.txt').info()
-        def rest_local_repo = artifactory.repository('local-repo').file('text.txt').info()
-
-
         when: 
                 
          artifactory.repository('local-repo').download('file.txt').doDownload()
