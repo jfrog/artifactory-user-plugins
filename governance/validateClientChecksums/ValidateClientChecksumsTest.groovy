@@ -53,7 +53,7 @@ class ValidateClientChecksumsTest extends Specification {
 
         when: 
                 
-         artifactory.repository('local-repo').download('file.txt').doDownload()
+         repo.repository('local-repo').download('file.txt').doDownload()
                      
         then:
         
