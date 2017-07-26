@@ -46,9 +46,9 @@ import javax.ws.rs.core.*
 @Field final String VULNERABILITY = 'WSS-Vulnerability: '
 @Field final String CVE_URL = 'https://cve.mitre.org/cgi-bin/cvename.cgi?name='
 
-@Field final String PROPERTIES_FILE_PATH = 'plugins/whitesource-artifactory-plugin.properties'
+@Field final String PROPERTIES_FILE_PATH = 'plugins/whitesource.properties'
 @Field final String AGENT_TYPE = 'artifactory-plugin'
-@Field final String AGENT_VERSION = '2.2.7'
+@Field final String AGENT_VERSION = '2.3.1'
 @Field final String OR = '|'
 @Field final int MAX_REPO_SIZE = 10000
 

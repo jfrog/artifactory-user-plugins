@@ -32,7 +32,8 @@ executions {
         def members = servers.collect {
             [serverId: it.serverId,
              localMember: curr == it,
-             address: "$it.contextUrl:$it.membershipPort",
+             address: "${new URL(it.contextUrl).host}:$it.membershipPort",
+             contextUrl: it.contextUrl,
              heartbeat: df.format(new Date(it.lastHeartbeat)),
              serverState: it.serverState.name(),
              serverRole: it.serverRole.prettyName,

@@ -20,39 +20,56 @@ import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 
-download {
-    jobs {
-        nugetMover(cron: "0 0/5 * * * ?") {
-            List<String> localRepoKeys = getLocalNugetRepositories()
-            log.debug "Found ${localRepoKeys.size()} local Nuget repositories"
-            localRepoKeys.each { String repoKey ->
-                log.debug "Looking for Nuget packages in the root of repo $repoKey"
-                RepoPath repoRoot = RepoPathFactory.create(repoKey, '/')
-                List<ItemInfo> children = repositories.getChildren(repoRoot).findAll { ItemInfo itemInfo ->
-                    !itemInfo.isFolder()
-                }
-                log.debug "Found ${children.size()} candidates"
-                children.each { ItemInfo itemInfo ->
-                    org.artifactory.md.Properties properties = repositories.getProperties(itemInfo.repoPath)
-                    if (properties.containsKey('nuget.id') && properties.containsKey('nuget.version')) {
-                        String id = properties.getFirst('nuget.id')
-                        String version = properties.getFirst('nuget.version')
-                        if (id && version) {
-                            log.debug "Found a new Nuget package '${itemInfo.repoPath.toPath()}'"
-                            FileLayoutInfo layout = new NugetLayoutInfo(id, version)
-                            RepoPath newPath
-                            try {
-                                newPath = repositories.getArtifactRepoPath(layout, repoRoot.repoKey)
-                            } catch (Exception e) {
-                                log.error 'Failed to calculate Nuget artifact path using repository layout', e
-                                return
-                            }
-                            StatusHolder holder = repositories.move(itemInfo.repoPath, newPath)
-                            if (holder.error) {
-                                log.error "Failed to move Nuget artifact from '${itemInfo.repoPath.toPath()}' to '${newPath.toPath()}'"
-                            } else {
-                                log.debug "Moved '${itemInfo.name}' from '${itemInfo.repoPath.toPath()}' to '${newPath.toPath()}'"
-                            }
+
+jobs {
+    nugetMover(cron: "0/10 0/1 * 1/1 * ? *") {
+
+        //get the local nuget repos and store the keys in ArrayList
+        List<String> localRepoKeys = getLocalNugetRepositories()
+        log.debug "Found ${localRepoKeys.size()} local Nuget repositories"
+
+        //loop through each repo key
+        localRepoKeys.each { String repoKey ->
+            log.debug "Looking for Nuget packages in the root of repo $repoKey"
+
+            //this forms a path into a string
+            RepoPath repoRoot = RepoPathFactory.create(repoKey, '/')
+
+            //get all the children of the specific nuget repo where it is not a folder
+            List<ItemInfo> children = repositories.getChildren(repoRoot).findAll { ItemInfo itemInfo ->
+                !itemInfo.isFolder()
+            }
+            log.debug "Found ${children.size()} candidates"
+
+            //loop through each child
+            children.each { ItemInfo itemInfo ->
+
+                //get the properties for the specific child repo
+                org.artifactory.md.Properties properties = repositories.getProperties(itemInfo.repoPath)
+
+                //check for nuget id and version and assign
+                if (properties.containsKey('nuget.id') && properties.containsKey('nuget.version')) {
+                    String id = properties.getFirst('nuget.id')
+                    String version = properties.getFirst('nuget.version')
+                    if (id && version) {
+                        log.debug "Found a new Nuget package '${itemInfo.repoPath.toPath()}'"
+                        FileLayoutInfo layout = new NugetLayoutInfo(id, version)
+
+                        //set an updated path for each child repo
+                        RepoPath newPath
+                        try {
+                            newPath = repositories.getArtifactRepoPath(layout, repoRoot.repoKey)
+                        } catch (Exception e) {
+                            log.error 'Failed to calculate Nuget artifact path using repository layout', e
+                            return
+                        }
+
+                        //move each successfully created child repo to the newPath
+                        StatusHolder holder = repositories.move(itemInfo.repoPath, newPath)
+                        if (holder.error) {
+                            log.error "Failed to move Nuget artifact from '${itemInfo.repoPath.toPath()}' to '${newPath.toPath()}'"
+                        } else {
+                            log.debug "Moved '${itemInfo.name}' from '${itemInfo.repoPath.toPath()}' to '${newPath.toPath()}'"
                         }
                     }
                 }
@@ -60,6 +77,7 @@ download {
         }
     }
 }
+
 
 private List<String> getLocalNugetRepositories() {
     List<String> localRepoKeys = repositories.getLocalRepositories()

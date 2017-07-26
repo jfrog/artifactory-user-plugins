@@ -1,9 +1,6 @@
 Artifactory Modify MD5 File User Plugin
 =======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
+This plugin modifies downloads of `*.md5` files so that an existing `*.md5.txt` file is downloaded instead.
 
-This plugin modifies attempts to download `*.md5` files so that a `*.md5.txt`
-file is downloaded instead.
-
-In this example, this only works in the `md5-test-remote` repository.
+In this example, this only works with the `md5-test-repo` repository. You can change this according to your needs.
