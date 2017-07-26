@@ -34,11 +34,10 @@ class BeforeSymbolServerDownloadTest extends Specification {
         def reader = new InputStreamReader(conn.inputStream)
         def textlog = reader.text
         conn.disconnect()
-	textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")
 
 	then:
-	notThrown(HttpResponseException)
- 
+	textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")
+
         cleanup:
 	artifactory.repository(remoteRepokey).delete()
     }
