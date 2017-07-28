@@ -18,6 +18,7 @@ class RemoveModulePropertiesTest extends Specification {
         def buildFile = new File('/tmp/buildScript/output.json')
 
         then:
+        sleep(1000)
         def res = slurper.parseText(buildFile.getText())
         res.buildInfo.modules.each{ m ->
           m.properties == ':'
