@@ -10,7 +10,7 @@ class RemoveModulePropertiesTest extends Specification {
         def artifactory = create(baseurl, 'admin', 'password')
         def slurper = new JsonSlurper()
 
-        ['bash','-c','curl -uadmin:password -X PUT http://localhost:8088/artifactory/api/build -H "Content-Type: application/json" --data-binary @/Users/scottm/Documents/build.json'].execute()
+        ['bash','-c','curl -uadmin:password -X PUT http://localhost:8088/artifactory/api/build -H "Content-Type: application/json" --data-binary @./src/test/groovy/RemoveModulePropertiesTest/build.json'].execute()
         ['bash','-c','mkdir /tmp/buildScript'].execute()
 
         when:
