@@ -12,7 +12,7 @@ class InternalRewriteDownloadTest extends Specification {
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('dist-local')
             .repositorySettings(new GenericRepositorySettingsImpl()).build()
-            // artifactory.repositories().create(0, local)
+            artifactory.repositories().create(0, local)
 
         def repo = artifactory.repository("dist-local")
 
