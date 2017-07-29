@@ -31,5 +31,9 @@ class InternalRewriteDownloadTest extends Specification {
         def test = downloadLatest.text 
         test.contains('filecontents')
 
+        cleanup: 
+        repo.delete(path)
+        repo.delete()
+
     }
 }
