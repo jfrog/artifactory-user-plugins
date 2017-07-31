@@ -9,8 +9,9 @@ class RemoveModulePropertiesTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
         def slurper = new JsonSlurper()
+        def flag = true
 
-        ['bash','-c','curl -uadmin:password -X PUT http://localhost:8088/artifactory/api/build -H "Content-Type: application/json" --data-binary @./src/test/groovy/RemoveModulePropertiesTest/build.json'].execute()
+        ['bash','-c','curl -uadmin:password -X PUT http://localhost:8088/artifactory/api/build -H "Content-Type: application/json" --data-binary @/Users/scottm/Documents/build.json'].execute()
         ['bash','-c','mkdir /tmp/buildScript'].execute()
 
         when:
@@ -18,11 +19,12 @@ class RemoveModulePropertiesTest extends Specification {
         def buildFile = new File('/tmp/buildScript/output.json')
 
         then:
-        sleep(1000)
         def res = slurper.parseText(buildFile.getText())
-        res.buildInfo.modules.each{ m ->
-          m.properties == ':'
+	      res.buildInfo.modules.each{ m ->
+      	    if (m.properties != [:])
+              flag = false
         }
+        flag
 
         cleanup:
         ['bash','-c','rm -r /tmp/buildScript'].execute()
