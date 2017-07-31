@@ -6,8 +6,6 @@ import groovy.json.*
 class RemoveModulePropertiesTest extends Specification {
     def 'removeModulePropertiesTest'() {
         setup:
-        def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
         def slurper = new JsonSlurper()
         def flag = true
 
