@@ -20,7 +20,7 @@ class RemoveModulePropertiesTest extends Specification {
 
         then:
         def res = slurper.parseText(buildFile.getText())
-	      res.buildInfo.modules.each{ m ->
+        res.buildInfo.modules.each{ m ->
       	    if (m.properties != [:])
               flag = false
         }
