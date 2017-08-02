@@ -1,0 +1,285 @@
+{
+  "version" : "1.0.1",
+  "name" : "stm-test",
+  "number" : "46",
+  "type" : "MAVEN",
+  "buildAgent" : {
+    "name" : "Maven",
+    "version" : "3.5.0"
+  },
+  "agent" : {
+    "name" : "Jenkins",
+    "version" : "2.65"
+  },
+  "started" : "2017-07-27T11:13:32.984-0700",
+  "durationMillis" : 7154,
+  "principal" : "scottm",
+  "artifactoryPrincipal" : "admin",
+  "artifactoryPluginVersion" : "2.11.0",
+  "url" : "http://10.6.17.178:8080/job/stm-test/46/",
+  "vcsRevision" : "cb6499aa5d10de9bcf409ff275cee8ce9f27c83f",
+  "vcsUrl" : "https://github.com/stmosher27/project-examples.git",
+  "licenseControl" : {
+    "runChecks" : false,
+    "includePublishedArtifacts" : false,
+    "autoDiscover" : true,
+    "licenseViolationsRecipientsList" : "",
+    "scopesList" : ""
+  },
+  "modules" : [ {
+    "properties" : {
+      "daversion" : "3.7-SNAPSHOT",
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "id" : "org.jfrog.test:multi2:3.7-SNAPSHOT",
+    "artifacts" : [ {
+      "type" : "jar",
+      "sha1" : "f056d77e404247148ca9b3db1b9bac1c75ffd5d1",
+      "md5" : "5007dca6f938c466eec8114c1a3e5a1d",
+      "name" : "multi2-3.7-SNAPSHOT.jar"
+    }, {
+      "type" : "pom",
+      "sha1" : "ce4de242f1f9ee88339887613612f3a0551267fd",
+      "md5" : "35f626d44fd38f8c221aa3d78af64aa9",
+      "name" : "multi2-3.7-SNAPSHOT.pom"
+    } ],
+    "dependencies" : [ {
+      "type" : "jar",
+      "sha1" : "99129f16442844f6a4a11ae22fbbee40b14d774f",
+      "md5" : "1f40fb782a4f2cf78f161d32670f7a3a",
+      "id" : "junit:junit:3.8.1",
+      "scopes" : [ "test" ]
+    } ]
+  }, {
+    "properties" : {
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "id" : "org.jfrog.test:multi1:3.7-SNAPSHOT",
+    "artifacts" : [ {
+      "type" : "test-jar",
+      "sha1" : "355f7a980d4ffe4b994c0e87f7da2945fe6fd3c1",
+      "md5" : "99a35975dbf2f24dfa7dfed57293dfef",
+      "name" : "multi1-3.7-SNAPSHOT-tests.jar"
+    }, {
+      "type" : "java-source-jar",
+      "sha1" : "1fd84fd5ef3d6eb3baade05e1505157102413179",
+      "md5" : "dc819b919b63992f5c1c0bc3736d5d4a",
+      "name" : "multi1-3.7-SNAPSHOT-sources.jar"
+    }, {
+      "type" : "jar",
+      "sha1" : "ab65f6cab3b748d9a62f0ce8a5f964734aff651f",
+      "md5" : "28f2325dd77012d385d5c46e0cc9e109",
+      "name" : "multi1-3.7-SNAPSHOT.jar"
+    }, {
+      "type" : "pom",
+      "sha1" : "bf793dfd54eb7d21332cc0f546572ce1a8c0abdb",
+      "md5" : "40cceb21b38d85a34972835e2ee8e0d6",
+      "name" : "multi1-3.7-SNAPSHOT.pom"
+    } ],
+    "dependencies" : [ {
+      "type" : "jar",
+      "sha1" : "449ea46b27426eb846611a90b2fb8b4dcf271191",
+      "md5" : "25c0752852205167af8f31a1eb019975",
+      "id" : "org.springframework:spring-beans:2.5.6",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "5043bfebc3db072ed80fbd362e7caf00e885d8ae",
+      "md5" : "ed448347fc0104034aa14c8189bf37de",
+      "id" : "commons-logging:commons-logging:1.1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "a8762d07e76cfde2395257a5da47ba7c1dbd3dce",
+      "md5" : "b6a50c8a15ece8753e37cbe5700bf84f",
+      "id" : "commons-io:commons-io:1.4",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "0235ba8b489512805ac13a8f9ea77a1ca5ebe3e8",
+      "md5" : "04177054e180d09e3998808efa0401c7",
+      "id" : "aopalliance:aopalliance:1.0",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "63f943103f250ef1f3a4d5e94d145a0f961f5316",
+      "md5" : "b8a34113a3a1ce29c8c60d7141f5a704",
+      "id" : "javax.servlet.jsp:jsp-api:2.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "a05c4de7bf2e0579ac0f21e16f3737ec6fa0ff98",
+      "md5" : "5d6576b5b572c6d644af2924da9a1952",
+      "id" : "org.apache.commons:commons-email:1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jdk15-jar",
+      "sha1" : "9b8614979f3d093683d8249f61a9b6a29bc61d3d",
+      "md5" : "52537a8a5231ca74518aec08434df7eb",
+      "id" : "org.testng:testng:5.9",
+      "scopes" : [ "test" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "99129f16442844f6a4a11ae22fbbee40b14d774f",
+      "md5" : "1f40fb782a4f2cf78f161d32670f7a3a",
+      "id" : "junit:junit:3.8.1",
+      "scopes" : [ "test" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "e6cb541461c2834bdea3eb920f1884d1eb508b50",
+      "md5" : "8ae38e87cd4f86059c0294a8fe3e0b18",
+      "id" : "javax.activation:activation:1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "342d1eb41a2bc7b52fa2e54e9872463fc86e2650",
+      "md5" : "2a666534a425add50d017d4aa06a6fca",
+      "id" : "org.codehaus.plexus:plexus-utils:1.5.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "7d04f648dd88a2173ee7ff7bcb337a080ee5bea1",
+      "md5" : "036c65b02a789306fbadd3c330f1e055",
+      "id" : "org.springframework:spring-aop:2.5.6",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "1aa1579ae5ecd41920c4f355b0a9ef40b68315dd",
+      "md5" : "2e64a3805d543bdb86e6e5eeca5529f8",
+      "id" : "javax.mail:mail:1.4",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "c450bc49099430e13d21548d1e3d1a564b7e35e9",
+      "md5" : "378db2cc1fbdd9ed05dff2dc1023963e",
+      "id" : "org.springframework:spring-core:2.5.6",
+      "scopes" : [ "compile" ]
+    } ]
+  }, {
+    "properties" : {
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "id" : "org.jfrog.test:multi:3.7-SNAPSHOT",
+    "artifacts" : [ {
+      "type" : "pom",
+      "sha1" : "eeb9ca9c9efe6d9649f27f4370785c003bea3258",
+      "md5" : "2782421973262088a7759cac8c6d0691",
+      "name" : "multi-3.7-SNAPSHOT.pom"
+    } ]
+  }, {
+    "properties" : {
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "id" : "org.jfrog.test:multi3:3.7-SNAPSHOT",
+    "artifacts" : [ {
+      "type" : "war",
+      "sha1" : "456f5785aa2a304f34ee77a3194ab7c7af7004fb",
+      "md5" : "bed4f8f82227304cfc95b91be4a0761a",
+      "name" : "multi3-3.7-SNAPSHOT.war"
+    }, {
+      "type" : "pom",
+      "sha1" : "590b0018f1b93114ac97b4e65aa19a9c33095063",
+      "md5" : "1ebc5a51c8aa838b1ca46333ba8838d3",
+      "name" : "multi3-3.7-SNAPSHOT.pom"
+    } ],
+    "dependencies" : [ {
+      "type" : "jar",
+      "sha1" : "449ea46b27426eb846611a90b2fb8b4dcf271191",
+      "md5" : "25c0752852205167af8f31a1eb019975",
+      "id" : "org.springframework:spring-beans:2.5.6",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "ab65f6cab3b748d9a62f0ce8a5f964734aff651f",
+      "md5" : "28f2325dd77012d385d5c46e0cc9e109",
+      "id" : "org.jfrog.test:multi1:3.7-SNAPSHOT",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "5043bfebc3db072ed80fbd362e7caf00e885d8ae",
+      "md5" : "ed448347fc0104034aa14c8189bf37de",
+      "id" : "commons-logging:commons-logging:1.1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "a8762d07e76cfde2395257a5da47ba7c1dbd3dce",
+      "md5" : "b6a50c8a15ece8753e37cbe5700bf84f",
+      "id" : "commons-io:commons-io:1.4",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "0235ba8b489512805ac13a8f9ea77a1ca5ebe3e8",
+      "md5" : "04177054e180d09e3998808efa0401c7",
+      "id" : "aopalliance:aopalliance:1.0",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "63f943103f250ef1f3a4d5e94d145a0f961f5316",
+      "md5" : "b8a34113a3a1ce29c8c60d7141f5a704",
+      "id" : "javax.servlet.jsp:jsp-api:2.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "7e9978fdb754bce5fcd5161133e7734ecb683036",
+      "md5" : "7df83e09e41d742cc5fb20d16b80729c",
+      "id" : "hsqldb:hsqldb:1.8.0.10",
+      "scopes" : [ "runtime" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "a05c4de7bf2e0579ac0f21e16f3737ec6fa0ff98",
+      "md5" : "5d6576b5b572c6d644af2924da9a1952",
+      "id" : "org.apache.commons:commons-email:1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "99129f16442844f6a4a11ae22fbbee40b14d774f",
+      "md5" : "1f40fb782a4f2cf78f161d32670f7a3a",
+      "id" : "junit:junit:3.8.1",
+      "scopes" : [ "test" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "e6cb541461c2834bdea3eb920f1884d1eb508b50",
+      "md5" : "8ae38e87cd4f86059c0294a8fe3e0b18",
+      "id" : "javax.activation:activation:1.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "342d1eb41a2bc7b52fa2e54e9872463fc86e2650",
+      "md5" : "2a666534a425add50d017d4aa06a6fca",
+      "id" : "org.codehaus.plexus:plexus-utils:1.5.1",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "7d04f648dd88a2173ee7ff7bcb337a080ee5bea1",
+      "md5" : "036c65b02a789306fbadd3c330f1e055",
+      "id" : "org.springframework:spring-aop:2.5.6",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "5959582d97d8b61f4d154ca9e495aafd16726e34",
+      "md5" : "69ca51af4e9a67a1027a7f95b52c3e8f",
+      "id" : "javax.servlet:servlet-api:2.5",
+      "scopes" : [ "provided" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "1aa1579ae5ecd41920c4f355b0a9ef40b68315dd",
+      "md5" : "2e64a3805d543bdb86e6e5eeca5529f8",
+      "id" : "javax.mail:mail:1.4",
+      "scopes" : [ "compile" ]
+    }, {
+      "type" : "jar",
+      "sha1" : "c450bc49099430e13d21548d1e3d1a564b7e35e9",
+      "md5" : "378db2cc1fbdd9ed05dff2dc1023963e",
+      "id" : "org.springframework:spring-core:2.5.6",
+      "scopes" : [ "compile" ]
+    } ]
+  } ],
+  "governance" : {
+    "blackDuckProperties" : {
+      "runChecks" : false,
+      "includePublishedArtifacts" : false,
+      "autoCreateMissingComponentRequests" : false,
+      "autoDiscardStaleComponentRequests" : false
+    }
+  }
+}
