@@ -45,7 +45,18 @@ example, oss.sonatype.org).
 
 3. Examples of the request using CURL:
    - Query by directory, upload only (without closing):
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"` for Artifactory 4.x, and `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;close=false;dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"` for Artifactory 5.x. 
+   
+   
+ For Artifactory 4.x:
+`curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"` 
+     
+     
+ For Artifactory 4.x
+ 
+ `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;close=false;dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"`
+ 
+ 
+ 
    - Query by properties:
      
      
