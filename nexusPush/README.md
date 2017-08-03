@@ -25,7 +25,7 @@ example, oss.sonatype.org).
      ```
 
 2. Execute a POST request authenticated with an Artifactory admin user with the
-   following parameters separated by pipes (`|`):
+   following parameters separated by pipes (`;`):
    - `stagingProfile`: The name of the profile file (without the 'properties'
      extension). E.g. for a profile saved in
      `${ARTIFACTORY_HOME}/etc/plugins/nexusPush.properties`, the parameter will
@@ -39,12 +39,12 @@ example, oss.sonatype.org).
        are allowed, where `property` is the full name of the Artifactory
        property (including the set name). All artifacts with all of these
        properties and values will be pushed. E.g.
-       `build.name=spaceship-new-rel|build.number=143`.
+       `build.name=spaceship-new-rel;build.number=143`.
    - `close`: whether or not the staging repository should be closed. Defaults
      to `true`.
 
 3. Examples of the request using CURL:
    - Query by directory, upload only (without closing):
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"`
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;close=false;dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"`
    - Query by properties:
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"`
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;build.name=spaceship-new-rel;build.number=143"`
