@@ -24,7 +24,6 @@ class BuildArtifactsAGVListTest extends Specification {
         def object = new JsonSlurper().parse(buildInfoFile)
         def buildName = object.name
         def buildNumber = object.number
-
         object.modules.each {
             def a = it.id.trim().split(':').collect{ it.trim()}
             def groupid = a[0]
@@ -35,8 +34,9 @@ class BuildArtifactsAGVListTest extends Specification {
         }
 
         when:
-
+        // for parameter pipe(|) is working at Artifactory 4.x , semicolon(;) is working at Artifactory 5.x
         conn = new URL("${baseurl}/api/plugins/execute/MavenDep?params=buildName=${buildName};buildNumber=1").openConnection()
+        //conn = new URL("${baseurl}/api/plugins/execute/MavenDep?params=buildName=${buildName}|buildNumber=${buildNumber}").openConnection()
         conn.requestMethod = 'POST'
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
