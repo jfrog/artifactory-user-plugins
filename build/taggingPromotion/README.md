@@ -30,4 +30,4 @@ To execute this plugin use the [Execute Build Promotion](https://www.jfrog.com/c
 
 Example:
 
-`curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/build/promote/cloudPromote/<BUILD_NAME>/<BUILD_NUMBER>?params=targetRepository=<TARGET_REPO>|prod=true"`
+`curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/build/promote/cloudPromote/<BUILD_NAME>/<BUILD_NUMBER>?params=targetRepository=<TARGET_REPO>|prod=true"` for Artifactory 4.x, and `curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/build/promote/cloudPromote/<BUILD_NAME>/<BUILD_NUMBER>?params=targetRepository=<TARGET_REPO>;prod=true"` for Artifactory 5.x. 

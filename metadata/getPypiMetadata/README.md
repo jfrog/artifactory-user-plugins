@@ -11,4 +11,4 @@ metadata will be extracted.
 
 Example execution:
 
-`curl -X POST -v -u admin:password "http://localhost:8081/artifactory/api/plugins/execute/getPypiMetadata?params=repoPath=/3.3/s/six/six-1.9.0-py2.py3-none-any.whl|repoKey=pypi-remote-cache"`
+`curl -X POST -v -u admin:password "http://localhost:8081/artifactory/api/plugins/execute/getPypiMetadata?params=repoPath=/3.3/s/six/six-1.9.0-py2.py3-none-any.whl|repoKey=pypi-remote-cache"` for Artifactory 4.x, and `curl -X POST -v -u admin:password "http://localhost:8081/artifactory/api/plugins/execute/getPypiMetadata?params=repoPath=/3.3/s/six/six-1.9.0-py2.py3-none-any.whl;repoKey=pypi-remote-cache"` for Artifactory 5.x. 
