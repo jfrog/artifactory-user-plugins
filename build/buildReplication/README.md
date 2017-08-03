@@ -33,7 +33,7 @@ Execution
 	```
 	- You can pass all the parameters for the plugin in the REST call:
 	```
-	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=http://localhost:8080/artifactory|masterUser=admin|masterPassword=password|slave=http://localhost:8081/artifactory|slaveUser=admin|slavePassword=password|deleteDifferentBuild=false"
+	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=http://localhost:8080/artifactory;masterUser=admin;masterPassword=password;slave=http://localhost:8081/artifactory;slaveUser=admin;slavePassword=password;deleteDifferentBuild=false"
 	```
 
 Logic
@@ -53,5 +53,5 @@ The script can get 7 params:
 	- User name and password\security key to the replicated server
 	- True\false flag which delete builds that don't exist at the main server and exist at the replicated server (not mandatory)
 	```
-	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=masterArtifactory|masterUser=masterArtifactoryUser|masterPassword=masterPassword|slave=slaveArtifactory|slaveUser=slaveUser|slavePassword=slavePassword|deleteDifferentBuild=true/false"
+	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=masterArtifactory;masterUser=masterArtifactoryUser;masterPassword=masterPassword;slave=slaveArtifactory;slaveUser=slaveUser;slavePassword=slavePassword;deleteDifferentBuild=true/false"
 	```

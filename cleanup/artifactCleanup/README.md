@@ -34,7 +34,7 @@ Executing
 
 To execute the plugin:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun|paceTimeMS=2000"`
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun;paceTimeMS=2000"`
 
 
 
@@ -56,4 +56,4 @@ The plugin have 4 control options:
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
 - `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"`

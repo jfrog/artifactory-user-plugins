@@ -28,4 +28,4 @@ Parameters
 
 For example:
 
-`curl -X POST -uadmin:password http://localhost:8080/artifactory/api/plugins/build/promote/snapshotToRelease/gradle-multi-example/1?params=snapExp=d%7B14%7D|targetRepository=gradle-release-local`
+`curl -X POST -uadmin:password http://localhost:8080/artifactory/api/plugins/build/promote/snapshotToRelease/gradle-multi-example/1?params=snapExp=d%7B14%7D;targetRepository=gradle-release-local`

@@ -31,7 +31,7 @@ For example:
 
 ```
 $ curl -u admin:password \
- 'http://localhost:8081/artifactory/api/plugins/execute/routedGet?params=serverId=ha_artifactory_1_1|apiEndpoint=api/plugins/execute/haClusterDump'
+ 'http://localhost:8081/artifactory/api/plugins/execute/routedGet?params=serverId=ha_artifactory_1_1;apiEndpoint=api/plugins/execute/haClusterDump'
 ```
 
 
