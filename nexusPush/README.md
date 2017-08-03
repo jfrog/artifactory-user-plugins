@@ -47,4 +47,11 @@ example, oss.sonatype.org).
    - Query by directory, upload only (without closing):
      `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|close=false|dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"` for Artifactory 4.x, and `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;close=false;dir=lib-release-local%2Forg%spacecrafts%2Fspaceship-new-rel%2F1.0"` for Artifactory 5.x. 
    - Query by properties:
-     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"` for Artifactory 4.x, and `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;build.name=spaceship-new-rel;build.number=143"` for Artifactory 5.x. 
+     
+     
+     For Artifactory 4.x:
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush|build.name=spaceship-new-rel|build.number=143"` 
+     
+     
+     For Artifactory 5.x:
+     `curl -X POST -v -u admin:password "http://localhost:8090/artifactory/api/plugins/execute/nexusPush?params=stagingProfile=nexusPush;build.name=spaceship-new-rel;build.number=143"`  
