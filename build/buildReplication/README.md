@@ -64,13 +64,13 @@ The script can get 7 params:
 	- True\false flag which delete builds that don't exist at the main server and exist at the replicated server (not mandatory)
 	
 	
-	(Artifactory 4.x)
+	For Artifactory 4.x
 	```
 	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=masterArtifactory|masterUser=masterArtifactoryUser|masterPassword=masterPassword|slave=slaveArtifactory|slaveUser=slaveUser|slavePassword=slavePassword|deleteDifferentBuild=true/false"
 	```
 	
 	
-	(Artifactory 5.x)
+	For Artifactory 5.x
 	```
 	curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildReplication?params=master=masterArtifactory;masterUser=masterArtifactoryUser;masterPassword=masterPassword;slave=slaveArtifactory;slaveUser=slaveUser;slavePassword=slavePassword;deleteDifferentBuild=true/false"
 	```
