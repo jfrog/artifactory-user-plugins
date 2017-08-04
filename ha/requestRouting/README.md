@@ -29,9 +29,17 @@ For the generic execution, the `apiEndpoint` parameter id requires.
 
 For example:
 
+
+For Artifactory 4.x:
 ```
 $ curl -u admin:password \
  'http://localhost:8081/artifactory/api/plugins/execute/routedGet?params=serverId=ha_artifactory_1_1|apiEndpoint=api/plugins/execute/haClusterDump'
+```
+
+For Artifactory 5.x:
+```
+$ curl -u admin:password \
+ 'http://localhost:8081/artifactory/api/plugins/execute/routedGet?params=serverId=ha_artifactory_1_1;apiEndpoint=api/plugins/execute/haClusterDump'
 ```
 
 

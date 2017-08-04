@@ -93,23 +93,49 @@ Sample REST Calls
   `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=ageDays=30"`
 - Archive any artifact that is 30 days old and has the following properties set:
 
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=ageDays=30|includedPropertySet=deleteme:true;junk:true"`
+
+For Artifactory 4.x:
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=ageDays=30|includedPropertySet=deleteme:true;junk:true"` 
+  
+  
 - Archive any artifact that has not been downloaded in 60 days, excluding those
   with a certain property set:
 
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60|excludedPropertySet=keeper:true"`
+
+For Artifactory 4.x:
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60|excludedPropertySet=keeper:true"` 
+  
+For Artifactory 5.x:
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60;excludedPropertySet=keeper:true"`  
 - Archive only `*.tgz` files that are 30 days old and have not been downloaded
   in 15 days:
 
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=filePattern=*.tgz|ageDays=30|lastDownloadedDays=15"`
+
+For Artifactory 4.x:
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=filePattern=*.tgz|ageDays=30|lastDownloadedDays=15"` 
+  
+  
+For Artifactory 5.x: 
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=filePattern=*.tgz;ageDays=30;lastDownloadedDays=15"`  
 - Archive any `*.tgz` artifact that is 30 days old and is tagged with
   `artifact.delete`:
 
-  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete"`
+
+For Artifactory 4.x:
+  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete"` 
+  
+For Artifactory 5.x:
+`curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz;ageDays=30;includePropertySet=artifact.delete"`  
 - Archive any `*.tgz` artifact that is 15 days old and is tagged with
   `artifact.delete=true`:
 
-  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true"`
+
+For Artifactory 4.x:
+  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true"` 
+  
+ 
+For Artifactory 5.x:
+`curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=filePattern=*.tgz;ageDays=15;includePropertySet=artifact.delete:true"`  
 
 Archive Process
 ---------------

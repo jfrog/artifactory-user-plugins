@@ -21,4 +21,12 @@ Executing
 
 To execute the plugin:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50|dryRun"`
+
+For Artifactory 4.x:
+
+
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50|dryRun"` 
+
+
+For Artifactory 5.x:
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanBuilds?params=days=50;dryRun"`  
