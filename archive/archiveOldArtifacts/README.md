@@ -98,8 +98,6 @@ For Artifactory 4.x:
   `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=ageDays=30|includedPropertySet=deleteme:true;junk:true"` 
   
   
-For Artifactory 5.x: 
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=ageDays=30;includedPropertySet=deleteme:true;junk:true"` 
 - Archive any artifact that has not been downloaded in 60 days, excluding those
   with a certain property set:
 
