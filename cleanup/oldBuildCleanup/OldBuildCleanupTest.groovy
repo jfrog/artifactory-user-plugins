@@ -23,7 +23,11 @@ class BuildCleanupTest extends Specification {
         conn.getResponseCode()
 
         when:
-        artifactory.plugins().execute('cleanOldBuilds').withParameter('testbuild', '0', true).sync()
+        def cleanup = artifactory.plugins().execute('cleanOldBuilds')
+        cleanup.withParameter('buildName', 'testbuild')
+        cleanup.withParameter('buildNumber', '0')
+        cleanup.withParameter('cleanArtifacts', 'true')
+        cleanup.sync()
         conn = new URL(baseurl + '/api/build/testbuild/0').openConnection()
         conn.setRequestProperty('Authorization', auth)
         def code2 = conn.getResponseCode()
