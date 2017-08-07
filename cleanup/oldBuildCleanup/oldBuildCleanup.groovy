@@ -21,8 +21,9 @@ import org.artifactory.api.common.BasicStatusHolder
 import org.artifactory.api.build.BuildService
 import org.artifactory.exception.CancelException
 
-
+// Example REST API calls:
 // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanOldBuilds?params=buildName=test|buildNumber=1|cleanArtifacts=true"
+// curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanOldBuilds?params=buildName=test;buildNumber=1;cleanArtifacts=true"
 
 @Field final String BUILDS_FILE_PATH = "plugins/build.json"
 
@@ -37,7 +38,6 @@ executions {
         log.info message
         status = 200
     }
-
 }
 
 private def buildCleanup(buildName, buildNumber, cleanArtifacts) {
@@ -76,7 +76,7 @@ private String getStringProperty(params, pName, mandatory) {
 
 private Integer getIntegerProperty(params, pName, mandatory) {
     def key = params[pName]
-    def val = key == null ? null : key[0] as Integer
+    def val = key == null ? null : getInteger(key[0])
     if (mandatory && val == null) cancelCleanup("$pName is mandatory paramater", null, 400)
     return val
 }
@@ -85,6 +85,11 @@ private Boolean getBooleanProperty(params, pName, mandatory) {
     def key = params[pName]
     def val = key == null ? null : key[0] as boolean
     if (mandatory && val == null) cancelCleanup("$pName is mandatory paramater", null, 400)
+    return val
+}
+
+private Integer getInteger(numberStr) {
+    val = numberStr.isInteger() ? numberStr.toInteger() : cancelCleanup("can not cast $numberStr to integer", null, 400)
     return val
 }
 

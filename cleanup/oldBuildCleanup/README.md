@@ -16,4 +16,9 @@ Executing
 
 To execute the plugin:
 
+For Artifactory 4.x: 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanOldBuilds?params=buildName=test|buildNumber=1|cleanArtifacts=true"`
+
+For Artifactory 5.x:
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanOldBuilds?params=buildName=test;buildNumber=1;cleanArtifacts=true"`
+
