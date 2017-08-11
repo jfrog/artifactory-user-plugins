@@ -21,7 +21,7 @@ class CurrentDateTest extends Specification {
 
         then: //confirm that the year is correct, the month is correct in expected format.
         currentYear.toString()==pluginstream.take(4)
-        '-'==pluginstream(4)
+        '-'==pluginstream.charAt(4)
         currentMonth.toString()==pluginstream.substring(5,6)
     }
 }
