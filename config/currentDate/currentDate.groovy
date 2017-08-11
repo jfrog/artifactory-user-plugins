@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-//import groovy.json.JsonBuilder
-//import groovy.lang.MissingPropertyException
-// depending on the Artifactory version, InternalStorageService might be in
-// either of these locations
-//import org.artifactory.storage.service.*
-//import org.artifactory.storage.*
 
-//import static org.artifactory.util.NumberFormatter.formatLong
-//import static org.artifactory.util.NumberFormatter.formatPercentage
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
