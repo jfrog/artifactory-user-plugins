@@ -2,8 +2,10 @@ Artifactory Current Date User Plugin
 =======================================
 
 Returns the current date and time of the artifactory server according to a W3C profile of the ISO 8601 Standard for Date and Time Formats.
+This is the date format used by AQL queries.
+
 The complete date and time notation is specified as: 
-YYYY-MM-DDThh:mm:ss.sTZD (e.g., 2012-07-16T19:20:30.45+01:00)
+```YYYY-MM-DDThh:mm:ss.sTZD (e.g., 2012-07-16T19:20:30.45+01:00)```
 
 Installation
 ------------

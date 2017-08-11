@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+//Use the same date library as Artifactory does
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 

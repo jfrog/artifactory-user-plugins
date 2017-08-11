@@ -3,11 +3,9 @@ import spock.lang.Specification
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 
-class StorageSummaryTest extends Specification {
-    def 'storage summary test'() {
+class CurrentDateTest extends Specification {
+    def 'currentDate test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
@@ -21,9 +19,9 @@ class StorageSummaryTest extends Specification {
         currentYear=date[Calendar.YEAR]
         currentMonth=date[Calendar.MONTH]
 
-        then: //TODO How do I confirm that this works?
-        input=new DateTime(pluginstream)
-        input.getYear()==currentYear
-        input.getMonth()==currentMonth
+        then: //confirm that the year is correct, the month is correct in expected format.
+        currentYear.toString()==pluginstream.take(4)
+        '-'==pluginstream(4)
+        currentMonth.toString()==pluginstream.substring(5,6)
     }
 }
