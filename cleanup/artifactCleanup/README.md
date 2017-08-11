@@ -21,6 +21,7 @@ Parameters
 - `repos`: A list of repositories to clean. This parameter is required.
 - `dryRun`: If this parameter is passed, artifacts will not actually be deleted.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default 0.
+- `disablePropertiesSupport`: Disable the support of Artifactory Properties (see below *Artifactory Properties support* section). Default *false*.
 
 Properties
 ----------
@@ -28,6 +29,14 @@ Properties
 - `monthsUntil`: The number of months back to look before deleting an artifact.
 - `repos`: A list of repositories to clean.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations.
+
+Artifactory Properties support
+----------
+
+Some Artifactory [Properties](https://www.jfrog.com/confluence/display/RTF/Properties) are supported if defined on *artifacts* or *folders*:
+
+- `cleanup.skip`: Skip the artifact deletion if property defined on artifact's path ; artifact itself or in a parent folder(s).
+
 
 Executing
 ---------
