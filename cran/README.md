@@ -4,15 +4,15 @@ This plugin adds CRAN (The Comprehensive R Archive Network) repositories support
 
 ## Features
 
-This plugin allows the creation of local and remote CRAN repositories in Artifactory. 
+This plugin allows the creation of local CRAN-style and remote CRAN repositories in Artifactory. 
 
 Virtual repositories ARE NOT supported.
 
-### Local Repositories
+### Local CRAN-style Repositories
 
-Using local repositories, users can host their own CRAN packages inside Artifactory.
+Using local repositories, users can host their own R packages inside Artifactory.
 
-To make the packages available to R clients, this plugin takes care of indexing the deployed CRAN packages accordingly to the CRAN repository specification. 
+To make the packages available to R clients, this plugin takes care of indexing the deployed R packages accordingly to the CRAN repository specification. 
 
 Besides that, when a package is deployed to the repository's root folder, the plugin identifies the package type and move it to the right location where the R client can find it. This layout enforcement feature is available for the following package types:
 
@@ -24,16 +24,16 @@ Users can also have a custom repository layout by deploying the package at any l
 
 All package metadata present in the `DESCRIPTION` file inside the package is also stored as artifact properties, so users can search and manipulate packages on Artifactory based on them. These metadata properties have the format `cran.<property_name>`.
 
-The plugin also adds additional metadata about the indexing process to each terminal folder containing CRAN packages. These metadata are:
+The plugin also adds additional metadata about the indexing process to each terminal folder containing R packages. These metadata are:
 
 - `cran.indexing.status`: Indexing process status. Possible values are: *scheduled*, *running*, *done* or *failed*
 - `cran.indexing.packages`: Number of packages indexed by the last successful execution
 - `cran.indexing.time`: Time taken in milliseconds by the last successful execution
 - `cran.indexing.last_execution`: End date of the last successful execution
 
-### Remote Repositories
+### Remote CRAN Repositories
 
-Using remote repositories, users can proxy and cache remote CRAN packages.
+Using remote repositories, users can proxy and cache R packages hosted by remote CRAN repositories.
 
 The remote repository index (`PACKAGES` file and compressed versions) local cache will expire every 10 minutes. After that time, Artifactory will fetch the remote repository index if available.
 
@@ -56,9 +56,9 @@ To enable logging, add the following lines to `$ARTIFACTORY_HOME/etc/logback.xml
 
 ## Usage
 
-### Local repositories
+### Local CRAN-style repositories
 
-To configure a CRAN local repository, create a generic local repository and set the property `cran` to any value at the repository root level. The repository will automatically start the metadata extraction, indexing and layout enforcement tasks to new packages deployed to it.
+To configure a CRAN-style local repository, create a generic local repository and set the property `cran` to any value at the repository root level. The repository will automatically start the metadata extraction, indexing and layout enforcement tasks to new R packages deployed to it.
 
 To manually request indexing of a repository's packages folder, the following API can be used:
 
@@ -72,6 +72,6 @@ curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/
 curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/execute/cranIndex?params=repoKey=cran-local;path=src/contrib"`
 ```
 
-### Remote repositories
+### Remote CARN repositories
 
-No additional configuration is needed for remote repositories. Just create a generic remote repository and set the URL to the root of the remote repo (e.g. https://cran.r-project.org/)
+No additional configuration is needed for remote repositories. Just create a generic remote repository and set the URL to the root of the remote repository (e.g. https://cran.r-project.org/)
