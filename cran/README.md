@@ -44,6 +44,16 @@ To install this plugin:
 1. Place file `cran.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
 2. Verify in the `${ARTIFACTORY_HOME}/logs/artifactory.log` that the plugin loaded correctly.
 
+### Logging
+
+To enable logging, add the following lines to `$ARTIFACTORY_HOME/etc/logback.xml` file. There is no need to restart Artifactory for this change to take effect:
+
+```xml
+<logger name="cran">
+    <level value="info"/>
+</logger>
+```
+
 ## Usage
 
 ### Local repositories
