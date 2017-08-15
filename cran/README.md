@@ -72,6 +72,6 @@ curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/
 curl -X POST -v -u user:password "http://localhost:8080/artifactory/api/plugins/execute/cranIndex?params=repoKey=cran-local;path=src/contrib"`
 ```
 
-### Remote CARN repositories
+### Remote CRAN repositories
 
 No additional configuration is needed for remote repositories. Just create a generic remote repository and set the URL to the root of the remote repository (e.g. https://cran.r-project.org/)
