@@ -118,7 +118,7 @@ storage {
         if (isCranRepo(item.repoPath.repoKey) && isCranPackage(item.repoPath)) {
             log.info("Creation of CRAN package ${item.repoPath} detected")
             storeCranPackageMetadata(item.repoPath)
-            if (item.repoPath.parent.root) {
+            if (item.repoPath.parent.isRoot()) {
                 executor.submit {
                     // If package was uploaded to the root move it to the right location
                     enforceRepositoryLayout(item.repoPath)
@@ -244,7 +244,7 @@ def getCranBinaryPackageRVersion(RepoPath packagePath) {
         if (builtValues != null) {
             for (value in builtValues) {
                 log.trace("Built value: $value")
-                Matcher matcher = value =~ /R (\d+).(\d+)/
+                Matcher matcher = value =~ /R (\d+)\.(\d+)/
                 if (matcher) {
                     rVersion = matcher.group(1) + '.' + matcher.group(2)
                     log.trace("R version found $rVersion")
