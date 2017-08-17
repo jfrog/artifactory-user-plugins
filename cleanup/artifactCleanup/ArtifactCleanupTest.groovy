@@ -1,27 +1,36 @@
-import spock.lang.Specification
-import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
-
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
+
+import groovyx.net.http.HttpResponseException
+import spock.lang.Specification
+
 class ArtifactCleanupTest extends Specification {
-    def 'artifact cleanup test'() {
-        setup:
+
+    private def createClientAndMavenRepo(String repoName){
+
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
 
         def builder = artifactory.repositories().builders()
-        def repository = builder.localRepositoryBuilder().key('maven-local')
-        .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        def repository = builder.localRepositoryBuilder().key(repoName)
+            .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, repository)
 
+        return artifactory
+    }
+
+    def 'artifact cleanup test'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
         def file = new ByteArrayInputStream('test'.bytes)
-        artifactory.repository("maven-local").upload('test', file).doUpload()
+        artifactory.repository('maven-local').upload('test', file).doUpload()
 
         when:
         artifactory.plugins().execute('cleanup').
             withParameter('repos', 'maven-local').sync()
-        artifactory.repository("maven-local").file('test').info()
+        artifactory.repository('maven-local').file('test').info()
 
         then:
         notThrown(HttpResponseException)
@@ -30,12 +39,128 @@ class ArtifactCleanupTest extends Specification {
         artifactory.plugins().execute('cleanup').
             withParameter('repos', 'maven-local').
             withParameter('months', '0').sync()
-        artifactory.repository("maven-local").file('test').info()
+        artifactory.repository('maven-local').file('test').info()
 
         then:
         thrown(HttpResponseException)
 
         cleanup:
-        artifactory.repository("maven-local").delete()
+        artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup skip artifact test'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
+        def file = new ByteArrayInputStream('test'.bytes)
+        artifactory.repository('maven-local').upload('test', file).withProperty('cleanup.skip', 'true').doUpload()
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').
+            withParameter('disablePropertiesSupport', 'true').sync()
+        artifactory.repository('maven-local').file('test').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup skip folder test'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
+        def file = new ByteArrayInputStream('test'.bytes)
+        artifactory.repository('maven-local').upload('foo/bar/test', file).doUpload()
+
+        // Test property on all folders path
+        when:
+        artifactory.repository('maven-local').folder('foo').properties().addProperty('cleanup.skip', 'true').doSet()
+        artifactory.repository('maven-local').folder('foo/bar').properties().addProperty('cleanup.skip', 'true').doSet()
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('foo/bar/test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        // Test property on root folder path
+        when:
+        artifactory.repository('maven-local').folder('foo').deleteProperty('cleanup.skip')
+        artifactory.repository('maven-local').folder('foo/bar').deleteProperty('cleanup.skip')
+
+        artifactory.repository('maven-local').folder('foo').properties().addProperty('cleanup.skip', 'true').doSet()
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('foo/bar/test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        // Test property on parent folder path
+        when:
+        artifactory.repository('maven-local').folder('foo').deleteProperty('cleanup.skip')
+        artifactory.repository('maven-local').folder('foo/bar').deleteProperty('cleanup.skip')
+
+        artifactory.repository('maven-local').folder('foo/bar').properties().addProperty('cleanup.skip', 'true').doSet()
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('foo/bar/test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').
+            withParameter('disablePropertiesSupport', 'true').sync()
+        artifactory.repository('maven-local').file('foo/bar/test').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup skip same prefix folder test'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
+        def file = new ByteArrayInputStream('test'.bytes)
+
+        artifactory.repository('maven-local').upload('foo/bar/test', file).doUpload()
+        artifactory.repository('maven-local').folder('foo').properties().addProperty('cleanup.skip', 'true').doSet()
+
+        // File not skipped : should be deleted
+        artifactory.repository('maven-local').upload('foobar/test', file).doUpload()
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('foobar/test').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
     }
 }
