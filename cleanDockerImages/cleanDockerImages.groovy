@@ -16,7 +16,6 @@
  * Created by Madhu Reddy on 6/16/17.
  */
 
-
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 
@@ -45,7 +44,7 @@ executions{
             log.debug "Call Delete Docker Images: $it"
             buildParentRepoPaths create(it)
         }
-        message = '{"status":"okay"}'
+        message = '{"Status":"okay"}'
         status = 200
     }
 
@@ -72,7 +71,7 @@ def private void removeImagesMaxCount(Map repoMap){
         if(maxImagesCount > 0){
 
 
-            log.debug " ARRAY LIST  Size is " + repoList.size() + " AND MAX COUNT IS " + maxImagesCount
+            //log.debug " ARRAY LIST  Size is " + repoList.size() + " AND MAX COUNT IS " + maxImagesCount
 
             if(repoList.size() > maxImagesCount){
 
@@ -82,6 +81,7 @@ def private void removeImagesMaxCount(Map repoMap){
                     log.debug "HASH MAP KEY = " + key + " AND VALUE = " + r.getId()
 
                     //Logic to delete docker images based on Max Count policy
+                    //Uncomment the below line for the images to actually delete
                     //deleteDockerImage(RepoPath)
 
                 }
@@ -101,7 +101,7 @@ def private void printImagesMaxCount(Map repoMap){
     while(repoIterator.hasNext()){
         def String key = repoIterator.next()
         def Integer value = repoMap.get(key)
-        log.debug " HASH MAP KEY = " + key + " and VALUE = " + value
+        //log.debug " HASH MAP KEY = " + key + " and VALUE = " + value
 
     }
 
@@ -207,7 +207,8 @@ def private void simpleTraverse(ItemInfo parentInfo, List revistFoldersList){
 def deleteDockerImage(RepoPath repPath){
 
     log.debug "@@@@@@@@@@ DELETING THE DOCKER IMAGE " + repPath + " @@@@@@@@@@@"
-    //Remove comment below to delete the images
+    
+    //Uncomment the below line for the images to actually delete
     //repositories.delete(repPath)
 
 }

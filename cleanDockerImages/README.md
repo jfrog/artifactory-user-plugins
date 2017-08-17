@@ -38,6 +38,8 @@ Plugin's Key Steps:
 
 How to run the Plugin?
 
+Uncomment the lines 84 and 210 to actually delete the images. 
+
 This is a REST executable user plugin. This plugin can be called using the below sample URL:
 
 http://<artifactory domain>:<artifactory port>/artifactory/api/plugins/execute/cleanDockerImages
