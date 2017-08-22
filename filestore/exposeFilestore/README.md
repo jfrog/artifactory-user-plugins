@@ -17,4 +17,13 @@ This plugin takes two parameters:
 
 For example:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/exposeRepository?params=repo=repoKey|dest=destFolder"`
+
+For Artifactory 4.x:
+
+
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/exposeRepository?params=repo=repoKey|dest=destFolder"` 
+
+
+for Artifactory 5.x:
+
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/exposeRepository?params=repo=repoKey;dest=destFolder"` 

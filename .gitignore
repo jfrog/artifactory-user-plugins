@@ -1,1 +1,8 @@
 *~
+/target/
+/.classpath
+/.factorypath
+/.scannerwork/
+/.settings/
+/build/
+/.project

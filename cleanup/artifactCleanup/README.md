@@ -21,6 +21,7 @@ Parameters
 - `repos`: A list of repositories to clean. This parameter is required.
 - `dryRun`: If this parameter is passed, artifacts will not actually be deleted.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default 0.
+- `disablePropertiesSupport`: Disable the support of Artifactory Properties (see below *Artifactory Properties support* section). Default *false*.
 
 Properties
 ----------
@@ -29,12 +30,20 @@ Properties
 - `repos`: A list of repositories to clean.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations.
 
+Artifactory Properties support
+----------
+
+Some Artifactory [Properties](https://www.jfrog.com/confluence/display/RTF/Properties) are supported if defined on *artifacts* or *folders*:
+
+- `cleanup.skip`: Skip the artifact deletion if property defined on artifact's path ; artifact itself or in a parent folder(s).
+
+
 Executing
 ---------
 
 To execute the plugin:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun|paceTimeMS=2000"`
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"`
 
 
 
@@ -56,4 +65,9 @@ The plugin have 4 control options:
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
 - `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
+
+For Artifactory 4.x
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"` 
+
+For Artifactory 5.x
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"` 

@@ -14,59 +14,64 @@
  * limitations under the License.
  */
 
-import groovy.transform.Field
+import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
+
+import groovy.time.TimeCategory
+import groovy.time.TimeDuration
+import groovy.transform.Field
 
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
 
 class Global {
-    static Boolean stopCleaning = false;
-    static Boolean pauseCleaning = false;
-    static int paceTimeMS = 0;
+    static Boolean stopCleaning = false
+    static Boolean pauseCleaning = false
+    static int paceTimeMS = 0
 }
 
-// curl command example for running this plugin.
-// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1|repos=libs-release-local|dryRun=true|paceTimeMS=2000"
+// curl command example for running this plugin (Prior Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"
 //
 // For a HA cluster, the following commands have to be directed at the instance running the script. Therefore it is best to invoke
 // the script directly on an instance so the below commands can operate on same instance
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=pause"
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"
-// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"
 
 executions {
     cleanup() { params ->
         def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
+        def disablePropertiesSupport = params['disablePropertiesSupport'] ? params['disablePropertiesSupport'][0] as boolean : false
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
-        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun)
+        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
     cleanupCtl() { params ->
         def command = params['command'] ? params['command'][0] as String : ''
 
         switch ( command ) {
-        case "stop":
-            Global.stopCleaning = true
-            log.info "Stop request detected"
-            break;
-        case "adjustPaceTimeMS":
-            def adjustPaceTimeMS = params['value'] ? params['value'][0] as int : 0
-            Global.paceTimeMS += adjustPaceTimeMS
-            log.info "Pacing adjustment request detected, adjusting pace time by $adjustPaceTimeMS to new value of $Global.paceTimeMS"
-            break;
-        case "pause":
-            Global.pauseCleaning = true
-            log.info "Pause request detected"
-            break;
-        case "resume":
-            Global.pauseCleaning = false
-            log.info "Resume request detected"
-            break;
-        default:
-            log.info "Missing or invalid command, '$command'"
+            case "stop":
+                Global.stopCleaning = true
+                log.info "Stop request detected"
+                break
+            case "adjustPaceTimeMS":
+                def adjustPaceTimeMS = params['value'] ? params['value'][0] as int : 0
+                Global.paceTimeMS += adjustPaceTimeMS
+                log.info "Pacing adjustment request detected, adjusting pace time by $adjustPaceTimeMS to new value of $Global.paceTimeMS"
+                break
+            case "pause":
+                Global.pauseCleaning = true
+                log.info "Pause request detected"
+                break
+            case "resume":
+                Global.pauseCleaning = false
+                log.info "Resume request detected"
+                break
+            default:
+                log.info "Missing or invalid command, '$command'"
         }
     }
 }
@@ -80,17 +85,24 @@ config.policies.each{ policySettings ->
     def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
     def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
     def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
+    def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
 
     jobs {
         "scheduledCleanup_$cron"(cron: cron) {
-            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun)"
-            artifactCleanup( months, repos, log, paceTimeMS, dryRun )
+            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
+            artifactCleanup( months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
         }
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false) {
-    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms dryrun: $dryRun"
+private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
+    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
+
+    // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
+    def skip = [:]
+    if ( ! disablePropertiesSupport && repos){
+        skip = getSkippedPaths(repos)
+    }
 
     def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
@@ -109,6 +121,13 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
             if ( Global.stopCleaning ) {
                 log.info "Stopping by request, ending loop"
                 return true
+            }
+
+            if ( ! disablePropertiesSupport && skip[ it.repoKey ] && StringUtils.startsWithAny(it.path, skip[ it.repoKey ])){
+                if (log.isDebugEnabled()){
+                    log.debug "Skip $it"
+                }
+                return false
             }
 
             bytesFound += repositories.getItemInfo(it)?.getSize()
@@ -136,4 +155,48 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     } else {
         log.info "Finished cleanup, deleted $foundArtifacts artifacts that took up $bytesFound bytes"
     }
+}
+
+private def getSkippedPaths(String[] repos) {
+    def timeStart = new Date()
+    def skip = [:]
+    for (String repoKey : repos){
+        def pathsTmp = []
+        def aql = "items.find({\"repo\":\"" + repoKey + "\",\"type\": \"any\",\"@cleanup.skip\":\"true\"}).include(\"path\", \"name\", \"type\")"
+        searches.aql(aql.toString()) {
+            for (item in it) {
+                def path = item.path + '/' + item.name
+                // Root path case behavior
+                if ('.' == item.path){
+                    path = item.name
+                }
+                if ('folder' == item.type){
+                    path += '/'
+                }
+                if (log.isTraceEnabled()){
+                    log.trace "skip found for " + repoKey + ":" + path
+                }
+                pathsTmp.add(path)
+            }
+        }
+
+        // Simplify list to have only parent paths
+        def paths = []
+        for (path in pathsTmp.sort{ it }) {
+            if (paths.size == 0 || ! path.startsWith(paths[-1])) {
+                if (log.isTraceEnabled()){
+                    log.trace "skip added for " + repoKey + ":" + path
+                }
+                paths.add(path)
+            }
+        }
+
+        if (paths.size > 0){
+            skip[repoKey] = paths.toArray(new String[paths.size])
+        }
+    }
+    def timeStop = new Date()
+    TimeDuration duration = TimeCategory.minus(timeStop, timeStart)
+    log.info "Elapsed time to retrieve paths to skip: " + duration
+    return skip
 }
