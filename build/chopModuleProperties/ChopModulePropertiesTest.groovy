@@ -8,57 +8,45 @@ import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 import groovy.json.JsonSlurper
 
 class ChopModulePropertiesTest extends Specification {
- def 'ChopModulePropertiesTest name' () {
+    def 'ChopModuleProperties Test' () {
 
-  setup: def baseurl = 'http://localhost:8088/artifactory'
-  def artifactory = create(baseurl, 'admin', 'password')
+        setup: 
 
-  def file = new File("./src/test/groovy/build.json")
-  def request = new JsonSlurper().parse(file)
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = create(baseurl, 'admin', 'password')
 
-  ArtifactoryRequest uploadBuild = new ArtifactoryRequestImpl().apiUrl("api/build")
-  .method(ArtifactoryRequest.Method.PUT)
-  .requestType(ArtifactoryRequest.ContentType.JSON)
-  .requestBody(new JsonSlurper().parse(file))
+        def file = new File("./src/test/groovy/build.json")
+        def request = new JsonSlurper().parse(file)
 
-  artifactory.restCall(uploadBuild)
+        ArtifactoryRequest uploadBuild = new ArtifactoryRequestImpl().apiUrl("api/build")
+        .method(ArtifactoryRequest.Method.PUT)
+        .requestType(ArtifactoryRequest.ContentType.JSON)
+        .requestBody(new JsonSlurper().parse(file))
 
-
-  when: ArtifactoryRequest getBuildInfo = new ArtifactoryRequestImpl().apiUrl("api/build/test-build/1")
-   .method(ArtifactoryRequest.Method.GET)
-   .responseType(ArtifactoryRequest.ContentType.JSON)
-
-   def response = artifactory.restCall(getBuildInfo)
+        artifactory.restCall(uploadBuild)
 
 
-   then:
+        when: 
 
-   boolean isGood = true
+        ArtifactoryRequest getBuildInfo = new ArtifactoryRequestImpl().apiUrl("api/build/test-build/1")
+        .method(ArtifactoryRequest.Method.GET)
+        .responseType(ArtifactoryRequest.ContentType.JSON)
 
-   response.buildInfo.modules.each {
-   m ->
-    print "m.properties: ${m.properties}"
-   Map < String, String > changed = [: ]
-   m.properties.each {
-    String k, String v ->
-     if (v.length() > 899) {
-      isGood = false
-
-     }
-   }
-  }
-
-   isGood
+        def response = artifactory.restCall(getBuildInfo)
 
 
-   cleanup:
+        then:
 
-   ArtifactoryRequest delete = new ArtifactoryRequestImpl().apiUrl("api/build/test-build")
-   .setQueryParams(deleteAll: 1)
-   .method(ArtifactoryRequest.Method.DELETE)
-  artifactory.restCall(delete)
+        response.buildInfo.modules.every {it.properties.length < 899}
 
- }
+        cleanup:
+
+        ArtifactoryRequest delete = new ArtifactoryRequestImpl().apiUrl("api/build/test-build")
+        .setQueryParams(deleteAll: 1)
+        .method(ArtifactoryRequest.Method.DELETE)
+        artifactory.restCall(delete)
+
+    }
 }
 
 
