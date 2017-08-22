@@ -86,6 +86,7 @@ def runBackup(repos) {
     searches.aql(aql.toString()) {
       for (item in it) {
         def path = item.path + '/' + item.name
+        if (item.path == '.') path = item.name
         def srcpath = RepoPathFactory.create(src, path)
         def destpath = RepoPathFactory.create(dest, path)
         if (repositories.exists(srcpath) &&
