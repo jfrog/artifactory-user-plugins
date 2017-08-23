@@ -36,8 +36,7 @@ class ChopModulePropertiesTest extends Specification {
 
 
         then:
-        response.buildInfo.modules.every {it.properties.any {it.value.size() < 899}}
-
+        response.buildInfo.modules.every {it.properties.every {it.value.size() < 900}}
 
         cleanup:
 
