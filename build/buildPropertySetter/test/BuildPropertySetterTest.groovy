@@ -20,6 +20,7 @@ class BuildPropertySetterTest extends Specification {
             artifactory.repositories().create(0, local)
 
 
+        def pom = new File('./src/test/groovy/BuildPropertySetterTest/pom.xml')
         def pom2 = new File('./src/test/groovy/BuildPropertySetterTest/pom2.xml')
         def path = "group/artifact/1.0-SNAPSHOT/artifact-1.0-20170828.232033-1.pom"
         def path2 = "group/artifact/2.0-SNAPSHOT/artifact-1.0-20170828.232043-2.pom"
