@@ -1,4 +1,3 @@
-*This plugin is currently being tested for Artifactory 5.x releases.*
 
 Artifactory User Plugin to create list of AGV (artifactId, groupId, Version) for all artifacts of build with their buildDependencies.
 A REST executable artifact's AGV List builder.
@@ -18,7 +17,7 @@ For example:
 
 For Artifactory 4.x:
 ```
-curl -H "Content-Type:application/json" -X POST  -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/MavenDep?params=buildName=Generic|buildNumber=28"
+curl -H "Content-Type:application/json" -X POST  -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/MavenDep?params=buildName=Generic%7CbuildNumber=28"
 ```
 
 For Artifactory 5.x:

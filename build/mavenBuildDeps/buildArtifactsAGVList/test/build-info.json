@@ -1,0 +1,56 @@
+{
+  "properties" : {
+    "buildInfo.env.LANG" : "en_US.UTF-8",
+    "buildInfo.env.XPC_SERVICE_NAME" : "0",
+    "java.specification.version" : "1.8"
+  },
+  "version" : "1.0.1",
+  "name" : "plugin-demo",
+  "number" : "2",
+  "type" : "MAVEN",
+  "buildAgent" : {
+    "name" : "Maven",
+    "version" : "3.3.9"
+  },
+  "agent" : {
+    "name" : "Maven",
+    "version" : "3.3.9"
+  },
+  "started" : "2017-08-28T17:25:32.501-0700",
+  "durationMillis" : 3620,
+  "url" : "http://build-url.org",
+  "licenseControl" : {
+    "runChecks" : true,
+    "includePublishedArtifacts" : false,
+    "autoDiscover" : true,
+    "licenseViolationRecipients" : [ "build@organisation.com" ],
+    "scopes" : [ "compile,runtime" ],
+    "licenseViolationsRecipientsList" : "build@organisation.com ",
+    "scopesList" : "compile,runtime "
+  },
+  "buildRetention" : {
+    "count" : -1,
+    "deleteBuildArtifacts" : true,
+    "buildNumbersNotToBeDiscarded" : [ ]
+  },
+  "modules" : [ {
+    "properties" : {
+      "project.build.sourceEncoding" : "UTF-8"
+    },
+    "id" : "org.jfrog.test:multi:2.17-SNAPSHOT",
+    "artifacts" : [ {
+      "type" : "pom",
+      "sha1" : "6e30ba1d0b93ded6d66337b1aa89ad00ffa002d6",
+      "md5" : "1708ab050b8289fc266cac4bfef33f6d",
+      "name" : "multi-2.17-SNAPSHOT.pom"
+    } ]
+  } ],
+  "governance" : {
+    "blackDuckProperties" : {
+      "runChecks" : false,
+      "includePublishedArtifacts" : false,
+      "autoCreateMissingComponentRequests" : false,
+      "autoDiscardStaleComponentRequests" : false
+    }
+  }
+}
