@@ -9,16 +9,8 @@ class BuildArtifactsAGVListTest extends Specification {
     def 'test build artifacts AGVList '() {
 
         setup:
-        def conn = new URL("${baseurl}/api/build").openConnection()
-        conn.requestMethod = 'PUT'
-        conn.doOutput = true
-        conn.setRequestProperty('Authorization', auth)
-        conn.setRequestProperty('Content-Type', 'application/json')
-        def buildInfoFile = new File("./src/test/groovy/BuildArtifactsAGVListTest/test/build-info.json")
-        buildInfoFile.withInputStream { conn.outputStream << it }
-        assert conn.responseCode == 204
-        conn.disconnect()
 
+        def buildInfoFile = new File("./src/test/groovy/BuildArtifactsAGVListTest/test/build-info.json")
         def artifactList_buildInfo = new HashMap<String,List>()
         def object = new JsonSlurper().parse(buildInfoFile)
         def buildName = object.name
@@ -30,6 +22,16 @@ class BuildArtifactsAGVListTest extends Specification {
             def version = a[2].trim().split('-').collect {it.trim()}
             artifactList_buildInfo.put(artifactid,["groupId":groupid,"version":version[0]])
         }
+
+        def conn = new URL("${baseurl}/api/build").openConnection()
+        conn.requestMethod = 'PUT'
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        buildInfoFile.withInputStream { conn.outputStream << it }
+        assert conn.responseCode == 204
+        conn.disconnect()
+
 
         when:
         conn = new URL("${baseurl}/api/plugins/execute/MavenDep?params=buildName=${buildName}%7CbuildNumber=${buildNumber}").openConnection()
