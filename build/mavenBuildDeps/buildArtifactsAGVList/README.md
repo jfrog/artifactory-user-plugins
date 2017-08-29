@@ -15,11 +15,7 @@ buildStartTime - StartTime of build to promote (optional - in case you have mutl
 For example:
 
 ```
-For Artifactory 4.x version
-curl -H "Content-Type:application/json" -X POST  -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/MavenDep?params=buildName=Generic|buildNumber=28"
-
-For Artifactory 5.x version
-curl -H "Content-Type:application/json" -X POST  -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/MavenDep?params=buildName=Generic;buildNumber=28"
+curl -H "Content-Type:application/json" -X POST  -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/MavenDep?params=buildName=Generic%7CbuildNumber=28"
 ```
 
 
