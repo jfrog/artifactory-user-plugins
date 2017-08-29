@@ -22,7 +22,7 @@ class InternalRewriteDownloadTest extends Specification {
 
         when: 
         def file =  new ByteArrayInputStream('filecontents'.bytes) 
-        def path ="$myVersion/testFile.txt" 
+        def path ="$myVersion/test1.txt" 
         repo.upload(path, file).doUpload()
          def latestPath="latest/test1.txt"
         def downloadLatest = repo.download(latestPath).doDownload();
