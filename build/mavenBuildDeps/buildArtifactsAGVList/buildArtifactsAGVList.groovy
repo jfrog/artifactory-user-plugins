@@ -100,7 +100,7 @@ executions {
 
 
         if (artifactList != null) {
-            for (int k = 1; k < artifactList.size(); k++) {
+            for (int k = 0; k < artifactList.size(); k++) {
                 sha1 = artifactList.get(k).sha1
                 def paths = searches.artifactsBySha1(sha1)
                 def path = paths[0]
