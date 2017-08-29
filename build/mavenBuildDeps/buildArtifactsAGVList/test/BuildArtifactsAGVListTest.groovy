@@ -1,6 +1,7 @@
 import spock.lang.Specification
 import groovy.json.JsonSlurper
-import org.jfrog.artifactory.client.ArtifactoryClient.*
+import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
 class BuildArtifactsAGVListTest extends Specification {
     static final baseurl = 'http://localhost:8088/artifactory'
@@ -9,8 +10,18 @@ class BuildArtifactsAGVListTest extends Specification {
     def 'test build artifacts AGVList '() {
 
         setup:
+        def artifactory = create(baseurl, 'admin', 'password')
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('libs-snapshot-local')
+                .repositorySettings(new MavenRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
 
-        def buildInfoFile = new File("./src/test/groovy/BuildArtifactsAGVListTest/test/build-info.json")
+        def pom = new File('./src/test/groovy/BuildArtifactsAGVListTest/multi-2.17-SNAPSHOT.pom')
+        def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom"
+        artifactory.repository("libs-snapshot-local").upload(path,pom).doUpload();
+
+
+        def buildInfoFile = new File("./src/test/groovy/BuildArtifactsAGVListTest/build-info.json")
         def artifactList_buildInfo = new HashMap<String,List>()
         def object = new JsonSlurper().parse(buildInfoFile)
         def buildName = object.name
@@ -50,6 +61,7 @@ class BuildArtifactsAGVListTest extends Specification {
         }
 
         cleanup:
+        artifactory.repository("libs-snapshot-local").delete()
         conn = new URL("${baseurl}/api/build/${buildName}?buildNumbers=${buildNumber}").openConnection()
         conn.requestMethod = 'DELETE'
         conn.setRequestProperty('Authorization', auth)
