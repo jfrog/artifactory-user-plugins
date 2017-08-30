@@ -14,7 +14,7 @@ class FilterReplicationByPropertyTest extends Specification {
         def artifactory1 = create(baseurl1, 'admin', 'password')
         def artifactory2 = create(baseurl2, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-        def jarfile = new File('/Users/jainishs/Downloads/lib-aopalliance-1.0.jar')
+        def jarfile = new File('./src/test/groovy/filterReplicationByProperty/lib-aopalliance-1.0.jar')
 
         def builder1 = artifactory1.repositories().builders()
         def local = builder1.localRepositoryBuilder().key('libs-release-local')
