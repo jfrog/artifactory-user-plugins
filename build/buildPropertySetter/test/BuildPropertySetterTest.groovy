@@ -13,20 +13,17 @@ class BuildPropertySetterTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
 
-
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('libs-snapshot-local')
             .repositorySettings(new MavenRepositorySettingsImpl()).build()
             artifactory.repositories().create(0, local)
-
 
         def pom = new File('./src/test/groovy/BuildPropertySetterTest/pom.xml')
         def pom2 = new File('./src/test/groovy/BuildPropertySetterTest/pom2.xml')
         def path = "group/artifact/1.0-SNAPSHOT/artifact-1.0-20170828.232033-1.pom"
         def path2 = "group/artifact/2.0-SNAPSHOT/artifact-1.0-20170828.232043-2.pom"
         def file = new File('./src/test/groovy/BuildPropertySetterTest/build.json')
-        def file2 = new File('./src/test/groovy/BuildPropertySetterTest/build2.json')
-        
+        def file2 = new File('./src/test/groovy/BuildPropertySetterTest/build2.json')     
 
         when:
         artifactory.repository("libs-snapshot-local")
@@ -48,9 +45,11 @@ class BuildPropertySetterTest extends Specification {
             .property("build.name","unit-test")
             .property("build.number","20")
             .doSearch(); 
+
+        then: 
         check.size() == 1
 
-
+        when: 
         artifactory.repository("libs-snapshot-local")
             .upload(path2,pom2)
             .withProperty("build.name","unit-test")
@@ -63,8 +62,6 @@ class BuildPropertySetterTest extends Specification {
           .requestBody(new JsonSlurper().parse(file2))
         artifactory.restCall(uploadBuild2)
 
-     
-        then:
         def check2 = artifactory.searches()
             .repositories("libs-snapshot-local")  
             .itemsByProperty()
@@ -72,9 +69,21 @@ class BuildPropertySetterTest extends Specification {
             .property("build.name","unit-test")
             .property("build.number","21")
             .doSearch(); 
+     
+        then:
         check2.size() == 1
 
-        def check3 = check.size() == 0
+        when: 
+        def check3 = artifactory.searches()
+            .repositories("libs-snapshot-local")  
+            .itemsByProperty()
+            .property("latest","true")
+            .property("build.name","unit-test")
+            .property("build.number","20")
+            .doSearch(); 
+
+        then: 
+        check3.size() == 0
 
         cleanup:
         artifactory.repository("libs-snapshot-local").delete()
