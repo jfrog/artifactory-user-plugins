@@ -29,6 +29,6 @@ class LayoutPropertiesTest extends Specification {
         props['layout.baseRevision'] == ['1.0']
 
         cleanup:
-        artifactory.repository(repo)
+        artifactory.repository(repo).delete()
     }
 }
