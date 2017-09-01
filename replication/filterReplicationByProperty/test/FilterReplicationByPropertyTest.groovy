@@ -1,5 +1,6 @@
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import spock.lang.Specification
+import groovyx.net.http.HttpResponseException
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -36,7 +37,7 @@ class FilterReplicationByPropertyTest extends Specification {
         textFile += '"password" : "password",'
         textFile += '"enableEventReplication" : true,'
         textFile += '"enabled" : true,'
-        textFile += '"cronExp" : "0 0 12 * * ?",'
+        textFile += '"cronExp" : "0 0/5 * * * ?",'
         textFile += '"syncDeletes" : true,'
         textFile += '"syncProperties" : true,'
         textFile += '"syncStatistics" : false,'
@@ -51,9 +52,10 @@ class FilterReplicationByPropertyTest extends Specification {
         .withProperty("foo", "true")
         .doUpload()
 
-        sleep(1000000)
+        sleep(100000)
 
         then:
+        thrown(HttpResponseException)
         artifactory2.repository("libs-release-local").file("lib-aopalliance-1.0.jar").info()
 
         cleanup:

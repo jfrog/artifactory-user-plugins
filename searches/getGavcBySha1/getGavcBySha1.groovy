@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+
+import org.artifactory.exception.CancelException
 import org.artifactory.repo.RepoPath
 
 executions {
@@ -23,12 +25,23 @@ executions {
      */
     getGavcBySha1(version: '1.0', description: 'Returns GAVC by SHA1',
                   httpMethod: 'GET') { params ->
-        String sha1 = params['sha1'][0]
-        // TODO check for parameter existence
+        String sha1 = getStringProperty(params, 'sha1', true)
         RepoPath artifact = searches.artifactsBySha1(sha1)?.first()
         // TODO check for more than one result
         // TODO handle artifacts which don't match the repo layout
         message = repositories.getLayoutInfo(artifact)
         status = 200
     }
+}
+
+private String getStringProperty(params, pName, mandatory) {
+    def key = params[pName]
+    def val = key == null ? null : key[0].toString()
+    if (mandatory && val == null) cancelCleanup("$pName is mandatory paramater", null, 400)
+    return val
+}
+
+def cancelCleanup(String message, Throwable cause, int errorLevel) {
+    log.warn message
+    throw new CancelException(message, cause, errorLevel)
 }

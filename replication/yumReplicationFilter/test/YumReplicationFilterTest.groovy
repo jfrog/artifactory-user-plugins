@@ -36,7 +36,7 @@ class YumReplicationFilterTest extends Specification {
         textFile += '"password" : "password",'
         textFile += '"enableEventReplication" : true,'
         textFile += '"enabled" : true,'
-        textFile += '"cronExp" : "0 0 12 * * ?",'
+        textFile += '"cronExp" : "0 0/2 * * * ?",'
         textFile += '"syncDeletes" : true,'
         textFile += '"syncProperties" : true,'
         textFile += '"syncStatistics" : false,'
@@ -50,7 +50,7 @@ class YumReplicationFilterTest extends Specification {
         .upload("wget-1.19.1-3.fc27.aarch64.rpm", rpmfile)
         .doUpload()
 
-        sleep(1000000)
+        sleep(600000)
 
         then:
         artifactory2.repository("yum-local").file("wget-1.19.1-3.fc27.aarch64.rpm").info()
