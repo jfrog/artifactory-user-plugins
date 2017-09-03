@@ -21,14 +21,19 @@ class ExposeFilestoreTest extends Specification {
         .doUpload()
 
         when:
+        println "filestoreexpose"
         def conn = new URL(baseurl + '/api/plugins/execute/exposeRepository?params=repo=maven-local%7Cdest=/tmp').openConnection()
         conn.setRequestMethod('POST')
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
-        conn.getResponseCode()
+        println "filestoreexpose response is " + conn.getResponseCode()
+        sh "ls -al"
 
         then:
+        println "Filestoreexpose checking sys link"
+        sh "ls -al"
+        sh "ls -al /tmp/foo/bar/file"
         Files.isSymbolicLink(Paths.get('/tmp/foo/bar/file'))
 
         cleanup:
