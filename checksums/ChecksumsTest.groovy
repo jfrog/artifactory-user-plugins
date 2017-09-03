@@ -34,11 +34,17 @@ class ChecksumsTest extends Specification {
         def repo = createLocalRepo(repoKey)
         def data = new ByteArrayInputStream(message.bytes)
         repo.upload(artifactPath, data).doUpload()
-
+        sleep 10
         when:
         def result256 = repo.download("${artifactPath}.sha256").doDownload().text
+        println "result256 is " + result256
+        sh "ls -al"
         def result384 = repo.download("${artifactPath}.sha384").doDownload().text
+        println "result384 is " + result384
+        sh "ls -al"
         def result512 = repo.download("${artifactPath}.sha512").doDownload().text
+        println "result512 is " + result512
+        sh "ls -al" 
 
         then:
         // Validate sha256
