@@ -15,15 +15,19 @@ class RepoQuotaTest extends Specification {
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
 
+        println "Sending quota request to artifactory"
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def conn = new URL("${baseurl}/api/storage/maven-local?properties=repository.path.quota=5").openConnection()
         conn.requestMethod = 'PUT'
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 204
         conn.disconnect()
-
+        sleep 10
+        
         when:
+        println "Upload first file - will upload"
         artifactory.repository('maven-local').upload('file1', new ByteArrayInputStream('test1'.getBytes('utf-8'))).doUpload()
+        println "Upload to fail due to quota"
         artifactory.repository('maven-local').upload('file2', new ByteArrayInputStream('test2'.getBytes('utf-8'))).doUpload()
 
         then:
