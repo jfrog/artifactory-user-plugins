@@ -17,7 +17,7 @@ Parameters
 
 To ensure logging for this plugin, edit ${ARTIFACTORY_HOME}/etc/logback.xml to add:
 ```xml
-    <logger name="cleanup">
+    <logger name="deleteByPropertyValue">
         <level value="info"/>
     </logger>
 ```
