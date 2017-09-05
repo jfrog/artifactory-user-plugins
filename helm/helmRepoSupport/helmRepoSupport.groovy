@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-import com.esotericsoftware.yamlbeans.YamlReader
-import com.esotericsoftware.yamlbeans.YamlWriter
+@Grab('org.yaml:snakeyaml:1.17')
 import org.artifactory.repo.service.InternalRepositoryService
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.util.HttpUtils
+import org.yaml.snakeyaml.Yaml
 
 download {
     altRemoteContent { repoPath ->
@@ -41,13 +39,12 @@ download {
         }
         def streamhandle = null
         try {
-            // open a stream to the remote and parse the repomd.xml file
+            // open a stream to the remote and parse the index.yaml file
             log.info("Downloading and parsing index.yaml")
             streamhandle = repo.downloadResource(repoPath.path)
-
-            YamlReader reader = new YamlReader(streamhandle.inputStream.text);
-            Object object = reader.read();
-            Map map = (Map) object;
+            Yaml parser = new Yaml();
+            def data = parser.load(streamhandle.inputStream);
+            Map map = (Map) data;
             def charts = map.get("entries");
 
             charts.each { k, v ->
@@ -56,13 +53,9 @@ download {
                             url + repo.key);
                 }
             }
-
-            def stringWrite = new StringWriter();
-            YamlWriter writer = new YamlWriter(stringWrite);
-            writer.write(object);
-            writer.close();
-            def stringWriteStr = stringWrite.toString()
-            def bytes = stringWriteStr.bytes
+            Yaml yaml = new Yaml();
+            String output = yaml.dump(map);
+            def bytes = output.bytes
             inputStream = new ByteArrayInputStream(bytes);
             size = bytes.length;
         } catch (Exception e) {
