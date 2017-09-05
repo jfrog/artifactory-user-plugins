@@ -1,7 +1,7 @@
-Artifactory Storage Summary User Plugin
-=======================================
+Artifactory HA Request Routing User Plugin
+==========================================
 
-Exposes a summary of the storage info via the REST api.
+Allows requests to be routed to specific HA nodes.
 
 Usage
 -----
