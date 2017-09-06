@@ -44,7 +44,7 @@ realms {
                 if (username && userConf.users.contains("$username:$credentials")) {
                     asSystem {
                         if (security.findUser(username) == null) {
-                            log.error "The user configuration conatin a username that does not exists in the DB"
+                            log.error "The user configuration contain a username that does not exists in the DB"
                             passed = false
                         } else {
                             log.info "Using old password for '${username}'"
@@ -72,7 +72,7 @@ class UserPwdConfigurationHolder {
     String dir = "${ctx.artifactoryHome.getHaAwareEtcDir()}/plugins"
     UserPwdConfigurationHolder(ctx, log) {
         this.log = log
-        this.confFile = new File(dir, "users.json")
+        this.confFile = new File(dir, "oldPasswordRealm.json")
     }
 
     UserPwdConfiguration getCurrent() {
