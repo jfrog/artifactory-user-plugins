@@ -22,6 +22,7 @@ class ExposeFilestoreTest extends Specification {
 
         when:
         println "filestoreexpose"
+        println "Plugin Loaded is " + artifactory.plugins().list()
         def conn = new URL(baseurl + '/api/plugins/execute/exposeRepository?params=repo=maven-local%7Cdest=/tmp').openConnection()
         conn.setRequestMethod('POST')
         conn.doOutput = true
