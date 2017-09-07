@@ -26,6 +26,7 @@ class RepoQuotaTest extends Specification {
         sleep 10
         
         when:
+        println "Plugin Loaded is " + artifactory.plugins().list()
         println "Upload first file - will upload"
         artifactory.repository('maven-local').upload('file1', new ByteArrayInputStream('test1'.getBytes('utf-8'))).doUpload()
         println "Upload to fail due to quota"
