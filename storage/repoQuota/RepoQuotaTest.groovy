@@ -21,6 +21,7 @@ class RepoQuotaTest extends Specification {
         conn.requestMethod = 'PUT'
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 204
+        println "Response code : " + conn.responseCode
         conn.disconnect()
         sleep 10
         
