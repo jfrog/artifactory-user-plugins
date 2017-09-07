@@ -36,6 +36,7 @@ class ChecksumsTest extends Specification {
         repo.upload(artifactPath, data).doUpload()
         sleep 10
         when:
+        println "Plugin Loaded is " + artifactory.plugins().list() 
         def result256 = repo.download("${artifactPath}.sha256").doDownload().text
         println "result256 is " + result256
         sh "ls -al"
@@ -45,6 +46,7 @@ class ChecksumsTest extends Specification {
         def result512 = repo.download("${artifactPath}.sha512").doDownload().text
         println "result512 is " + result512
         sh "ls -al" 
+        
 
         then:
         // Validate sha256
