@@ -14,7 +14,7 @@ Execution
 ---------
 
 ``` shell
-curl -uadmin:password -X POST http://localhost:8081/artifactory/api/plugins/execute/imagePromote -T example.json
+curl -XPOST -uadmin:password http://localhost:8081/artifactory/api/plugins/promotions/promoteDocker?params=targetRepository=docker-prod-local;status=Released;comment=promoting_docker_build
 ```
 
 An `example.json` might be as follows:
