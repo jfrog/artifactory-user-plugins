@@ -1,23 +1,33 @@
-NOTE:  This plugin is deprecated as of Artifactory v4.10.  Instead you should use the built-in [docker promote rest API](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-PromoteDockerImage) to re-tag images.
+Artifactory Docker Retag User Plugin
+====================================
 
-This user plugin makes a copy of an existing tag in the current repository with a new tag name.  If the new tag name already exists, it is DELETED.
+*NOTE: This plugin is deprecated as of Artifactory v4.10. Instead you should use
+the built-in [Docker Promote REST API][] to re-tag images.*
 
-To Install:
+[Docker Promote REST API]: https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-PromoteDockerImage
 
-	copy dockerRetag.groovy into $ARTIFACTORY_HOME/etc/plugins/
+This user plugin makes a copy of an existing tag in the current repository with
+a new tag name. If the new tag name already exists, it is DELETED.
 
-To Execute:
+Installation
+------------
 
-	curl -uadmin:password -X POST http://localhost:8081/artifactory/api/plugins/execute/dockerRetag -T example.json
+To install, copy `dockerRetag.groovy` into `$ARTIFACTORY_HOME/etc/plugins/`.
 
+Execution
+---------
 
-Input json:
+``` shell
+curl -uadmin:password -X POST http://localhost:8081/artifactory/api/plugins/execute/dockerRetag -T example.json
+```
 
-	{
-		"sourceRepo"	: "<sourceRepoKey>",	//repoKey of source artifactory repository being used
-		"dockerImage"	: "<pathOfImage>", 	//path of docker image (i.e. <dockerRepo>/<dockerImage>)
-		"sourceTag"	: "<sourceTag>", 	//tag name of source
-		"destTag"	: "<destTag>"		//destination tag name
-	}
+An `example.json` might be as follows:
 
-
+``` json
+{
+    "sourceRepo":  "<sourceRepoKey>", //repoKey of source artifactory repository being used
+    "dockerImage": "<pathOfImage>",   //path of docker image (i.e. <dockerRepo>/<dockerImage>)
+    "sourceTag":   "<sourceTag>",     //tag name of source
+    "destTag":     "<destTag>"        //destination tag name
+}
+```
