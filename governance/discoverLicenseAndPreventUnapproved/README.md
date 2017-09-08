@@ -8,11 +8,12 @@ artifact's property 'approve.status' equals 'pending' or 'rejected', else the ar
 
 Upload 
 ------
-This plugin sets the artifact's license approval status property 'approve.status'.  The approve.status is 
- 'rejected' : If the artifact's licenses contains either 'GPL-2.0' or 'CC  BY-SA'
- 'approved' : if any one of the artifact's licenses is approved.  
- 'pending'  : If no licenses found
- 
+This plugin sets the artifact's license approval status property 'approve.status' after it discovers its licenses.  The approve.status is:
+
+- 'rejected' : If the artifact's licenses is in the FORBIDDEN_LICENSES list.
+- 'approved' : If any one of the artifact's licenses is approved.  
+- 'pending'  : If no licenses found
+
  
 
 
