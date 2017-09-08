@@ -28,13 +28,9 @@ class ExposeFilestoreTest extends Specification {
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
-        println "filestoreexpose response is " + conn.getResponseCode()
-        sh "ls -al"
 
         then:
         println "Filestoreexpose checking sys link"
-        sh "ls -al"
-        sh "ls -al /tmp/foo/bar/file"
         Files.isSymbolicLink(Paths.get('/tmp/foo/bar/file'))
 
         cleanup:
