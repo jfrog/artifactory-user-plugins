@@ -1,19 +1,9 @@
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+// NOTE: This test is intentionally left blank. This plugin was written to promote
+// docker images and their builds and has been deprecated since Artifactory 4.10. Please use
+// Artifactory's Docker Promote REST API and build promotion REST API instead.
 
 class ImagePromoteTest extends Specification {
-    def 'test name'() {
-        setup:
-        def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
-
-        when:
-        null
-
-        then:
-        false
-
-        //cleanup:
-    }
+    
 }
