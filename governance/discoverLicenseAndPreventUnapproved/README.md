@@ -4,7 +4,7 @@ Artifactory Discover License and Prevent Unapproved
 Download
 --------
 This plugin prevents download of artifacts whose licenses have not been approved.  Response code 403 is returned if the
-artifact's property 'approve.status' equals 'pending' or 'rejected', else the artifactory response code is returned.  
+artifact's property 'approve.status' equal 'pending' or 'rejected', else the artifactory's response code is returned.  
 
 Upload 
 ------
