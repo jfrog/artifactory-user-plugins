@@ -28,7 +28,7 @@ class SynchronizeLdapGroupsTest extends Specification {
      */
     def runLdapServer() {
         // Run docker container
-        executeAndPrintOutput"docker run --name openldap -p $ldapPort:389 -d osixia/openldap"
+        executeAndPrintOutput"docker run --name openldap -p $ldapPort:389 -d osixia/openldap:1.1.9"
         // Wait for ldap to be available
         sleep(5000)
         // Copy ldap data file to container
