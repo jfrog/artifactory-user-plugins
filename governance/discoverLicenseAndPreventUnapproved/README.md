@@ -14,6 +14,8 @@ This plugin sets the artifact's license approval status property 'approve.status
 - 'approved' : If any one of the artifact's licenses is approved.  
 - 'pending'  : If no licenses found
 
- 
+Installation 
+------------
+This plugin needs to be added to the $ARTIFACTORY_HOME/etc/plugins directory.
 
 
