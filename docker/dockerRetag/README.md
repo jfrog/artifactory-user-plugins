@@ -23,7 +23,7 @@ curl -uadmin:password -X POST http://localhost:8081/artifactory/api/plugins/exec
 
 An `example.json` might be as follows:
 
-``` json
+``` yaml
 {
     "sourceRepo":  "<sourceRepoKey>", //repoKey of source artifactory repository being used
     "dockerImage": "<pathOfImage>",   //path of docker image (i.e. <dockerRepo>/<dockerImage>)
