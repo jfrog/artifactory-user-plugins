@@ -17,7 +17,6 @@
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
-import org.jfrog.client.util.PathUtils
 
 import groovy.transform.Field
 
@@ -86,7 +85,8 @@ private void addRepositoriesSettings(def repositoriesMSCWR, def repositorySettin
 
 private void removeMavenSnapshotIfRelease(RepoPath repoPath, def repositoriesMSCWR){
     if (repositoriesMSCWR [ repoPath.getRepoKey() ] &&  ! repoPath.isFolder() && repoPath.getPath().endsWith('.pom')){
-        def snapshotRepoPath = RepoPathFactory.create(repositoriesMSCWR [ repoPath.getRepoKey() ], PathUtils.getParent(repoPath.getPath()) + '-SNAPSHOT/')
+        def parent = new File(repoPath.path).parent + '-SNAPSHOT/'
+        def snapshotRepoPath = RepoPathFactory.create(repositoriesMSCWR[repoPath.repoKey], parent)
         if (repositories.exists(snapshotRepoPath)){
             if (log.isInfoEnabled()){
                 log.info "Snapshot deletion due to release " + snapshotRepoPath
