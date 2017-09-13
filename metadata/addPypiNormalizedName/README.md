@@ -35,14 +35,14 @@ Usage
 -----
 
 By default, the plugin runs every 30 seconds. This can be changed by editing the
-`interval` parameter on line 7:
+`interval` parameter on line 13:
 
 ``` groovy
 addPerms(interval: 30000, delay: 100) {
 ```
 
 Add the Pypi repositories that you wish to have monitored by the script on line
-10, by adding it to the provided array `searchRepoNames`.
+8, by modifying the provided array `searchRepoNames`.
 
 ``` groovy
 def searchRepoNames = []
