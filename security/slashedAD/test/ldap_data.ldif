@@ -1,0 +1,45 @@
+dn: ou=People,dc=example,dc=org
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: Groups
+
+dn: cn=frogs,ou=Groups,dc=example,dc=org
+objectClass: posixGroup
+cn: frogs
+gidNumber: 5000
+memberUid: john
+
+dn: uid=admin,ou=People,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: admin
+sn: admin
+givenName: admin
+cn: admin
+displayName: admin
+uidNumber: 10000
+gidNumber: 5000
+userPassword: password
+gecos: admin
+loginShell: /bin/bash
+homeDirectory: /home/admin
+
+dn: uid=john,ou=People,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: john
+sn: Doe
+givenName: John
+cn: John Doe
+displayName: John Doe
+uidNumber: 10001
+gidNumber: 5000
+userPassword: johnldap
+gecos: John Doe
+loginShell: /bin/bash
+homeDirectory: /home/john
