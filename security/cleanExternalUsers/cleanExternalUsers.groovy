@@ -16,6 +16,7 @@
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonException
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 
 // This function needs to return a collection of usernames that should be
 // cleaned (deleted) from Artifactory. Users in this array that already don't
@@ -103,7 +104,13 @@ def cleanUsers(params) {
     def secserv = ctx.securityService
     def userct = 0
     for (user in usersToClean(config)) {
-        if (secserv.findUser(user, false, null)) {
+        def userfound = null
+        try {
+            userfound = secserv.findUser(user)
+        } catch (UsernameNotFoundException ex) {
+            userfound = null
+        }
+        if (userfound) {
             userct += 1
             if (config.dryRun) {
                 log.warn("Deleting user $user (dry run)")
