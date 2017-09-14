@@ -16,13 +16,10 @@
 
 import groovy.transform.Field
 import org.artifactory.api.context.ContextHelper
-import org.artifactory.api.security.UserGroupService
-import org.artifactory.security.UserInfo
 import org.artifactory.storage.StorageService
-import net.gpedro.integrations.slack.SlackApi
-import net.gpedro.integrations.slack.SlackAttachment
-import net.gpedro.integrations.slack.SlackMessage
-
+import org.artifactory.resource.ResourceStreamHandle
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 
 /**
  * Interval between storage checks (in ms)
@@ -33,9 +30,43 @@ def executionInterval = 60000
 NotificationsStrategy sendingNotificationsStrategy = new SendAlertNotificationsAtSomeRateStrategy(alertNotificationRate: 60)
 //NotificationsStrategy sendingNotificationsStrategy = new LimitAlertNotificationsStrategy(maxNumberOfSuccessiveNotifications: 1)
 
+/**
+ * Configuration file path
+ */
+@Field
+def configurationFilePath = 'plugins/quotaWarnSlack.json'
+
 jobs {
     scheduledQuotaCheck(delay: 100, interval: executionInterval) {
         quotaCheck()
+    }
+}
+
+executions {
+    /**
+     * Set slack webhook url.
+     *
+     * Expected json payload:
+     * {
+     *     "webhookUrl": "WEBHOOK_URL"
+     * }
+     *
+     */
+    setSlackWebhookUrl() { ResourceStreamHandle body ->
+        bodyJson = new JsonSlurper().parse(body.inputStream)
+        setWebhookUrl(bodyJson.webhookUrl)
+        message = '{"status":"okay", "message":"webhook url set"}'
+        status = 200
+    }
+
+    /**
+     * Reset notification strategy
+     */
+    resetSlackNotificationStrategy() {
+        sendingNotificationsStrategy.reset()
+        log.info "Slack quota notification strategy reset executed"
+        message = '{"status":"okay", "message":"notification strategy reset executed"}'
+        status = 200
     }
 }
 
@@ -59,19 +90,50 @@ def quotaCheck() {
     }
 }
 
+/**
+ * Send slack notification
+ * @param level
+ * @param headline
+ * @param message
+ * @return
+ */
 def notifySlack(String level,String headline,String message) {
-    def slackApi = new SlackApi("WEBHOOK_URL");
-    def slackMessage = new SlackMessage()
-    slackMessage.setUsername("BOT")
-    slackMessage.setIcon(":slack:")
+    def webhookUrl = getWebhookUrl()
+    log.info "Quota notification message will be send to $webhookUrl"
+    // Setup slack message payload
     def hostname = InetAddress.getLocalHost().getHostName()
-    slackMessage.setText(hostname + ": " + headline)
-    def slackAttachment = new SlackAttachment()
-    slackAttachment.setColor(level)
-    slackAttachment.setText(message)
-    slackAttachment.setFallback(hostname + ": " + headline)
-    slackMessage.addAttachments(slackAttachment)
-    slackApi.call(slackMessage)
+    JsonBuilder builder = new JsonBuilder()
+    builder {
+        username 'BOT'
+        icon_emoji ':slack:'
+        text hostname + ': ' + headline
+        attachments ([
+            {
+                color level
+                text message
+                fallback hostname + ": " + headline
+            }
+
+        ])
+    }
+
+    // Open connection and do output
+    def conn = new URL(webhookUrl).openConnection()
+    conn.setRequestMethod('POST')
+    conn.setDoOutput(true)
+    conn.setRequestProperty('Content-Type', 'application/json')
+    conn.outputStream.withCloseable { output ->
+        output.write(builder.toString().bytes)
+    }
+
+    // Handle response
+    def responseCode = conn.responseCode
+    if (responseCode != 200) {
+        log.error "Failed to send slack quota notification. Response code: $responseCode"
+        conn.inputStream.withCloseable { input ->
+            log.error "Received message: ${input.text}"
+        }
+    }
 }
 
 def trySendNotification(String level, String headline, String message) {
@@ -83,6 +145,32 @@ def trySendNotification(String level, String headline, String message) {
     } catch (Exception e) {
         log.error("Error while sending storage quota message.", e)
     }
+}
+
+/**
+ * Load Slack Webhook url from configuration file
+ */
+def getWebhookUrl() {
+    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def configFile = new File(etcdir, configurationFilePath)
+    def props = new JsonSlurper().parse(configFile)
+    def url = props.webhookUrl
+    return url
+}
+
+/**
+ *  Seet Webhook url at configuration file
+ */
+def setWebhookUrl(url) {
+    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def configFile = new File(etcdir, configurationFilePath)
+    def json = new JsonBuilder()
+    json {
+        webhookUrl url
+    }
+    configFile.write(json.toPrettyString())
+    log.info "Slack webhook url set: ${url}"
+    return url
 }
 
 interface NotificationsStrategy {
