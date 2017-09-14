@@ -30,10 +30,10 @@ To install this plugin:
 Usage
 -----
 
-This plugin is a scheduled task, fired every 60s. You can change this at the begining of the quotaWarnSlack.groovy : `executionInterval = 60000`
+This plugin is a scheduled task, fired every 60s. If needed, you can change this at the begining of the quotaWarnSlack.groovy : `executionInterval = 60000`
 
 ### Limit the number of messages ###
-At the begining of que plugin script you can select one of the two provided strategies for limiting the number of notification messages :
+At the begining of que plugin script you can also select one of the two provided strategies for limiting the number of notification messages :
 
 - Send one message every 60 alerts until the alert is over (Default)
 ```JAVA
