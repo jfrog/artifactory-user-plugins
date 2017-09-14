@@ -1,26 +1,8 @@
 Artifactory Storage Quota Warn Slack User Plugin
 =============================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 This plugin is used to send notification messages to a Slack channel when the storage quota warning / limit is reached.
 Storage quotas are configured in the Artifactory UI at Admin > Advanced > Maintenance > Storage Quota.
-
-Installation
-------------
-
-To install this plugin:
-
-1. Download the latest release of the Slack Webhook Integration for Java project
-   at https://github.com/gpedro/slack-webhook
-   or alternatively clone the repository and build from source
-2. Place the slack-webhook jar file under the master Artifactory server
-   `${ARTIFACTORY_HOME}/etc/plugins/lib`.
-3. Edit this script, replacing `WEBHOOK_URL` with your Slack Incoming WebHook URL from the Setup instructions in Slack
-4. Place this script under the master Artifactory server
-   `${ARTIFACTORY_HOME}/etc/plugins`.
-5. Verify in the ${ARTIFACTORY_HOME}/logs/artifactory.log that the plugin loaded
-   correctly.
 
 Features
 --------
@@ -35,15 +17,25 @@ The message attachment text is the exact same message shown in the UI, for examp
 
 `Datastore disk space is too high: Max limit: 30%, Used: 32%, Total: 464.78 GB, Used: 149.21 GB, Available: 315.58 GB`
 
-### Execution ###
-This plugin is a scheduled task, fired every 60s by default.
-You can change this at the begining of the quotaWarnSlack.groovy :
-`executionInterval = 60000`
+Installation
+------------
+
+To install this plugin:
+
+1. Place the configuration file `quotaWarnSlack.json` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins` folder
+2. Edit the configuration file, replacing `WEBHOOK_URL` with your Slack Incoming WebHook URL from the Setup instructions in Slack
+3. Place the plugin script file `quotaWarnSlack.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins` folder
+4. Verify in Artifactory's log that the plugin loaded correctly.
+
+Usage
+-----
+
+This plugin is a scheduled task, fired every 60s. If needed, you can change this at the begining of the quotaWarnSlack.groovy : `executionInterval = 60000`
 
 ### Limit the number of messages ###
-You can use one of the two provided strategies for limiting the number of notification messages :
+At the begining of que plugin script you can also select one of the two provided strategies for limiting the number of notification messages :
 
-- Send one message every 60 alerts (default) until the alert is over
+- Send one message every 60 alerts until the alert is over (Default)
 ```JAVA
 NotificationsStrategy sendingNotificationsStrategy = new SendAlertNotificationsAtSomeRateStrategy(alertNotificationRate: 60)
 ```
