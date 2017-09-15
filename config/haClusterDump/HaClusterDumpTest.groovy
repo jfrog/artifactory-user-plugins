@@ -12,9 +12,9 @@ class HaClusterDumpTest extends Specification {
         def artifactory = create(baseurl, 'admin', 'password')
 
         when:
-        def pluginmembers = []
+        def pluginmembers = [] as Set
         def plugindata = [:]
-        def integmembers = []
+        def integmembers = [] as Set
         def integdata = [:]
 
         // get plugin data
