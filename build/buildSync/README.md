@@ -1,12 +1,6 @@
 Artifactory Build Sync User Plugin
 ==================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
-BuildSync is only supported from version 3.1.0
-
-Build Sync is a (which license?) user plugin for Artifactory.
-
 Build info is a powerful method of tracking metadata associated with artifacts
 in Artifactory, and Build Sync allows you to keep this data in sync with all of
 your Artifactory instances with push, pull, and event push replication.
