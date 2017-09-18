@@ -1,8 +1,6 @@
 Artifactory Build Promotion User Plugin
 =======================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 A REST executable build promotion.
 
 This plugin promotes a snapshot build to release. It does the following:
