@@ -1,19 +1,7 @@
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+// NOTE: This test is intentionally left blank. This plugin has been deprecated
+// since Artifactory 4.0.
 
 class StatusPropertyWorkflowTest extends Specification {
-    def 'test name'() {
-        setup:
-        def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
-
-        when:
-        null
-
-        then:
-        false
-
-        //cleanup:
-    }
 }
