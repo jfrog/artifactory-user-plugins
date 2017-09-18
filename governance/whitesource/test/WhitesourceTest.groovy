@@ -16,21 +16,12 @@ class WhitesourceTest extends Specification {
         def repo = artifactory.repository('whitesource-test-local')
 
         when:
-        def desc = "Guava is a suite of core and expanded libraries that"
-        desc += " include\n    utility classes, google's collections, io"
-        desc += " classes, and much\n    much more.\n\n    Guava has two code"
-        desc += " dependencies - javax.annotation\n    per the JSR-305 spec"
-        desc += " and javax.inject per the JSR-330 spec."
-        def homepage = "http://code.google.com/p/guava-libraries/guava"
         def file = new File('./src/test/groovy/WhitesourceTest/guava-15.0.jar')
         repo.upload('/guava-15.0.jar', file).doUpload()
 
         then:
-        def props = repo.file('/guava-15.0.jar').getProperties(
-                'WSS-Description', 'WSS-Homepage', 'WSS-Licenses')
-        props['WSS-Description'].contains(desc)
-        props['WSS-Homepage'].contains(homepage)
-        props['WSS-Licenses'].contains('Apache 2.0')
+        def props = repo.file('/guava-15.0.jar').getProperties('WSS-Description')
+        props['WSS-Description'].contains(':guava-15.0.jar:')
 
         cleanup:
         artifactory.repository('whitesource-test-local').delete()
