@@ -4,7 +4,7 @@ import groovy.json.JsonSlurper
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
-class BinaryCompatibilityCheck extends Specification {
+class BinaryCompatibilityCheckTest extends Specification {
     def 'compatible binary compatibility check test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
