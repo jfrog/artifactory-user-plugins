@@ -1,6 +1,0 @@
-{
-  "url": "https://sc1.netapp.local:8146",
-  "token": "Token",
-  "policy": "Database_Daily",
-  "resourcegroups": "db1_netapp_local_MySQL_artdb"
-}

@@ -1,0 +1,6 @@
+{
+  "url": "http://localhost:8146",
+  "token": "N56auDBGZVo+3r5d+R0AcuMrY6laNXWye0Yf9o/A7wRR2o2V1aHwk9o9tX0RVLL21uhhWI2YtUjRcqAzJKLkhjd9CjDpXbh0htBM5tuvSMuurh6scl9WGYCBAIBgvL8LFHxMJ+gFk6fj5Zw2EklnVu+MXZMMt3FDIat8ZtgN238KG55DP/Ge9ii2gEKv+rxPKHA5ihV+BL3XIJigIriOpQ==",
+  "policy": "Database_Daily",
+  "resourcegroups": "db1_netapp_local_MySQL_artdb"
+}
