@@ -5,8 +5,8 @@ import java.text.SimpleDateFormat
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
-class BuildCleanupTest extends Specification {
-    def 'build cleanup test'() {
+class OldBuildCleanupTest extends Specification {
+    def 'old build cleanup test'() {
         setup:
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         def baseurl = 'http://localhost:8088/artifactory'
