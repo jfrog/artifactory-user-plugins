@@ -78,15 +78,15 @@ class SynchronizeLdapGroupsTest extends Specification {
         cleanup:
         println 'Cleaning up test case...'
         // Delete permission
-        artifactory.security().deletePermissionTarget(permissionName)
+        ignoringExceptions{ artifactory.security().deletePermissionTarget(permissionName) }
         // Delete group
-        artifactory.security().deleteGroup(groupName)
+        ignoringExceptions{ artifactory.security().deleteGroup(groupName) }
         // Delete repo
-        artifactory.repository(repoKey)?.delete()
+        ignoringExceptions{ artifactory.repository(repoKey)?.delete() }
         // Revert ldap configuration settings
-        removeLdapConfiguration()
+        ignoringExceptions{ removeLdapConfiguration() }
         // Remove ldap server
-        shutdownLdapServer()
+        ignoringExceptions{ shutdownLdapServer() }
     }
 
     /**
@@ -215,7 +215,6 @@ class SynchronizeLdapGroupsTest extends Specification {
                 // the first attempt
                 return getArtifactoryConfiguration(false)
             }
-            assert responseCode == 200
             def config = conn.inputStream.text
             return config
         } catch (Exception e) {
@@ -238,7 +237,7 @@ class SynchronizeLdapGroupsTest extends Specification {
             conn.setRequestProperty('Content-Type', 'application/xml')
             conn.getOutputStream().write(config.bytes)
             println "Response code ${conn.responseCode}"
-            assert conn.responseCode == 200
+            conn.responseCode
         } catch (Exception e) {
             e.printStackTrace()
             throw e
@@ -276,5 +275,13 @@ class SynchronizeLdapGroupsTest extends Specification {
         def proc = command.execute()
         proc.consumeProcessOutput(System.out, System.err)
         proc.waitFor()
+    }
+
+    def ignoringExceptions = { method ->
+        try {
+            method()
+        } catch (Exception e) {
+            e.printStackTrace()
+        }
     }
 }

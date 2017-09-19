@@ -165,7 +165,6 @@ class SlashedADTest extends Specification {
                 // the first attempt
                 return getArtifactoryConfiguration(false)
             }
-            assert responseCode == 200
             def config = conn.inputStream.text
             return config
         } catch (Exception e) {
@@ -188,7 +187,7 @@ class SlashedADTest extends Specification {
             conn.setRequestProperty('Content-Type', 'application/xml')
             conn.getOutputStream().write(config.bytes)
             println "Response code ${conn.responseCode}"
-            assert conn.responseCode == 200
+            conn.responseCode
         } catch (Exception e) {
             e.printStackTrace()
             throw e
