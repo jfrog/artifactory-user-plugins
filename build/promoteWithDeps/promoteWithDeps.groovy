@@ -41,7 +41,7 @@ executions {
 
      REST call example (should be executed by admin or by user mentioned in
      * closure parameters):
-     * http://localhost:8080/artifactory/api/plugins/execute/promoteWithDeps?params=Generic=Generic|buildNumber=67
+     * http://localhost:8080/artifactory/api/plugins/execute/promoteWithDeps?params=buildName=Generic|buildNumber=67
      *      promoteWithDeps - plugin name
      *      Generic - build to promote
      *      67 - build number
