@@ -19,11 +19,6 @@ import groovy.json.JsonSlurper
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.HttpResponseException
-@Grapes([
-    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
-          module = 'http-builder', version = '0.6')
-])
-@GrabExclude('commons-codec:commons-codec')
 import groovyx.net.http.Method
 import org.apache.http.HttpRequestInterceptor
 import org.apache.http.entity.StringEntity

@@ -14,13 +14,6 @@
  * limitations under the License.
  */
 
-
-@Grapes([
-    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
-          module = 'http-builder', version = '0.7.2')
-])
-@GrabExclude('commons-codec:commons-codec')
-
 import groovy.transform.Field
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder

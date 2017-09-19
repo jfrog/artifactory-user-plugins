@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-@Grapes([
-    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
-          module = 'http-builder', version = '0.6')
-])
 import groovyx.net.http.HTTPBuilder
 import org.apache.http.HttpRequestInterceptor
 import org.artifactory.api.security.UserGroupService

@@ -1,5 +1,6 @@
-// install dependency libraries
-lib1 = 'org/codehaus/groovy/modules/http-builder/http-builder/0.7.2/http-builder-0.7.2.jar'
-lib2 = 'net/sf/json-lib/json-lib/2.4/json-lib-2.4-jdk15.jar'
-lib3 = 'xml-resolver/xml-resolver/1.2/xml-resolver-1.2.jar'
-installLibraries([lib1, lib2, lib3])
+artifactory 8088, {
+    plugin 'deploy/remoteDownload'
+    dependency 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
+    dependency 'net.sf.json-lib:json-lib:2.4:jdk15'
+    dependency 'xml-resolver:xml-resolver:1.2'
+}

@@ -1,7 +1,4 @@
 import groovy.json.JsonSlurper
-@Grapes(
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.7.1')
-)
 import groovyx.net.http.HTTPBuilder
 import org.artifactory.resource.ResourceStreamHandle
 
