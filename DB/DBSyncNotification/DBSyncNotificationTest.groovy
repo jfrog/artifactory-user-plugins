@@ -9,6 +9,7 @@ class DBSyncNotificationTest extends Specification {
         def sync = 'http://localhost:8081/artifactory/api/plugins/execute/syncNotification'
         def lastline = null, conn = null, lastlinum = -1, startlinum = -1
         // the test won't pass unless we wait for the HA nodes to connect
+        def starttime = System.currentTimeMillis()
         while (true) {
             conn = new URL(logs).openConnection()
             conn.setRequestProperty('Authorization', auth)
@@ -20,6 +21,7 @@ class DBSyncNotificationTest extends Specification {
             lastlinum = oldlines.findIndexOf { it == lastline }
             startlinum = oldlines.findIndexOf { it.contains('Artifactory successfully started') }
             System.sleep(5000)
+            assert System.currentTimeMillis() <= starttime + 120000
         }
         conn = new URL(sync).openConnection()
         conn.requestMethod = 'POST'
