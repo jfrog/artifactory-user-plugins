@@ -58,7 +58,7 @@ class BackupFoldersTest extends Specification {
 
         cleanup:
         artifactory.repository(repoKey)?.delete()
-        Control.deleteFolder(basePort, backUpFolder)
+        Control.deleteFolder(basePort, backupFolder)
     }
 
     def 'Backup partial repository test'() {
@@ -90,7 +90,7 @@ class BackupFoldersTest extends Specification {
 
         cleanup:
         artifactory.repository(repoKey)?.delete()
-        Control.deleteFolder(basePort, backUpFolder)
+        Control.deleteFolder(basePort, backupFolder)
     }
 
     def createLocalRepo(artifactory, key) {
