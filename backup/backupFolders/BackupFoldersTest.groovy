@@ -1,6 +1,6 @@
 import groovy.json.JsonBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
-import org.junit.rules.TemporaryFolder
+import org.jfrog.pluginsdevenv.Control
 import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
@@ -21,7 +21,8 @@ import static org.jfrog.artifactory.client.ArtifactoryClient.create
  * limitations under the License.
  */
 class BackupFoldersTest extends Specification {
-    static final baseurl = 'http://localhost:8088/artifactory'
+    static final basePort = 8088
+    static final baseurl = "http://localhost:$basePort/artifactory"
     static final user = 'admin'
     static final password = 'password'
     static final userPassword = "$user:$password"
@@ -34,11 +35,12 @@ class BackupFoldersTest extends Specification {
         def artifact2Path = 'path/to/sh/file.sh'
         def artifact1Content = 'txt content'
         def artifact2Content = 'sh content'
+        def backupFolder = "/tmp/backupfoldertest/${System.currentTimeMillis()}"
 
         setup:
         def artifactory = create(baseurl, user, password)
         // Create temporary folder to receive backup
-        File destinationFolder = createTemporaryFolder()
+        Control.createFolder(basePort, backupFolder)
         // Create repository
         def repo = createLocalRepo(artifactory, repoKey)
         // Create artifacts
@@ -46,16 +48,17 @@ class BackupFoldersTest extends Specification {
         uploadFile(repo, artifact2Path, artifact2Content)
 
         when:
-        requestBackup(repoKey, destinationFolder.absolutePath)
+        requestBackup(repoKey, backupFolder)
 
         then:
-        isFilePresentInBackup(destinationFolder, repoKey, artifact1Path)
-        isFileContentEqualTo(destinationFolder, repoKey, artifact1Path, artifact1Content)
-        isFilePresentInBackup(destinationFolder, repoKey, artifact2Path)
-        isFileContentEqualTo(destinationFolder, repoKey, artifact2Path, artifact2Content)
+        isFilePresentInBackup(backupFolder, repoKey, artifact1Path)
+        isFileContentEqualTo(backupFolder, repoKey, artifact1Path, artifact1Content)
+        isFilePresentInBackup(backupFolder, repoKey, artifact2Path)
+        isFileContentEqualTo(backupFolder, repoKey, artifact2Path, artifact2Content)
 
         cleanup:
         artifactory.repository(repoKey)?.delete()
+        Control.deleteFolder(basePort, backupFolder)
     }
 
     def 'Backup partial repository test'() {
@@ -65,11 +68,12 @@ class BackupFoldersTest extends Specification {
         def artifact2Path = 'path/to/shs/version/file.sh'
         def artifact1Content = 'txt content'
         def artifact2Content = 'sh content'
+        def backupFolder = "/tmp/backupfoldertest/${System.currentTimeMillis()}"
 
         setup:
         def artifactory = create(baseurl, user, password)
         // Create temporary folder to receive backup
-        File destinationFolder = createTemporaryFolder()
+        Control.createFolder(basePort, backupFolder)
         // Create repository
         def repo = createLocalRepo(artifactory, repoKey)
         // Create artifacts
@@ -77,21 +81,16 @@ class BackupFoldersTest extends Specification {
         uploadFile(repo, artifact2Path, artifact2Content)
 
         when:
-        requestBackup("$repoKey/path/to/txts", destinationFolder.absolutePath)
+        requestBackup("$repoKey/path/to/txts", backupFolder)
 
         then:
-        isFilePresentInBackup(destinationFolder, repoKey, artifact1Path)
-        isFileContentEqualTo(destinationFolder, repoKey, artifact1Path, artifact1Content)
-        !isFilePresentInBackup(destinationFolder, repoKey, artifact2Path)
+        isFilePresentInBackup(backupFolder, repoKey, artifact1Path)
+        isFileContentEqualTo(backupFolder, repoKey, artifact1Path, artifact1Content)
+        !isFilePresentInBackup(backupFolder, repoKey, artifact2Path)
 
         cleanup:
         artifactory.repository(repoKey)?.delete()
-    }
-
-    def createTemporaryFolder() {
-        TemporaryFolder folder = new TemporaryFolder()
-        folder.create()
-        return folder.root
+        Control.deleteFolder(basePort, backupFolder)
     }
 
     def createLocalRepo(artifactory, key) {
@@ -125,13 +124,14 @@ class BackupFoldersTest extends Specification {
     }
 
     def isFilePresentInBackup(backupFolder, repoKey, path) {
-        def filePath = "${backupFolder.absolutePath}/${backupFolder.list()[0]}/$repoKey/$path"
-        return new File(filePath).exists()
+        def backupFolderContent = Control.getFolderContents(basePort, backupFolder)
+        def filePath = "$backupFolder/${backupFolderContent[0]}/$repoKey/$path"
+        return Control.fileExists(basePort, filePath)
     }
 
     def isFileContentEqualTo(backupFolder, repoKey, path, content) {
-        def filePath = "${backupFolder.absolutePath}/${backupFolder.list()[0]}/$repoKey/$path"
-        def file = new File(filePath)
-        return file.text == content
+        def backupFolderContent = Control.getFolderContents(basePort, backupFolder)
+        def filePath = "$backupFolder/${backupFolderContent[0]}/$repoKey/$path"
+        return Control.getFileContent(basePort, filePath) == content
     }
 }
