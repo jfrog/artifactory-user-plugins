@@ -1,5 +1,7 @@
-artifactory 8082, {
+artifactory 8088, {
     plugin 'replication/yumReplicationFilter'
-    node 8088
-    node 8081
+}
+
+artifactory 8081, {
+    plugin 'replication/yumReplicationFilter'
 }
