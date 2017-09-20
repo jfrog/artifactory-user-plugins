@@ -23,7 +23,7 @@ replication {
         SetMultimap<String, String> props = HashMultimap.create()
         props.put("foo", "true")
         List<RepoPath> found = searches.itemsByProperties(props,
-                                                          "libs-release-local")
+                                                          "libs-releases-local")
         if (found.contains(localRepoPath)) {
             log.info("Replicating file: ${localRepoPath.getPath()} as it has" +
                      " the right property")
