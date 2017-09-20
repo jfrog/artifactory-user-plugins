@@ -10,6 +10,7 @@ class SkipReplicationTest extends Specification {
         setup:
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
+        def replicationurl = 'http://localhost:8081/artifactory'
         def artifactory1 = create(baseurl1, 'admin', 'password')
         def artifactory2 = create(baseurl2, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
@@ -28,7 +29,7 @@ class SkipReplicationTest extends Specification {
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
 
-        def textFile = "{\"url\" : \"${baseurl2}/maven-copy\","
+        def textFile = "{\"url\" : \"${replicationurl}/maven-copy\","
         textFile += '"socketTimeoutMillis" : 15000,'
         textFile += '"username" : "admin",'
         textFile += '"password" : "password",'
@@ -56,6 +57,21 @@ class SkipReplicationTest extends Specification {
         .upload("lib-aopalliance-1.0.jar", jarfile)
         .withProperty("prop", "test")
         .doUpload()
+
+        conn = new URL("${baseurl1}/api/replication/execute/maven-local").openConnection()
+        conn.requestMethod = 'POST'
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        textFile = "[{\"url\" : \"${replicationurl}/maven-copy\","
+        textFile += '"username" : "admin",'
+        textFile += '"password" : "password",'
+        textFile += '"delete" : true,'
+        textFile += '"properties" : true}]'
+        conn.outputStream.write(textFile.bytes)
+        assert conn.responseCode == 202
+        conn.disconnect()
+        System.sleep(1000)
         artifactory2.repository("maven-copy").file("maven-metadata.xml").info()
 
         then:

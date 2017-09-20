@@ -4,4 +4,8 @@ artifactory 8088, {
     dependency 'net.sf.json-lib:json-lib:2.4:jdk15'
     dependency 'xml-resolver:xml-resolver:1.2'
     dependency 'net.sf.ezmorph:ezmorph:1.0.6'
+    sed 'buildSync.json', /"password": "AKCp2.*a2iwX"/, '"password": "password"'
+}
+
+artifactory 8081, {
 }
