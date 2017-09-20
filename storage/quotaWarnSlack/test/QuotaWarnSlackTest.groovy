@@ -17,7 +17,6 @@ class QuotaWarnSlackTest extends Specification {
     def artifactory = create(baseurl, 'admin', 'password')
 
     static final def slackMockServerPort = 8000
-    static final def slackMockServerUrl = "http://localhost:$slackMockServerPort/"
 
     def 'receive valid slack quota warning notification test'() {
         setup:
@@ -25,8 +24,6 @@ class QuotaWarnSlackTest extends Specification {
         // Start slack mock server
         def slackMockServer = new SlackMockServer(port: slackMockServerPort, requiredMessage: expectedMessageContent)
         slackMockServer.start()
-        // Set artifactory slack webhook url
-        setSlackWebhookUrl(slackMockServerUrl)
         // Reset notification strategy
         resetNotificationStragety()
 
@@ -46,8 +43,6 @@ class QuotaWarnSlackTest extends Specification {
         cleanup:
         // Remove quota configuration
         deleteQuotaConfiguration()
-        // Set webhook url back to default value
-        setSlackWebhookUrl('WEBHOOK_URL')
         // Stop slack mock server
         slackMockServer?.stop()
     }
@@ -58,8 +53,6 @@ class QuotaWarnSlackTest extends Specification {
         // Start slack mock server
         def slackMockServer = new SlackMockServer(port: slackMockServerPort, requiredMessage: expectedMessageContent)
         slackMockServer.start()
-        // Set artifactory slack webhook url
-        setSlackWebhookUrl(slackMockServerUrl)
         // Reset notification strategy
         resetNotificationStragety()
 
@@ -79,8 +72,6 @@ class QuotaWarnSlackTest extends Specification {
         cleanup:
         // Remove quota configuration
         deleteQuotaConfiguration()
-        // Set webhook url back to default value
-        setSlackWebhookUrl('WEBHOOK_URL')
         // Stop slack mock server
         slackMockServer?.stop()
     }
@@ -241,4 +232,3 @@ class QuotaWarnSlackTest extends Specification {
         }
     }
 }
-
