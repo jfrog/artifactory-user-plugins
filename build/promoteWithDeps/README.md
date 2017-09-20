@@ -1,5 +1,3 @@
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Artifactory Build Promotion User Plugin to promote build with buildDependencies.
 A REST executable build promotion.
 
