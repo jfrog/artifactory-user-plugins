@@ -50,7 +50,20 @@ class YumReplicationFilterTest extends Specification {
         .upload("wget-1.19.1-3.fc27.aarch64.rpm", rpmfile)
         .doUpload()
 
-        sleep(600000)
+        conn = new URL("${baseurl1}/api/replication/execute/yum-local").openConnection()
+        conn.requestMethod = 'POST'
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        textFile = "[{\"url\" : \"${baseurl2}/yum-local\","
+        textFile += '"username" : "admin",'
+        textFile += '"password" : "password",'
+        textFile += '"delete" : true,'
+        textFile += '"properties" : true}]'
+        conn.outputStream.write(textFile.bytes)
+        assert conn.responseCode == 202
+        conn.disconnect()
+        System.sleep(3000)
 
         then:
         artifactory2.repository("yum-local").file("wget-1.19.1-3.fc27.aarch64.rpm").info()
