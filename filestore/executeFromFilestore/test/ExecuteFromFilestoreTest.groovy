@@ -29,7 +29,7 @@ class ExecuteFromFilestoreTest extends Specification {
         def output = conn.getInputStream().text
 
         then:
-        output.readLines().contains('/tmp//foo/bar/file')
+        output.readLines().contains('/tmp/foo/bar/file')
 
         cleanup:
         artifactory.repository('maven-local').delete()

@@ -1,6 +1,5 @@
 import spock.lang.Specification
-import java.nio.file.Files
-import java.nio.file.Paths
+import org.jfrog.pluginsdevenv.Control
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
@@ -29,7 +28,7 @@ class ExposeFilestoreTest extends Specification {
         conn.getResponseCode()
 
         then:
-        Files.isSymbolicLink(Paths.get('/tmp/foo/bar/file'))
+        Control.fileExists(8088, '/tmp/foo/bar/file')
 
         cleanup:
         artifactory.repository('maven-local').delete()
