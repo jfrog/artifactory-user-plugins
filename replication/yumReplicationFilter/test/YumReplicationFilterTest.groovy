@@ -1,6 +1,6 @@
 import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 import spock.lang.Specification
-
+import groovyx.net.http.HttpResponseException
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 class YumReplicationFilterTest extends Specification {
@@ -9,6 +9,7 @@ class YumReplicationFilterTest extends Specification {
         setup:
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
+        def replicationurl = 'http://localhost:8081/artifactory'
         def artifactory1 = create(baseurl1, 'admin', 'password')
         def artifactory2 = create(baseurl2, 'admin', 'password')
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
@@ -30,7 +31,7 @@ class YumReplicationFilterTest extends Specification {
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
 
-        def textFile = "{\"url\" : \"${baseurl2}/yum-local\","
+        def textFile = "{\"url\" : \"${replicationurl}/yum-local\","
         textFile += '"socketTimeoutMillis" : 15000,'
         textFile += '"username" : "admin",'
         textFile += '"password" : "password",'
@@ -55,7 +56,7 @@ class YumReplicationFilterTest extends Specification {
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
         conn.setRequestProperty('Content-Type', 'application/json')
-        textFile = "[{\"url\" : \"${baseurl2}/yum-local\","
+        textFile = "[{\"url\" : \"${replicationurl}/yum-local\","
         textFile += '"username" : "admin",'
         textFile += '"password" : "password",'
         textFile += '"delete" : true,'
@@ -63,7 +64,7 @@ class YumReplicationFilterTest extends Specification {
         conn.outputStream.write(textFile.bytes)
         assert conn.responseCode == 202
         conn.disconnect()
-        System.sleep(6000)
+        System.sleep(20000)
 
         then:
         artifactory2.repository("yum-local").file("wget-1.19.1-3.fc27.aarch64.rpm").info()
