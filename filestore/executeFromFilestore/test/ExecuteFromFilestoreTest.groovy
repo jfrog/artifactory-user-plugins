@@ -8,7 +8,7 @@ class ExecuteFromFilestoreTest extends Specification {
         def baseurl = 'http://localhost:8088/artifactory'
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         def artifactory = create(baseurl, 'admin', 'password')
-        
+
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
