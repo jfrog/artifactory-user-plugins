@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@Grab('org.yaml:snakeyaml:1.17')
 import org.artifactory.repo.service.InternalRepositoryService
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.util.HttpUtils
