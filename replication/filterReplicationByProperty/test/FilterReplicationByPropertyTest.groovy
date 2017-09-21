@@ -68,7 +68,7 @@ class FilterReplicationByPropertyTest extends Specification {
         conn.outputStream.write(textFile.bytes)
         assert conn.responseCode == 202
         conn.disconnect()
-        System.sleep(1000)
+        System.sleep(20000)
         artifactory2.repository("libs-releases-local").file("lib-aopalliance-1.0.jar").info()
 
         then:
