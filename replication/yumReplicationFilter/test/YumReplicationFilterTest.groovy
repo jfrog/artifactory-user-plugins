@@ -63,14 +63,8 @@ class YumReplicationFilterTest extends Specification {
         conn.outputStream.write(textFile.bytes)
         assert conn.responseCode == 202
         conn.disconnect()
-      
-        for (i = 0; i < 360; i++) { 
-            System.sleep(1000)
-            println "Seconds: " + i
-            if (artifactory2.repository("yum-local").file("wget-1.19.1-3.fc27.aarch64.rpm").info()) {
-               break
-            }
-        }   
+        System.sleep(10000)
+  
         then:
         artifactory2.repository("yum-local").file("wget-1.19.1-3.fc27.aarch64.rpm").info()
 
