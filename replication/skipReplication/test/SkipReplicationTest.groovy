@@ -71,7 +71,7 @@ class SkipReplicationTest extends Specification {
         conn.outputStream.write(textFile.bytes)
         assert conn.responseCode == 202
         conn.disconnect()
-        System.sleep(1000)
+        System.sleep(20000)
         artifactory2.repository("maven-copy").file("maven-metadata.xml").info()
 
         then:
