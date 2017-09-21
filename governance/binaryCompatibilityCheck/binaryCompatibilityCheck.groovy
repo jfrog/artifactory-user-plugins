@@ -20,14 +20,6 @@ import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.codehaus.mojo.versions.ordering.VersionComparator
 import org.codehaus.mojo.versions.ordering.VersionComparators
-@Grapes([
-    @Grab(group = 'org.semver', module = 'api', version = '0.9.29'),
-    @Grab(group = 'org.semver', module = 'api', classifier = 'sources', version = '0.9.29'),
-    //@GrabExclude('asm:asm'),
-    //@GrabExclude('asm:asm-tree'),
-    //@GrabExclude('asm:asm-commons'),
-    @GrabExclude('commons-lang:commons-lang')
-])
 import org.semver.Comparer
 import org.semver.Delta
 import org.osjava.jardiff.SimpleDiffCriteria
