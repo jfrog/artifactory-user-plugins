@@ -14,15 +14,13 @@ class NugetFolderMoverTest extends Specification {
         artifactory.repositories().create(0, local)
         def repo = artifactory.repository('nuget-local')
 
+        when:
         def file = new File('./src/test/groovy/NugetFolderMoverTest/angularjs.1.4.8.nupkg')
         def name = 'angularjs.1.4.8.nupkg'
         repo.upload(name, file).doUpload()
-
-        when:
-        null
+        sleep(5000)
 
         then:
-        sleep(10100)
         repo.file("/angularjs/angularjs/1.4.8/angularjs-1.4.8.nupkg").info()
 
         cleanup:
