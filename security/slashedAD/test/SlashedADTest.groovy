@@ -32,11 +32,24 @@ class SlashedADTest extends Specification {
         // Run docker container
         executeAndPrintOutput"docker run --name openldap -p $ldapPort:389 -d osixia/openldap:1.1.9"
         // Wait for ldap to be available
-        sleep(5000)
+        waitForLdapServer()
         // Copy ldap data file to container
         executeAndPrintOutput "docker cp ${new File('./src/test/groovy/SlashedADTest/ldap_data.ldif').getAbsolutePath()} openldap:/"
         // Import data to ldap
         executeAndPrintOutput "docker exec openldap ldapadd -x -H ldap://localhost -D cn=admin,dc=example,dc=org -w admin -f /ldap_data.ldif"
+    }
+
+    /**
+     * Wait for ldap server to be available
+     */
+    def waitForLdapServer() {
+        def initTime = System.currentTimeMillis()
+        def status = 255
+        // Repeat until success response is received or one minute timeout is reached
+        while (status == 255 && System.currentTimeMillis() - initTime < 60000L) {
+            status = executeAndPrintOutput("docker exec openldap ldapsearch -x -H ldap://localhost -D cn=admin,dc=example,dc=org -w admin")
+            sleep(1000)
+        }
     }
 
     /**
@@ -199,6 +212,8 @@ class SlashedADTest extends Specification {
         def proc = command.execute()
         proc.consumeProcessOutput(System.out, System.err)
         proc.waitFor()
+        println "Exit: ${proc.exitValue()}"
+        return proc.exitValue()
     }
 
     def ignoringExceptions = { method ->
