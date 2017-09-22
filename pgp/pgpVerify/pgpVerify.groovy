@@ -100,14 +100,6 @@ download {
     }
 }
 
-@Grapes([
-    @Grab(group = 'org.codehaus.groovy.modules.http-builder',
-          module = 'http-builder', version = '0.6'),
-    @Grab(group = 'org.bouncycastle', module = 'bcpg-jdk16', version = '1.46'),
-    @GrabExclude('commons-codec:commons-codec'),
-    @GrabResolver(name = 'jcenter', root = 'http://jcenter.bintray.com')
-])
-
 def verify(rp) {
     RepoPath ascRepoPath = RepoPathFactory.create(rp.repoKey, "${rp.path}.asc")
     if (repositories.exists(ascRepoPath)) {

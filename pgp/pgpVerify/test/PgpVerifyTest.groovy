@@ -16,15 +16,24 @@ class PgpVerifyTest extends Specification {
 
         def xmlfile = new File('./src/test/groovy/PgpVerifyTest/maven-metadata.xml')
         def ascfile = new File('./src/test/groovy/PgpVerifyTest/maven-metadata.xml.asc')
+        def badfile = new File('./src/test/groovy/PgpVerifyTest/bad-maven-metadata.xml.asc')
 
-        artifactory.repository('maven-local').upload('maven-metadata.xml', xmlfile).doUpload()
-        artifactory.repository('maven-local').upload('maven-metadata.xml.asc', ascfile).doUpload()
+        artifactory.repository('maven-local').upload('foo/maven-metadata.xml', xmlfile).doUpload()
+        artifactory.repository('maven-local').upload('foo/maven-metadata.xml.asc', ascfile).doUpload()
+        artifactory.repository('maven-local').upload('bar/maven-metadata.xml', xmlfile).doUpload()
+        artifactory.repository('maven-local').upload('bar/maven-metadata.xml.asc', badfile).doUpload()
 
         when:
-        artifactory.repository('maven-local').download('maven-metadata.xml').doDownload()
+        artifactory.repository('maven-local').download('foo/maven-metadata.xml').doDownload()
 
         then:
         notThrown(HttpResponseException)
+
+        when:
+        artifactory.repository('maven-local').download('bar/maven-metadata.xml').doDownload()
+
+        then:
+        thrown(HttpResponseException)
 
         cleanup:
         artifactory.repository('maven-local').delete()

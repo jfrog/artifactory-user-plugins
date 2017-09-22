@@ -16,12 +16,12 @@ class CleanExternalUsersTest extends Specification {
         user.email("deleteme@foo.bar").password("password")
         artifactory.security().createOrUpdate(user.build())
         artifactory.security().user("deleteme@foo.bar").email
+        artifactory.plugins().execute("cleanExternalUsers").sync()
 
         then:
         notThrown(HttpResponseException)
 
         when:
-        artifactory.plugins().execute("cleanExternalUsers").sync()
         artifactory.security().user("deleteme@foo.bar").email
 
         then:
