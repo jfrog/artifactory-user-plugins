@@ -2,6 +2,7 @@ import groovy.json.JsonSlurper
 import groovy.xml.XmlUtil
 import spock.lang.Shared
 import spock.lang.Specification
+import org.jfrog.pluginsdevenv.util.Docker
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -13,7 +14,7 @@ class SlashedADTest extends Specification {
     @Shared artifactory = create(baseurl, 'admin', 'password')
 
     static final ldapName = 'ldap'
-    static final ldapPort = 389
+    static final ldapPort = Docker.findPort()
     static final ldapBaseurl = "ldap://localhost:$ldapPort"
     static final ldapAdminUser = 'admin'
     static final ldapAdminPassword = 'admin'
