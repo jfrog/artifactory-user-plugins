@@ -5,6 +5,7 @@ import org.jfrog.artifactory.client.model.Privilege
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
 import spock.lang.Shared
 import spock.lang.Specification
+import org.jfrog.pluginsdevenv.util.Docker
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -15,7 +16,7 @@ class SynchronizeLdapGroupsTest extends Specification {
     static final auth = "Basic ${adminPassword.bytes.encodeBase64().toString()}"
     @Shared artifactory = create(baseurl, 'admin', 'password')
 
-    static final ldapPort = 389
+    static final ldapPort = Docker.findPort()
     static final ldapBaseurl = "ldap://localhost:$ldapPort"
     static final ldapAdminUser = 'admin'
     static final ldapAdminPassword = 'admin'
