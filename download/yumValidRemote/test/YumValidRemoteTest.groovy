@@ -14,7 +14,7 @@ class YumValidRemoteTest extends Specification {
         def artifactory = create(baseurl, 'admin', 'password')
 
         def builder = artifactory.repositories().builders()
-        
+
         def local = builder.localRepositoryBuilder().key('yum-local')
         .repositorySettings(new YumRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
@@ -35,7 +35,7 @@ class YumValidRemoteTest extends Specification {
         conn.outputStream.write(textFile.bytes)
         assert conn.responseCode == 200
         conn.disconnect()
-        
+
         def localrepo = artifactory.repository('yum-local')
         def remoterepo = artifactory.repository('yum-remote')
         def remoterepocache = artifactory.repository('yum-remote-cache')
@@ -51,6 +51,10 @@ class YumValidRemoteTest extends Specification {
         localrepo.upload('repodata/primary.xml.gz', primary).doUpload()
         localrepo.upload('repodata/filelists.xml.gz', flists).doUpload()
         localrepo.upload('repodata/other.xml.gz', other).doUpload()
+
+        // Wait for indexing
+        sleep(5000l)
+
         // download the repomd file from the remote
         def filedata = []
         def mdstream = remoterepo.download('repodata/repomd.xml').doDownload()
