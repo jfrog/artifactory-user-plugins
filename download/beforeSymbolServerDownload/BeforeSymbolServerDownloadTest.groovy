@@ -1,3 +1,4 @@
+import org.jfrog.pluginsdevenv.Control
 import spock.lang.Specification
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import org.jfrog.artifactory.client.model.repository.settings.impl.NugetRepositorySettingsImpl
@@ -16,18 +17,19 @@ class BeforeSymbolServerDownloadTest extends Specification {
 
     def 'before Symbol Server download test '() {
         setup:
+        Control.setLoggerLevel(8088, 'org.apache.http.wire', 'debug')
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
-	def builder = artifactory.repositories().builders()
+        def builder = artifactory.repositories().builders()
 
-	def remoteRepo= builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
-	artifactory.repositories().create(0,remoteRepo)
-	
-	when:
+        def remoteRepo= builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0,remoteRepo)
+
+        when:
         artifactory.repository(remoteRepokey).download(filePath).doDownload();
 
-	def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
-  	def conn = new URL (logfile).openConnection()
+        def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
+        def conn = new URL (logfile).openConnection()
         conn.requestMethod = 'GET'
         conn.setRequestProperty('Authorization', auth)
         assert conn.responseCode == 200
@@ -35,10 +37,10 @@ class BeforeSymbolServerDownloadTest extends Specification {
         def textlog = reader.text
         conn.disconnect()
 
-	then:
-	textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")
+        then:
+        textlog.contains("User-Agent: Microsoft-Symbol-Server/6.3.9600.17095")
 
         cleanup:
-	artifactory.repository(remoteRepokey).delete()
+        artifactory.repository(remoteRepokey).delete()
     }
 }
