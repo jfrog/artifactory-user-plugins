@@ -12,13 +12,13 @@ class BuildArtifactsAGVListTest extends Specification {
         setup:
         def artifactory = create(baseurl, 'admin', 'password')
         def builder = artifactory.repositories().builders()
-        def local = builder.localRepositoryBuilder().key('libs-snapshot-local')
+        def local = builder.localRepositoryBuilder().key('libs-snapshots-local')
                 .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
 
         def pom = new File('./src/test/groovy/BuildArtifactsAGVListTest/multi-2.17-SNAPSHOT.pom')
         def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom"
-        artifactory.repository("libs-snapshot-local").upload(path,pom).doUpload();
+        artifactory.repository("libs-snapshots-local").upload(path,pom).doUpload();
 
 
         def buildInfoFile = new File("./src/test/groovy/BuildArtifactsAGVListTest/build-info.json")
@@ -61,7 +61,7 @@ class BuildArtifactsAGVListTest extends Specification {
         }
 
         cleanup:
-        artifactory.repository("libs-snapshot-local").delete()
+        artifactory.repository("libs-snapshots-local").delete()
         conn = new URL("${baseurl}/api/build/${buildName}?buildNumbers=${buildNumber}").openConnection()
         conn.requestMethod = 'DELETE'
         conn.setRequestProperty('Authorization', auth)

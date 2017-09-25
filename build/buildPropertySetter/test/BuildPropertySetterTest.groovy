@@ -14,7 +14,7 @@ class BuildPropertySetterTest extends Specification {
         def artifactory = create(baseurl, 'admin', 'password')
 
         def builder = artifactory.repositories().builders()
-        def local = builder.localRepositoryBuilder().key('libs-snapshot-local')
+        def local = builder.localRepositoryBuilder().key('libs-snapshots-local')
             .repositorySettings(new MavenRepositorySettingsImpl()).build()
             artifactory.repositories().create(0, local)
 
@@ -26,7 +26,7 @@ class BuildPropertySetterTest extends Specification {
         def file2 = new File('./src/test/groovy/BuildPropertySetterTest/build2.json')     
 
         when:
-        artifactory.repository("libs-snapshot-local")
+        artifactory.repository("libs-snapshots-local")
             .upload(path,pom)
             .withProperty("build.name","unit-test")
             .withProperty("build.number","20")
@@ -39,7 +39,7 @@ class BuildPropertySetterTest extends Specification {
         artifactory.restCall(uploadBuild)
 
         def check = artifactory.searches()
-            .repositories("libs-snapshot-local")  
+            .repositories("libs-snapshots-local")  
             .itemsByProperty()
             .property("latest","true")
             .property("build.name","unit-test")
@@ -50,7 +50,7 @@ class BuildPropertySetterTest extends Specification {
         check.size() == 1
 
         when: 
-        artifactory.repository("libs-snapshot-local")
+        artifactory.repository("libs-snapshots-local")
             .upload(path2,pom2)
             .withProperty("build.name","unit-test")
             .withProperty("build.number","21")
@@ -63,7 +63,7 @@ class BuildPropertySetterTest extends Specification {
         artifactory.restCall(uploadBuild2)
 
         def check2 = artifactory.searches()
-            .repositories("libs-snapshot-local")  
+            .repositories("libs-snapshots-local")  
             .itemsByProperty()
             .property("latest","true")
             .property("build.name","unit-test")
@@ -75,7 +75,7 @@ class BuildPropertySetterTest extends Specification {
 
         when: 
         def check3 = artifactory.searches()
-            .repositories("libs-snapshot-local")  
+            .repositories("libs-snapshots-local")  
             .itemsByProperty()
             .property("latest","true")
             .property("build.name","unit-test")
@@ -86,7 +86,7 @@ class BuildPropertySetterTest extends Specification {
         check3.size() == 0
 
         cleanup:
-        artifactory.repository("libs-snapshot-local").delete()
+        artifactory.repository("libs-snapshots-local").delete()
         ArtifactoryRequest delete = new ArtifactoryRequestImpl().apiUrl("api/build/unit-test")
         .setQueryParams(deleteAll: 1)
         .method(ArtifactoryRequest.Method.DELETE)
