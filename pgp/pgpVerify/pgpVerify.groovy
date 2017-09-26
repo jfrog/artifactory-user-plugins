@@ -20,6 +20,8 @@ import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.resource.ResourceStreamHandle
 import org.bouncycastle.openpgp.*
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider
 
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.Method.GET
@@ -119,14 +121,14 @@ def verify(rp) {
         def http = new HTTPBuilder("http://pgp.mit.edu:11371//pks/lookup?op=get&search=0x$hexPublicKeyId")
         def verified = http.request(GET, BINARY) { req ->
             response.success = { resp, inputStream ->
-                PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(inputStream))
+                PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(inputStream), new BcKeyFingerprintCalculator())
                 def o
                 while ((o = factory.nextObject()) != null) {
                     if (o instanceof PGPPublicKeyRing) {
                         def keys = o.getPublicKeys()
                         while (keys.hasNext()) {
                             PGPPublicKey key = keys.next()
-                            signature.initVerify(key, PGPUtil.defaultProvider)
+                            signature.init(new BcPGPContentVerifierBuilderProvider(), key)
                             ResourceStreamHandle file = repositories.getContent(rp)
                             try {
                                 byte[] buffer = new byte[8192]
@@ -180,7 +182,7 @@ private void fetchAsc(RepoPath ascRepoPath, request) {
 }
 
 private PGPSignature getSignature(ResourceStreamHandle asc) {
-    PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(asc.inputStream))
+    PGPObjectFactory factory = new PGPObjectFactory(PGPUtil.getDecoderStream(asc.inputStream), new BcKeyFingerprintCalculator())
     Object o = factory.nextObject()
     if (o instanceof PGPSignatureList) {
         ((PGPSignatureList) o).get(0)
