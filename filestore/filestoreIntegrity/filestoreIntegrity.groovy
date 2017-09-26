@@ -105,10 +105,10 @@ def buildInitialList(binstore, bindir) {
 **/
 def existsInDatabase(binstore, sha1) {
     try {
-        // Artifactory 5.4.6 and older
-        return binstore.exists(sha1)
-    } catch (MissingMethodException e) {
         // Artifactory 5.5.0 and newer
         return binstore.exists(org.artifactory.checksum.ChecksumType.sha1, sha1)
+    } catch (MissingMethodException e) {
+        // Artifactory 5.4.6 and older
+        return binstore.exists(sha1)
     }
 }
