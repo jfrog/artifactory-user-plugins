@@ -44,7 +44,8 @@ class ChecksumsTest extends Specification {
         // Validate sha256
         def checksum256 = DigestUtils.sha256Hex(message)
         checksum256 == result256
-        checksum256 == repo.file(artifactPath).getPropertyValues('checksum.sha256')[0]
+        repo.file(artifactPath).getPropertyValues('checksum.sha256') == null ||
+            checksum256 == repo.file(artifactPath).getPropertyValues('checksum.sha256')[0]
         // Validate sha384
         def checksum384 = DigestUtils.sha384Hex(message)
         checksum384 == result384
