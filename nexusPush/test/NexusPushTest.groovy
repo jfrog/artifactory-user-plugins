@@ -58,13 +58,23 @@ class NexusPushTest extends Specification {
         notThrown(HttpResponseException)
 
         cleanup:
-        artifactory.repository('maven-local').delete()
+        ignoringExceptions { artifactory.repository('maven-local').delete() }
 
-        conn = new URL(nexus_baseurl + '/service/local/repositories/maven-local').openConnection()
-        conn.setRequestMethod('DELETE')
-        conn.setRequestProperty('Authorization', nexus_auth)
-        conn.doOutput = true
-        conn.setRequestProperty('Content-Type', 'application/json')
-        conn.getResponseCode()
+        ignoringExceptions {
+          conn = new URL(nexus_baseurl + '/service/local/repositories/maven-local').openConnection()
+          conn.setRequestMethod('DELETE')
+          conn.setRequestProperty('Authorization', nexus_auth)
+          conn.doOutput = true
+          conn.setRequestProperty('Content-Type', 'application/json')
+          conn.getResponseCode()
+        }
+    }
+
+    def ignoringExceptions = { method ->
+        try {
+            method()
+        } catch (Exception e) {
+            e.printStackTrace()
+        }
     }
 }
