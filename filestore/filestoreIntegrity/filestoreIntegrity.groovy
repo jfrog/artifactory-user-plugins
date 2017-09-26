@@ -14,7 +14,7 @@ executions {
     } catch (MissingPropertyException ex) {
       bindir = new File(ctx.artifactoryHome.dataDir, 'filestore')
     }
-    
+
 
     log.debug("Reading from filestore at '$bindir'")
     if (!bindir.list()) {
@@ -32,12 +32,12 @@ executions {
     def (missing, extra) = buildInitialList(binstore, bindir)
     // remove any false-positives from the missing list
     missing.retainAll {
-      binstore.exists(it) && !new File(bindir, "${it[0..1]}/$it").exists()
+      existsInDatabase(binstore, it) && !new File(bindir, "${it[0..1]}/$it").exists()
     }
     // remove any false-positives from the extra list
     extra.retainAll {
       if (!it[1].startsWith(it[0])) return true
-      !binstore.exists(it[1]) && new File(bindir, "${it[0]}/${it[1]}").exists()
+      !existsInDatabase(binstore, it[1]) && new File(bindir, "${it[0]}/${it[1]}").exists()
     }
     extra = extra.collect { "${it[0]}/${it[1]}" }
     // prepare a list of repoPaths matching each checksum in the missing list
@@ -98,4 +98,17 @@ def buildInitialList(binstore, bindir) {
   // results before returning
   if (idx < binsize) missing += binaries[idx..-1]
   return [missing, extra]
+}
+
+/**
+* Check if sha1 exists in database
+**/
+def existsInDatabase(binstore, sha1) {
+    try {
+        // Artifactory 5.4.6 and older
+        return binstore.exists(sha1)
+    } catch (MissingMethodException e) {
+        // Artifactory 5.5.0 and newer
+        return binstore.exists(org.artifactory.checksum.ChecksumType.sha1, sha1)
+    }
 }
