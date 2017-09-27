@@ -27,6 +27,8 @@ class YumCalculateTest extends Specification {
 
         then:
         thrown(HttpResponseException)
+        // Yum calculation is an asynchronous task, so give it a time to run
+        sleep(10000L)
         artifactory.repository('yum').folder('org/mod1/repodata').info()
 
         cleanup:
