@@ -43,7 +43,7 @@ class SmtpConfigTest extends Specification {
         conn.disconnect()
 
         then:
-        json1 == json1r
+        matchesSmtpConfiguration(json1, json1r)
 
         when:
         def json2 = [
@@ -73,7 +73,7 @@ class SmtpConfigTest extends Specification {
         conn.disconnect()
 
         then:
-        json2 == json2r
+        matchesSmtpConfiguration(json2, json2r)
 
         cleanup:
         conn = new URL("$baseurl/setSmtp").openConnection()
@@ -83,5 +83,17 @@ class SmtpConfigTest extends Specification {
         conn.setRequestProperty('Content-Type', 'application/json')
         conn.outputStream.write(backup)
         conn.disconnect()
+    }
+
+    def matchesSmtpConfiguration(json1, json2) {
+        json1.enabled == json2.enabled &&
+        json1.host == json2.host &&
+        json1.port == json2.port &&
+        json1.username == json2.username &&
+        json1.from == json2.from &&
+        json1.subjectPrefix == json2.subjectPrefix &&
+        json1.tls == json2.tls &&
+        json1.ssl == json2.ssl &&
+        json1.artifactoryUrl == json2.artifactoryUrl
     }
 }
