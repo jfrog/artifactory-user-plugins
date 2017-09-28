@@ -13,6 +13,8 @@ class NexusPushTest extends Specification {
         def nexus_baseurl = 'http://localhost:8081/nexus'
         def nexus_auth = "Basic ${'admin:admin123'.bytes.encodeBase64()}"
 
+        waitForNexus(nexus_baseurl, nexus_auth)
+
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
@@ -67,6 +69,26 @@ class NexusPushTest extends Specification {
           conn.doOutput = true
           conn.setRequestProperty('Content-Type', 'application/json')
           conn.getResponseCode()
+        }
+    }
+
+    def waitForNexus(baseUrl, auth) {
+        def initTime = System.currentTimeMillis()
+        def response = 0
+        while (response != 200 && System.currentTimeMillis() - initTime < 60000L) {
+            println "Checking Nexus server status..."
+            try {
+                def conn = new URL("$baseUrl/service/local/status").openConnection()
+                conn.setRequestMethod('GET')
+                conn.setRequestProperty('Authorization', auth)
+                conn.doOutput = true
+                conn.setRequestProperty('Content-Type', 'application/json')
+                response = conn.getResponseCode()
+                println "Nexus server returned status $response!"
+            } catch (Exception e) {
+                println "Nexus server not available"
+            }
+            sleep(5000L)
         }
     }
 
