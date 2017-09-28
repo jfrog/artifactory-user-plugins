@@ -30,8 +30,19 @@ import org.artifactory.addon.ha.message.HaMessageTopic
 executions {
     syncNotification(description: 'send HA notifications for permission target and configuration change') {
         AddonsManager addonsManager = ctx.beanForType(AddonsManager.class)
+        HaAddon haAddon = addonsManager.addonByType(HaAddon.class)
 
-        addonsManager.addonByType(HaAddon.class).notify(HaMessageTopic.CONFIG_CHANGE_TOPIC, null)
-        addonsManager.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null)
+        def message = null
+        try {
+            // Artifactory 5.5.x or newer
+            def messageClass = "org.artifactory.addon.ha.message.HaBaseMessage" as Class
+            message = messageClass.newInstance(haAddon.getCurrentMemberServerId())
+        } catch (Exception e) {            
+            // Older artifactory versions
+            message = null
+        }
+
+        haAddon.notify(HaMessageTopic.CONFIG_CHANGE_TOPIC, message)
+        haAddon.notify(HaMessageTopic.ACL_CHANGE_TOPIC, message)
     }
 }

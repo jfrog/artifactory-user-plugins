@@ -35,9 +35,9 @@ class SlashedADTest extends Specification {
         // Wait for ldap to be available
         waitForLdapServer()
         // Copy ldap data file to container
-        executeAndPrintOutput "docker cp ${new File('./src/test/groovy/SlashedADTest/ldap_data.ldif').getAbsolutePath()} openldap:/"
+        executeWithRetries "docker cp ${new File('./src/test/groovy/SlashedADTest/ldap_data.ldif').getAbsolutePath()} openldap:/"
         // Import data to ldap
-        executeAndPrintOutput "docker exec openldap ldapadd -x -H ldap://localhost -D cn=admin,dc=example,dc=org -w admin -f /ldap_data.ldif"
+        executeWithRetries "docker exec openldap ldapadd -x -H ldap://localhost -D cn=admin,dc=example,dc=org -w admin -f /ldap_data.ldif"
     }
 
     /**
@@ -215,6 +215,16 @@ class SlashedADTest extends Specification {
         proc.waitFor()
         println "Exit: ${proc.exitValue()}"
         return proc.exitValue()
+    }
+
+    def executeWithRetries (command, expectedResponse = 0, maxTries = 10) {
+        def response = -1
+        def tries = 0
+        while (response != expectedResponse && tries < maxTries) {
+            response = executeAndPrintOutput(command)
+            tries++
+            sleep(1000)
+        }
     }
 
     def ignoringExceptions = { method ->
