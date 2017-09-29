@@ -1,8 +1,6 @@
 Artifactory Nexus Push User Plugin
 ==================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Artifactory plugin for pushing artifacts to a Nexus Staging Repository (for
 example, oss.sonatype.org).
 

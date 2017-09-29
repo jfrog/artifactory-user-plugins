@@ -1,8 +1,6 @@
 Artifactory Filestore Integrity User Plugin
 ===========================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Checks the integrity of the filestore. This plugin reveals discrepancies between
 the Artifactory database and the filestore, such as artifacts with missing
 binaries, and extra binaries that don't correspond to any artifacts. It is

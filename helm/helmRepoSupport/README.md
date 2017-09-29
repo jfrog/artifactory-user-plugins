@@ -1,8 +1,6 @@
 Artifactory Helm Repo Support User Plugin
 =========================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 HelmRepoSupport is only supported from version 4.x
 
 HelmRepoSupport is a user plugin for Artifactory.

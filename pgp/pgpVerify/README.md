@@ -1,8 +1,6 @@
 Artifactory PGP Verify User Plugin
 ==================================
 
-*This plugin is currently being tested for Artifactory 5.x releases.*
-
 Verifies downloaded files against their asc signature, by using the signature's
 public key from a public key server. For remote repos, tries to fetch the .asc
 signature. Result is cached in the `pgp-verified` property on artifacts, so that
