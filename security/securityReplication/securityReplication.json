@@ -1,16 +1,17 @@
-{"securityReplication":{
-    "authorization":{
-        "password":"password",
-        "username":"admin"
+{
+    "securityReplication": {
+        "authorization": {
+            "password": "password",
+            "username": "admin"
         },
-    "filter":1,
-    "cron_job": "0 0 0/1 * * ?",
-    "urls":[
-        "http://localhost:8088/artifactory",
-        "http://localhost:8090/artifactory",
-        "http://localhost:8091/artifactory",
-        "http://localhost:8092/artifactory"
-    ],
-    "whoami":"http://localhost:8088/artifactory"
+        "filter": 1,
+        "cron_job": "0 0 0/1 * * ?",
+        "urls": [
+            "http://localhost:8088/artifactory",
+            "http://localhost:8090/artifactory",
+            "http://localhost:8091/artifactory",
+            "http://localhost:8092/artifactory"
+        ],
+        "whoami": "http://localhost:8088/artifactory"
     }
 }
