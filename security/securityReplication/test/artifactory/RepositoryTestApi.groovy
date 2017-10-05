@@ -1,4 +1,4 @@
-package artifactory
+package SecurityReplicationTest.artifactory
 
 import groovyx.net.http.HttpResponseException
 import org.jfrog.artifactory.client.Artifactory

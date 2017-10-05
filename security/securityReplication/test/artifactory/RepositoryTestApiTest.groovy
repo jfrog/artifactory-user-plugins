@@ -1,4 +1,4 @@
-package artifactory
+package SecurityReplicationTest.artifactory
 
 import devenv.ArtifactoryManager
 import org.jfrog.artifactory.client.Artifactory

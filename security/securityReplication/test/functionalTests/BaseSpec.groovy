@@ -1,4 +1,4 @@
-package functionalTests
+package SecurityReplicationTest.functionalTests
 
 import artifactory.RepositoryTestApi
 import artifactory.SecurityTestApi

@@ -1,4 +1,4 @@
-package functionalTests
+package SecurityReplicationTest.functionalTests
 import artifactory.SecurityTestApi
 import common.ArtGroups
 import spock.lang.Requires

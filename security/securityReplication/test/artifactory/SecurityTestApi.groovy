@@ -1,4 +1,4 @@
-package artifactory
+package SecurityReplicationTest.artifactory
 
 import data.Groups
 import data.PermissionTargets
