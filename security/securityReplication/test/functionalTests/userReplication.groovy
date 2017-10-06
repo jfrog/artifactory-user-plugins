@@ -1,4 +1,4 @@
-package SecurityReplicationTest.functionalTests
+package SecurityReplicationTest
 
 import artifactory.SecurityTestApi
 import common.ArtUsers
