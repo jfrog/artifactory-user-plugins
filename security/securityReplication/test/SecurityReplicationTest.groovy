@@ -1,3 +1,4 @@
+package SecurityReplicationTest
 import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
