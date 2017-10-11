@@ -1,0 +1,8 @@
+# Sample Artifactory User Plugin Metadata Sample
+#
+name: samplePlugin
+description: "One line description" 
+tag:
+    -replication
+    -docker
+art-version: "4.14.3"
