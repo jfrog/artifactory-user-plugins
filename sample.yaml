@@ -1,5 +1,6 @@
 # Sample Artifactory User Plugin Metadata Sample
 #
+#
 name: samplePlugin
 description: "One line description" 
 tag:
