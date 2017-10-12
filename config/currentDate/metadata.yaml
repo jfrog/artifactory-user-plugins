@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Artifactory Time
+description: Returns the current date and time of the Artifactory Server 
 tag:
-    - replication
-    - docker
+    - configuration
+   
 art-version: "4.14.3"

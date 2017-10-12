@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Configure Blackduck
+description: Configure Blackduck for Artifactory 4.x releases only.  
 tag:
-    - replication
-    - docker
+    - configuration
+    - goverance
 art-version: "4.14.3"
