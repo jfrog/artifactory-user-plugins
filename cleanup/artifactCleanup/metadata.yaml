@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Cleanup Artifacts
+description: Deletes all artifacts that have not been dowloaded for the past n months 
 tag:
-    - replication
-    - docker
+    - cleanup
+    - storage
 art-version: "4.14.3"

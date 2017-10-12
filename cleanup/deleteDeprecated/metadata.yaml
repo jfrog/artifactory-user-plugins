@@ -10,9 +10,8 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Cleanup Artifacts
+description: Delete all artifacts with the default property analysis.deprecated=true.  
 tag:
-    - replication
-    - docker
+    - cleanup
 art-version: "4.14.3"

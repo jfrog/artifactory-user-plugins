@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Cleanup Builds
+description: Delete all builds that are older than n days 
 tag:
-    - replication
-    - docker
+    - cleanup
+    - build
 art-version: "4.14.3"

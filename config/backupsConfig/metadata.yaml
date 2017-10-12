@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Configure Backups
+description: Manage artifactory backup configurations 
 tag:
-    - replication
-    - docker
+    - configuration
+    - backup
 art-version: "4.14.3"
