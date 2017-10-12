@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Checksum calucation 
+name: Checksum Calculations 
 description: Adds sha-256, sha-384 and sha-512 checksum calculation to artifact 
 tag:
     - checksum

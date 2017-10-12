@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Cleanup Artifacts
+name: Cleanup Artifacts by Property
 description: Delete all artifacts with the default property analysis.deprecated=true.  
 tag:
     - cleanup

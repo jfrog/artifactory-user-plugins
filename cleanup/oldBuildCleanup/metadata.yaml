@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Cleanup Builds
+name: Cleanup Builds by Build Number
 description: Delete all old builds since a build number 
 tag:
     - cleanup

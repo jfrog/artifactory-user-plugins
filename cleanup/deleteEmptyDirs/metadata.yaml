@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Cleanup paths
+name: Cleanup Paths
 description: Deletes all empty directories in a repository  
 tag:
     - cleanup

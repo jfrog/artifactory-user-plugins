@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Cleanup artifacts
+name: Cleanup Artifacts by Property Value
 description: Delete artifacts by a specific property values 
 tag:
     - cleanup

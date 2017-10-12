@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Build modules
+name: Remove Modules from Buildinfo
 description: Remove build modules information from buildinfo 
 tag:
     - buildinfo

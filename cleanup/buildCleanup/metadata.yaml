@@ -10,7 +10,7 @@
 # art-version: minimal artifactory version
 #
 #
-name: Cleanup Builds
+name: Cleanup Builds by Days
 description: Delete all builds that are older than n days 
 tag:
     - cleanup
