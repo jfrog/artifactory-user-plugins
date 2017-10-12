@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Latest Build
+description: Label all the latest build with property latest = true.    
 tag:
-    - replication
-    - docker
+    - build
+    - latest
 art-version: "4.14.3"

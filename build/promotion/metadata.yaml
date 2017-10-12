@@ -10,9 +10,10 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Snapshot promotion
+description: Promote snapshot builds to release repository  
 tag:
-    - replication
-    - docker
+    - build 
+    - promotion
+    - maven
 art-version: "4.14.3"

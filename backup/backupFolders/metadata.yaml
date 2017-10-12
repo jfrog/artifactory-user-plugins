@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Backup Artifacts
+description: Scheduled backup artifacts to local storage  
 tag:
-    - replication
-    - docker
+    - backup
+    
 art-version: "4.14.3"

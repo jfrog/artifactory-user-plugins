@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Tagging Promotions
+description: Promote and tag build war artifacts to a designated repository 
 tag:
-    - replication
-    - docker
+    - build
+    - promote 
 art-version: "4.14.3"

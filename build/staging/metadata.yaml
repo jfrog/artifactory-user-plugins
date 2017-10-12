@@ -10,9 +10,10 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Build Strategy
+description: Defines subsequent maven and gradle builds and versioning next steps  
 tag:
-    - replication
-    - docker
+    - build
+    - maven
+    - gradle
 art-version: "4.14.3"

@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: MIME type suffix
+description: Before deploying build artifacts, remove the suffix after the MIME type   
 tag:
-    - replication
-    - docker
+    - build
+    - MIME
 art-version: "4.14.3"

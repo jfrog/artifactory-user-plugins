@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Properties length
+description: Trim a build artifact's property value if it exceeds default maximum length of 900 characters.  
 tag:
-    - replication
-    - docker
+    - build
+    - properties
 art-version: "4.14.3"

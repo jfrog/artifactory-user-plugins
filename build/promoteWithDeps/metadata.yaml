@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Build Promotion
+description: Promote a build and all its dependent builds 
 tag:
-    - replication
-    - docker
+    - build
+    - promotion
 art-version: "4.14.3"

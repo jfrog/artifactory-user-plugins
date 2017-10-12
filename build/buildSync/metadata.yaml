@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Replicate Buildinfo
+description: Replicate buildinfo to multiple artifactory instances 
 tag:
+    - buildinf
     - replication
-    - docker
 art-version: "4.14.3"

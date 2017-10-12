@@ -10,9 +10,8 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Build modules
+description: Remove build modules information from buildinfo 
 tag:
-    - replication
-    - docker
+    - buildinfo
 art-version: "4.14.3"

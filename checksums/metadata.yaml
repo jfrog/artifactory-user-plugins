@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Checksum calucation 
+description: Adds sha-256, sha-384 and sha-512 checksum calculation to artifact 
 tag:
-    - replication
-    - docker
+    - checksum
+    - sha-256
 art-version: "4.14.3"

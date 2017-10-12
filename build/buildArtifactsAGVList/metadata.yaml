@@ -10,9 +10,9 @@
 # art-version: minimal artifactory version
 #
 #
-name: samplePlugin
-description: "One line description" 
+name: Maven GAV
+description: Retrieves maven group, artifact and version coordinates from a maven build  
 tag:
-    - replication
-    - docker
+    - build
+    - maven
 art-version: "4.14.3"
