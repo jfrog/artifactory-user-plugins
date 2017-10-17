@@ -35,12 +35,6 @@ class YumCalculateAsyncTest extends Specification {
             if (resp.contains('done')) break
             sleep(1000)
         }
-        // On artifactory 5.5.x yum calculation is async by default. That means
-        // that the task created by plugin execution 'yumCalculateAsync'
-        // will schedule the yum calculation instead of executing it. For this reason
-        // yum calculation may not be completed even after the above query returns
-        // status done. So the test needs to wait a little more...
-        sleep(10000L)
 
         then:
         artifactory.repository('yum').folder('org/mod1/repodata').info()

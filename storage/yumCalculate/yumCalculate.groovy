@@ -31,7 +31,11 @@ def calculateYumMetadata(RepoPath repoPath) {
         return "YUM metadata is set to calculate automatically"
     }
     def yumBean = ctx.beanForType(InternalYumAddon.class)
-    yumBean.calculateYumMetadata(repoPath)
+    try {
+        yumBean.calculateYumMetadata(null, repoPath)
+    } catch (MissingMethodException ex) {
+        yumBean.calculateYumMetadata(repoPath)
+    }
     return 0
 }
 

@@ -45,7 +45,11 @@ executions {
                     asSystem {
                         def yumBean = ctx.beanForType(InternalYumAddon.class)
                         def path = RepoPathFactory.create(mypath)
-                        yumBean.calculateYumMetadata(path)
+                        try {
+                            yumBean.calculateYumMetadata(null, path)
+                        } catch (MissingMethodException ex) {
+                            yumBean.calculateYumMetadata(path)
+                        }
                     }
                     // used for testing
                     // try {
