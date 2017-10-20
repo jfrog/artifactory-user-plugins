@@ -7,8 +7,14 @@ Installation
 ---------------------------------------
 To install Build Replication:
 
-1. Place buildReplication.groovy under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
-2. Place buildReplication.properties file under `${ARTIFACTORY_HOME}/etc/plugins`.
+1. Download the following dependency jars, and put them in
+   `${ARTIFACTORY_HOME}/etc/plugins/lib`:
+   * [HTTPBuilder](https://bintray.com/bintray/jcenter/org.codehaus.groovy.modules.http-builder%3Ahttp-builder/_latestVersion)
+   * [Json-lib](https://bintray.com/bintray/jcenter/net.sf.json-lib%3Ajson-lib/_latestVersion)
+   * [Xml-resolver](https://bintray.com/bintray/jcenter/xml-resolver%3Axml-resolver/_latestVersion)
+
+2. Place buildReplication.groovy under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`.
+3. Place buildReplication.properties file under `${ARTIFACTORY_HOME}/etc/plugins`, and edit it to suit your needs.
 
 
 Execution
