@@ -44,6 +44,10 @@ The others parameters present in the configuration file are:
 - **password**: Password to be used to perform REST API calls and setup replication to the target Artifactory.
     - Possible values: Any string
     - Default value: password
+    
+## Limitations
+
+This user plugin does not handle repository layouts. In order for this plugin to work properly, the user must manually sync the repository layouts between the source and the target Artifactory installations.
 
 ## Installation
 
