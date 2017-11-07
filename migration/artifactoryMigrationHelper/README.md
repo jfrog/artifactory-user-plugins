@@ -65,8 +65,6 @@ To enable logging, add the following lines to `$ARTIFACTORY_HOME/etc/logback.xml
 
 ## Usage
 
-### Local CRAN-style repositories
-
 This plugin will run automatically according to the cron expression configured in the configuration file.
 
 To manually request its execution, the following API can be used:
