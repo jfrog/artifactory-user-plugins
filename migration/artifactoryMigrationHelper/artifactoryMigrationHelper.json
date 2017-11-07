@@ -1,0 +1,10 @@
+{
+    "cron": "0 0 0/1 * * ?",
+    "target": "http://localhost:8081/artifactory",
+    "username": "admin",
+    "password": "password",
+    "replicationTimes": 1,
+    "replicationStep": 30,
+    "replicationInitialHour": 0,
+    "replicationFinalHour": 24
+}
