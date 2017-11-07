@@ -9,7 +9,9 @@ This plugin provides the following features:
 - Copy all repositories (local, remote and virtual) from the source Artifactory to the target
 - Set event based push replication for every local repository from the source Artifactory to the target
 
-During the copy repository step, the plugin will ignore everything that has already been added to the target Artifactory. So changes to repositories that have already been handled by this plugin must be done manually at the target Artifactory environment. Besides that, since this plugin copies the virtual repositories in an arbitrary manner, more than one execution may be necessary in order to successfully copy virtual repositories that have other virtual repositories in their compositions.
+During the copy repository step, the plugin will ignore everything that has already been added to the target Artifactory. So changes to repositories that have already been handled by this plugin must be done manually at the target Artifactory environment. 
+
+This plugin copies the virtual repositories in an arbitrary manner, so more than one execution may be necessary in order to successfully copy virtual repositories that have other virtual repositories in their compositions.
 
 To minimize concurrent execution of replications, this plugin distribute the replications over time, according to parameters specified by the user in the `artifactoryMigrationHelper.json` configuration file. These parameters are:
 
