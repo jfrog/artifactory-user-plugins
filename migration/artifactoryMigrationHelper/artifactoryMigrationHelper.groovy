@@ -66,6 +66,7 @@ executions {
 
 def setupArtifactoryMigration() {
     log.info "Setting up replication to $config.target"
+    validateConfigurations()
     def changesHolder = []
     def localConfig = getLocalArtifactoryConfig()
     def remoteRepositories = getRemoteArtifactoryRepositories()
@@ -79,6 +80,28 @@ def setupArtifactoryMigration() {
         log.info "No changes detected"
     }
     handleReplication(localConfig)
+}
+
+def validateConfigurations() {
+    if (config.replicationInitialHour < 0 || config.replicationInitialHour > 23) {
+        throw new Exception("Config parameter replicationInitialHour must be within range 0 to 23. Current value: $config.replicationInitialHour")
+    }
+
+    if (config.replicationFinalHour < 1 || config.replicationFinalHour > 24) {
+        throw new Exception("Config parameter replicationFinalHour must be within range 1 to 24. Current value: $config.replicationFinalHour")
+    }
+
+    if (config.replicationFinalHour <= config.replicationInitialHour) {
+        throw new Exception("Config parameter replicationFinalHour must be bigger than replicationInitialHour. Current values: $config.replicationInitialHour - $config.replicationFinalHour")
+    }
+
+    if (config.replicationTimes <= 0) {
+        throw new Exception("Config parameter replicationTimes must be bigger than 0. Current value: $config.replicationTimes")
+    }
+
+    if (config.replicationStep <= 0) {
+        throw new Exception("Config parameter replicationStep must be bigger than 0. Current value: $config.replicationStep")
+    }
 }
 
 def hasChanges(changesHolder) {
@@ -236,7 +259,7 @@ def getRemoteArtifactoryRepositories() {
 def copyLocalRepositoryToRemoteArtifactory(repoKey) {
     def repositoryService = ctx.beanForType(InternalRepositoryService.class)
     def repoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey)
-    def repoConfiguration = new LocalRepositoryConfigurationImpl(repoDescriptor)    
+    def repoConfiguration = new LocalRepositoryConfigurationImpl(repoDescriptor)
     createRemoteArtifactoryRepo(repoKey, repoConfiguration)
 }
 
