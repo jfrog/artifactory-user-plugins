@@ -47,7 +47,9 @@ The others parameters present in the configuration file are:
 
 ## Limitations
 
-This user plugin does not handle repository layouts. In order for this plugin to work properly, the user must manually sync the repository layouts between the source and the target Artifactory installations.
+This user plugin does not handle repository layouts. In order for this plugin to work properly, the user must manually sync the repository layouts between the source and the target Artifactory installations.  Consider using the [repoLayoutsConfig plugin](http://www.github.com/jfrogdev/artifactory-user-plugins/tree/master/config/repoLayoutsConfig) for this.
+
+This user plugin moves only repository and artifact data and metadata. If you wish to move build data, please use the [buildReplication plugin](http://www.github.com/jfrogdev/artifactory-user-plugins/tree/master/build/buildReplication)
 
 ## Installation
 
