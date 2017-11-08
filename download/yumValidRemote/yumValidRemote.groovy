@@ -91,6 +91,10 @@ storage {
                         def fileid = fileserv.getFileNodeId(item.repoPath)
                         fileserv.updateFile(fileid, info)
                         log.info("Wrote etag $etag to path $item.repoPath.id")
+                    } catch (Exception ex) {
+                        def writer = new StringWriter()
+                        writer.withPrintWriter { ex.printStackTrace(it) }
+                        log.error(writer.toString())
                     } finally {
                         // we are no longer in a potentially recursive state
                         etagWorking = false
@@ -225,8 +229,12 @@ download {
                         def mover = new DefaultRepoPathMover(status, config)
                         def mvsrc = cache.getImmutableFsItem(origcache)
                         def mvdst = repoService.getRepoRepoPath(truecache)
-                        mover.moveOrCopyMultiTx(mvsrc, mvdst)
+                        mover.moveFileMultiTx(mvsrc, mvdst)
                         log.info("Completed download of '$trueloc'")
+                    } catch (Exception ex) {
+                        def writer = new StringWriter()
+                        writer.withPrintWriter { ex.printStackTrace(it) }
+                        log.error(writer.toString())
                     } finally {
                         synchronized (downloadMutex) {
                             downloadQueue.remove(repo.key + ':' + origloc)
