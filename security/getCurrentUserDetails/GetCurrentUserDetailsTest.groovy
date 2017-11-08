@@ -38,7 +38,7 @@ class GetCurrentUserDetailsTest extends Specification {
         json.updatableProfile == true
         json.privateKey == null
         json.bintrayAuth == null
-        json.realm == null
+        json.realm == null || json.realm == 'internal'
 
         cleanup:
         conn = new URL(baseurl + '/api/security/users/newuser').openConnection()
