@@ -11,7 +11,7 @@ class BeforeSymbolServerDownloadTest extends Specification {
     static final password='password'
     static final userPassword="$user:$password"
     static final auth = "Basic ${userPassword.bytes.encodeBase64()}"
-    static final url = "http://msdl.microsoft.com/download/symbols"
+    static final url = "http://localhost:8081/artifactory/symbols"
     static final filePath ='wininet.pdb/7CE26DE332694328B6EB5F3C69DB20CC2/wininet.pd_'
     static final def remoteRepokey = 'microsoft-symbols'
 
@@ -20,10 +20,17 @@ class BeforeSymbolServerDownloadTest extends Specification {
         Control.setLoggerLevel(8088, 'org.apache.http.wire', 'debug')
         def baseurl = 'http://localhost:8088/artifactory'
         def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory2 = create('http://localhost:8081/artifactory', 'admin', 'password')
         def builder = artifactory.repositories().builders()
+        def builder2 = artifactory2.repositories().builders()
 
-        def remoteRepo= builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
-        artifactory.repositories().create(0,remoteRepo)
+        def localRepo = builder2.localRepositoryBuilder().key('symbols').repositorySettings(new NugetRepositorySettingsImpl()).build()
+        artifactory2.repositories().create(0, localRepo)
+        def file = new ByteArrayInputStream('test symbol'.bytes)
+        artifactory2.repository('symbols').upload(filePath, file).doUpload()
+
+        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, remoteRepo)
 
         when:
         artifactory.repository(remoteRepokey).download(filePath).doDownload();
@@ -42,5 +49,6 @@ class BeforeSymbolServerDownloadTest extends Specification {
 
         cleanup:
         artifactory.repository(remoteRepokey).delete()
+        artifactory2.repository('symbols').delete()
     }
 }
