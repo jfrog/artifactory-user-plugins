@@ -399,7 +399,7 @@ class RemoteBuildService extends BuildListBase {
     Server server
     HTTPBuilder http
     StatusLine lastFailure = null
-    int majorVersion, minorVersion
+    String majorVersion, minorVersion
 
     RemoteBuildService(Server server, log, ignoreStartDate) {
         super(log, ignoreStartDate)
@@ -422,8 +422,8 @@ class RemoteBuildService extends BuildListBase {
                 throw new CancelException("Server ${server.url} version not correct. Got ${json.text}",
                     500)
             }
-            majorVersion = v[0] as int
-            minorVersion = v[1] as int
+            majorVersion = v[0]
+            minorVersion = v[1]
         }
         if (lastFailure != null) {
             throw new CancelException("Server ${server.url} version unreadable! got: ${lastFailure.reasonPhrase}",

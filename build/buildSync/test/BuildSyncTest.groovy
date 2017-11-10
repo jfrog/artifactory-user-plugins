@@ -39,10 +39,18 @@ class BuildSyncTest extends Specification {
         def deletereq = new ArtifactoryRequestImpl().apiUrl('api/build/test-build')
         deletereq.method(ArtifactoryRequest.Method.DELETE)
         deletereq.setQueryParams(deleteAll: 1)
-        artifactory2.restCall(deletereq)
+        ignoringExceptions { artifactory2.restCall(deletereq) }
         deletereq = new ArtifactoryRequestImpl().apiUrl('api/build/test-build')
         deletereq.method(ArtifactoryRequest.Method.DELETE)
         deletereq.setQueryParams(deleteAll: 1)
-        artifactory1.restCall(deletereq)
+        ignoringExceptions { artifactory1.restCall(deletereq) }
+    }
+
+    def ignoringExceptions = { method ->
+        try {
+            method()
+        } catch (Exception e) {
+            e.printStackTrace()
+        }
     }
 }
