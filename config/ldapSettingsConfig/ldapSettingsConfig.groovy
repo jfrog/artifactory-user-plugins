@@ -62,7 +62,13 @@ def propList = ['key': [
         { c, v -> c.autoCreateUser = v ?: false }
     ], 'emailAttribute': [
         CharSequence.class, 'string',
-        { c, v -> c.emailAttribute = v ?: null }]]
+        { c, v -> c.emailAttribute = v ?: null }
+    ], 'ldapPoisoningProtection': [
+        Boolean.class, 'boolean',
+        { c, v -> c.ldapPoisoningProtection = v ?: true }
+    ], 'allowUserToAccessProfile': [
+        Boolean.class, 'boolean',
+        { c, v -> c.allowUserToAccessProfile = v ?: false }]]
 
 executions {
     getLdapSettingsList(version: '1.0', httpMethod: 'GET') { params ->
@@ -97,7 +103,9 @@ executions {
             managerDn: setting.search.managerDn ?: null,
             managerPassword: setting.search.managerPassword ?: null,
             autoCreateUser: setting.isAutoCreateUser() ?: false,
-            emailAttribute: setting.emailAttribute ?: null]
+            emailAttribute: setting.emailAttribute ?: null,
+            ldapPoisoningProtection: setting.getLdapPoisoningProtection() ?: false,
+            allowUserToAccessProfile: setting.isAllowUserToAccessProfile() ?: false]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
