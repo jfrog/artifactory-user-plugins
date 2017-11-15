@@ -29,7 +29,7 @@ class BuildReplicationTest extends Specification {
         assert proc1.responseCode == 200
         proc1.disconnect()
 
-        def conn3 = new URL("${baseurl2}/api/build/buildReplication1/28").openConnection()
+        def conn3 = new URL("${baseurl2}/api/build/build%2FReplication1/28").openConnection()
         conn3.requestMethod = 'GET'
         conn3.setRequestProperty('Authorization', auth)
         assert conn3.responseCode == 200
@@ -55,7 +55,7 @@ class BuildReplicationTest extends Specification {
         assert proc2.responseCode == 200
         proc2.disconnect()
 
-        def conn4 = new URL("${baseurl1}/api/build/buildReplication2/29").openConnection()
+        def conn4 = new URL("${baseurl1}/api/build/build%2FReplication2/29").openConnection()
         conn4.requestMethod = 'GET'
         conn4.setRequestProperty('Authorization', auth)
 
@@ -64,19 +64,19 @@ class BuildReplicationTest extends Specification {
         conn4.disconnect()
 
         cleanup:
-        def conn5 = new URL("${baseurl1}/api/build/buildReplication1?deleteAll=1").openConnection()
+        def conn5 = new URL("${baseurl1}/api/build/build%2FReplication1?deleteAll=1").openConnection()
         conn5.requestMethod = 'DELETE'
         conn5.setRequestProperty('Authorization', auth)
         assert conn5.responseCode == 200
         conn5.disconnect()
 
-        def conn6 = new URL("${baseurl2}/api/build/buildReplication1?deleteAll=1").openConnection()
+        def conn6 = new URL("${baseurl2}/api/build/build%2FReplication1?deleteAll=1").openConnection()
         conn6.requestMethod = 'DELETE'
         conn6.setRequestProperty('Authorization', auth)
         assert conn6.responseCode == 200
         conn6.disconnect()
 
-        def conn7 = new URL("${baseurl2}/api/build/buildReplication2?deleteAll=1").openConnection()
+        def conn7 = new URL("${baseurl2}/api/build/build%2FReplication2?deleteAll=1").openConnection()
         conn7.requestMethod = 'DELETE'
         conn7.setRequestProperty('Authorization', auth)
         assert conn7.responseCode == 200

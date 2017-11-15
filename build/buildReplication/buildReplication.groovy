@@ -246,7 +246,9 @@ def buildNameAndNumberes(String server, String user, String password) {
 
     buildsNames?.each { buildName ->
         buildName = URLDecoder.decode(buildName, "UTF-8")
-        http.get(path: "api/build/$buildName") { resp, json ->
+        def urlBuildName = org.apache.commons.httpclient.util.URIUtil.encodeWithinPath(buildName.substring(1))
+        def urib = new URI(http.uri.toString() + "api/build/$urlBuildName")
+        http.get(uri: urib) { resp, json ->
             json.buildsNumbers.uri.each { buildNumber ->
                 buildNamesAndNumbers << buildName + ":" + buildNumber
             }
@@ -283,9 +285,11 @@ def uploadJson(String mainServer, String mainServerUser, String mainServerPasswo
 
     buildNumber = buildNumber.substring(1)
     buildName = buildName.substring(1)
+    buildName = org.apache.commons.httpclient.util.URIUtil.encodeWithinPath(buildName)
+    def urib = new URI(http.uri.toString() + "api/build/$buildName/$buildNumber")
 
     try {
-        http.get(path: "api/build/$buildName/$buildNumber") { resp, json ->
+        http.get(uri: urib) { resp, json ->
             putCommand(repServer, repServerUser, repServerPassword, json.text)
         }
     } catch (HttpResponseException e) {
@@ -325,13 +329,14 @@ def putCommand(def server, def repServerUser, def repServerPassword, def json) {
 }
 
 def deleteBuild(String buildName, String buildNumbers) {
-    def dbn = org.apache.commons.httpclient.util.URIUtil.encodeQuery(buildName)
+    def dbn = org.apache.commons.httpclient.util.URIUtil.encodeWithinPath(buildName)
     HTTPBuilder http = new HTTPBuilder(repProps.slave)
+    def urib = new URI(http.uri.toString() + "api/build/$dbn")
     http.client.addRequestInterceptor({ def httpRequest, def httpContext ->
         httpRequest.addHeader('Authorization', "Basic ${"${repProps.slaveUser}:${repProps.slavePassword}".getBytes().encodeBase64()}")
     } as HttpRequestInterceptor)
 
-    http.request("$repProps.slave/api/build/$dbn", Method.DELETE, ContentType.ANY) { req ->
+    http.request(urib, Method.DELETE, ContentType.ANY) { req ->
         uri.query = [buildNumbers: buildNumbers]
         headers.Accept = 'application/text'
 

@@ -1,6 +1,6 @@
 {
   "version" : "1.0.1",
-  "name" : "buildReplication2",
+  "name" : "build/Replication2",
   "number" : "29",
   "type" : "MAVEN",
   "buildAgent" : {
