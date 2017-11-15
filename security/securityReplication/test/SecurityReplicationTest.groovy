@@ -1,5 +1,6 @@
 package SecurityReplicationTest
 import spock.lang.Specification
+import groovy.json.JsonSlurper
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
@@ -8,7 +9,16 @@ class SecurityReplicationTest extends Specification {
     setup:
     def baseurl = 'http://localhost:8088/artifactory/api/plugins/execute'
     def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-    def conn = new URL("$baseurl/testSecurityDump").openConnection()
+    def conn = new URL("http://localhost:8088/artifactory/api/system/version").openConnection()
+    conn.requestMethod = 'GET'
+    conn.setRequestProperty('Authorization', auth)
+    assert conn.responseCode == 200
+    def version = new JsonSlurper().parse(conn.inputStream).version.split('\\.')
+    conn.disconnect()
+    def major = version[0] as int
+    def minor = version[1] as int
+    def vtest = (major > 5 || (major == 5 && minor >= 6)) ? '' : 'old'
+    conn = new URL("$baseurl/testSecurityDump").openConnection()
     conn.requestMethod = 'GET'
     conn.setRequestProperty('Authorization', auth)
     assert conn.responseCode == 200
@@ -21,7 +31,7 @@ class SecurityReplicationTest extends Specification {
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
     conn.setRequestProperty('Content-Type', 'application/json')
-    file = new File("./src/test/groovy/SecurityReplicationTest/sec1.json")
+    file = new File("./src/test/groovy/SecurityReplicationTest/sec1${vtest}.json")
     conn.outputStream << file.text
     assert conn.responseCode == 200
     conn.disconnect()
@@ -42,7 +52,7 @@ class SecurityReplicationTest extends Specification {
     conn.doOutput = true
     conn.setRequestProperty('Authorization', auth)
     conn.setRequestProperty('Content-Type', 'application/json')
-    file = new File("./src/test/groovy/SecurityReplicationTest/sec2.json")
+    file = new File("./src/test/groovy/SecurityReplicationTest/sec2${vtest}.json")
     conn.outputStream << file.text
     assert conn.responseCode == 200
     conn.disconnect()

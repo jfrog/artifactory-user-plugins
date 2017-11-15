@@ -8,7 +8,7 @@
                 "changeme": "nrw",
                 "deleteme": "nrw"
             },
-            "realm": "internal",
+            "realm": "artifactory",
             "realmattrs": null
         },
         "deleteme": {
@@ -19,7 +19,7 @@
                 "changeme": "dnrw",
                 "deleteme": "dnrw"
             },
-            "realm": "internal",
+            "realm": "artifactory",
             "realmattrs": null
         },
         "readers": {
@@ -31,7 +31,7 @@
                 "changeme": "dmnrw",
                 "deleteme": "dmnrw"
             },
-            "realm": "internal",
+            "realm": "artifactory",
             "realmattrs": null
         }
     },
@@ -93,7 +93,7 @@
             ],
             "locked": false,
             "passkey": null,
-            "password": "bcrypt$$2a$08$evbpoO.n.B0r5UICCbaV9uWR0LRwHHinbXW/BRyYTkS02EctY4t0O",
+            "password": "1f70548d73baca61aab8660733c7de81",
             "permissions": {
                 
             },
@@ -102,7 +102,7 @@
                 
             },
             "publickey": null,
-            "salt": null,
+            "salt": "CAFEBABEEBABEFAC",
             "updatable": true
         },
         "anonymous": {
@@ -116,7 +116,7 @@
             ],
             "locked": false,
             "passkey": null,
-            "password": "bcrypt$$2a$08$paWfyuaWcUIQImCKbognSunZbLpHwRb0TtNWiwNxXTa/eUxCF2tU.",
+            "password": "d41d8cd98f00b204e9800998ecf8427e",
             "permissions": {
                 "Any Remote": "rw",
                 "Anything": "r",
@@ -144,7 +144,7 @@
             ],
             "locked": false,
             "passkey": null,
-            "password": "bcrypt$$2a$08$Lji9jdZMHNnG2ZTG4UbnnudTk3N1/p.p1xD0ftBsRhAfUIgkks49C",
+            "password": "12c2a2afff2ae64ef35c281a11264821",
             "permissions": {
                 "changeme": "dnrw",
                 "deleteme": "dnrw"
@@ -154,7 +154,7 @@
                 "apiKey": "AKCp2V77CZw9VKd8J97FttrGpxqcPcpKwZxrf9zcwhaeAV9oSLrT14m9qLH2msUbRbJssQ6iz"
             },
             "publickey": "JUHfDLxBPMe4YZbWLKdbams2ZTPq3rmG1zxgSbvZJaaMaREwiQdtoeavTp7QUuxvt23CaPhdKosG9VDkSWSVgKvXu3BveKqLA52bby72v9mi86MLpCR6Ecsvu7WuzN1muAGSa",
-            "salt": null,
+            "salt": "CAFEBABEEBABEFAC",
             "updatable": true
         },
         "deleteme": {
@@ -170,7 +170,7 @@
             ],
             "locked": false,
             "passkey": null,
-            "password": "bcrypt$$2a$08$Lji9jdZMHNnG2ZTG4UbnnudTk3N1/p.p1xD0ftBsRhAfUIgkks49C",
+            "password": "12c2a2afff2ae64ef35c281a11264821",
             "permissions": {
                 "changeme": "nrw",
                 "deleteme": "nrw"
@@ -180,7 +180,7 @@
                 
             },
             "publickey": null,
-            "salt": null,
+            "salt": "CAFEBABEEBABEFAC",
             "updatable": true
         }
     }

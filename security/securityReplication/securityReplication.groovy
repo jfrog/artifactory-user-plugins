@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// v1.1.0
+
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
 import groovy.json.JsonSlurper
@@ -24,6 +26,7 @@ import org.apache.http.client.methods.*
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClients
 
+import org.artifactory.api.config.VersionInfo
 import org.artifactory.common.ArtifactoryHome
 import org.artifactory.factory.InfoFactoryHolder
 import org.artifactory.request.RequestThreadLocal
@@ -32,6 +35,11 @@ import org.artifactory.security.SaltedPassword
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.util.HttpUtils
+
+// This version number must be greater than or equal to the Artifactory version.
+// Otherwise, security replication will not run. Always update this plugin when
+// Artifactory is upgraded.
+pluginVersion = "5.6.2"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -42,6 +50,7 @@ import org.artifactory.util.HttpUtils
 //global variables
 verbose = false
 artHome = ctx.artifactoryHome.haAwareEtcDir
+cronExpression = null
 
 //general artifactory plugin execution hook
 executions {
@@ -154,6 +163,271 @@ executions {
         status = 200
         message = "Snapshots cleared successfully"
     }
+
+    secRepValidate(httpMethod: 'GET') { params ->
+        def chain = params?.getAt('chain')?.getAt(0) ?: null
+        log.debug("secRepValidate called with chain=$chain")
+        if (chain == 'node') {
+            message = new JsonBuilder(validateNode()).toString()
+        } else if (chain == 'instance') {
+            message = new JsonBuilder(validateInstance()).toString()
+        } else if (chain == 'mesh') {
+            message = new JsonBuilder(validateMesh()).toString()
+        } else {
+            message = validateResponse(validateMesh())
+        }
+        status = 200
+    }
+}
+
+def validateResponse(data) {
+    def errors = [], json = null, version = null
+    if ('!message' in data) {
+        def error = [:]
+        error.title = 'Error accessing mesh'
+        error.msg = data['!message']
+        def rec = []
+        rec << "Ensure securityReplication.json exists and is correct"
+        error.rec = rec
+        errors << error
+    } else data.each { url, instance ->
+        if (instance['!status'] != 200) {
+            def error = ['instance': url]
+            error.title = 'Error accessing instance'
+            error.msg = instance['!message']
+            error.status = instance['!status']
+            def rec = []
+            rec << "Ensure the instance is running and accessible"
+            rec << "Ensure the plugin is installed and loaded correctly"
+            rec << "Try reloading or reinstalling the plugin"
+            rec << "Try restarting the Artifactory service on the instance"
+            error.rec = rec
+            errors << error
+        } else instance.each { id, node ->
+            if (id.startsWith('!')) return
+            if (node['!status'] != 200 || node['!state'] != 'Running') {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Error accessing node'
+                error.msg = node['!message']
+                error.status = node['!status'] + ' (' + node['!state'] + ')'
+                def rec = []
+                rec << "Ensure the node is running and accessible"
+                rec << "Ensure the plugin is installed and loaded correctly"
+                rec << "Try reloading or reinstalling the plugin"
+                rec << "Try restarting the Artifactory service on the node"
+                error.rec = rec
+                errors << error
+                return
+            }
+            if (!node.fsversion || node.fsversionerr) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Error reading plugin version from groovy file'
+                error.msg = node.fsversionerr
+                def rec = []
+                rec << "Ensure the plugin is installed and loaded correctly"
+                rec << "Ensure the correct version of the plugin is installed"
+                rec << "Try reinstalling the plugin"
+                error.rec = rec
+                errors << error
+            } else if (node.fsversion != node.version) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Loaded plugin version mismatch'
+                error.msg = "Loaded plugin version '$node.version' does not"
+                error.msg += " match groovy file verson '$node.fsversion'"
+                def rec = []
+                rec << "Run a plugin reload on the node"
+                rec << "Ensure the plugin is installed and loaded correctly"
+                rec << "Try restarting the Artifactory service on the node"
+                error.rec = rec
+                errors << error
+            }
+            if (!version) version = node.fsversion
+            if (version != node.fsversion) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Plugin version mismatch'
+                error.msg = "Plugin version '$node.fsversion' does not match"
+                error.msg += " expected version '$version'"
+                def rec = []
+                rec << "Ensure the correct version of the plugin is installed"
+                rec << "Try reinstalling the plugin"
+                error.rec = rec
+                errors << error
+            }
+            if (!node.json || node.jsonerr) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Error reading plugin config from json file'
+                error.msg = node.jsonerr
+                def rec = []
+                rec << "Ensure the config file is installed and is correct"
+                rec << "Try reinstalling the config file on the node"
+                error.rec = rec
+                errors << error
+                return
+            }
+            def myjson = node.json
+            def whoami = null
+            if (myjson?.securityReplication?.whoami) {
+                whoami = myjson.securityReplication.whoami
+                myjson.securityReplication.whoami = null
+            }
+            if (!json) json = myjson
+            if (myjson != json || whoami != url) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Plugin config mismatch'
+                error.msg = "Plugin config does not match expected config:\n"
+                node.json.securityReplication.whoami = whoami
+                json.securityReplication.whoami = whoami
+                error.msg += "Plugin config: "
+                error.msg += new JsonBuilder(node.json).toPrettyString()
+                error.msg += "\nExpected config: "
+                error.msg += new JsonBuilder(json).toPrettyString()
+                node.json.securityReplication.whoami = null
+                json.securityReplication.whoami = null
+                def rec = []
+                rec << "Ensure the config file is installed and is correct"
+                rec << "Try reinstalling the config file on the node"
+                error.rec = rec
+                errors << error
+            }
+            if (node.cron != myjson.securityReplication.cron_job) {
+                def error = ['instance': url, 'node': id]
+                error.title = 'Loaded plugin config mismatch'
+                error.msg = "Loaded plugin cron expression '$node.cron' does"
+                error.msg += " not match configured cron expression"
+                error.msg += " '$myjson.securityReplication.cron_job'"
+                def rec = []
+                rec << "Run a plugin reload on the node"
+                rec << "Ensure the plugin is installed and loaded correctly"
+                rec << "Try restarting the Artifactory service on the node"
+                error.rec = rec
+                errors << error
+            }
+        }
+    }
+    def status = new StringBuilder('==== ')
+    if (errors.size() > 0) {
+        status << 'Failure: ' << errors.size() << ' errors ====\n'
+    } else {
+        status << 'Success! All nodes synced with securityReplication version '
+        status << version << ' ====\n'
+    }
+    for (err in errors) {
+        status << '#### ' << err.title << ':'
+        if (err.instance) {
+            status << ' ' << err.instance
+            if (err.node) status << ' - ' << err.node
+            if (err.status) status << ' | ' << err.status
+        }
+        def msg = err.msg.replaceAll(/(?m)^/, '        ')
+        status << '\n' << msg << '\n    Recommended Actions:\n'
+        for (rec in err.rec) status << '     - ' << rec << '\n'
+    }
+    return status.toString()
+}
+
+def validateMesh() {
+    log.debug("validating mesh ...")
+    def slurped = null
+    def targetFile = new File(artHome, "/plugins/securityReplication.json")
+    try {
+        slurped = new JsonSlurper().parse(targetFile)
+    } catch (JsonException ex) {
+        def msg = "Cannot read urls from securityReplication.json: $ex"
+        return ['!message': msg]
+    }
+    def username = slurped.securityReplication.authorization.username
+    def password = slurped.securityReplication.authorization.password
+    def encoded = "$username:$password".getBytes().encodeBase64().toString()
+    def auth = "Basic $encoded"
+    def instances = [:]
+    def urls = slurped.securityReplication.urls.reverse().unique()
+    while (urls) {
+        def url = urls.pop()
+        instances[url] = validateRequest(url, auth, 'instance')
+        for (serv in (instances[url].entrySet() as List).reverse()) {
+            if (serv.key.startsWith('!')) continue
+            for (link in serv.value?.json?.securityReplication?.urls?.reverse()) {
+                if (!(link in urls) && !(link in instances) && (link != url)) {
+                    urls << link
+                }
+            }
+        }
+    }
+    log.debug("mesh validation data fetched: $instances")
+    return instances
+}
+
+def validateInstance() {
+    log.debug("validating instance ...")
+    def servs = [:]
+    def tctx = RequestThreadLocal.context.get().requestThreadLocal
+    def auth = tctx.request.getHeader('Authorization')
+    def sserv = ctx.beanForType(ArtifactoryServersCommonService)
+    def me = sserv.currentMember
+    for (serv in sserv.allArtifactoryServers) {
+        def node = null
+        if (serv == me) {
+            node = validateNode()
+            node['!status'] = 200
+        } else node = validateRequest(serv.contextUrl, auth, 'node')
+        node['!state'] = serv.serverState.prettyName
+        servs[serv.serverId] = node
+    }
+    log.debug("instance validation data fetched: $servs")
+    return servs
+}
+
+def validateNode() {
+    log.debug("validating node ...")
+    def data = ['version': pluginVersion, 'cron': cronExpression]
+    def configfile = new File(artHome, "/plugins/securityReplication.json")
+    try {
+        data['json'] = new JsonSlurper().parse(configfile)
+    } catch (JsonException ex) {
+        data['jsonerr'] = "Cannot read securityReplication.json: $ex"
+    }
+    def pluginfile = new File(artHome, "/plugins/securityReplication.groovy")
+    try {
+        def version = null
+        try {
+            pluginfile.eachLine {
+                if (!it.startsWith("pluginVersion = \"")) return
+                def match = it =~ '^pluginVersion = "(.*)"$'
+                if (match.size() <= 0) return
+                version = match[0][1]
+                throw new RuntimeException('<terminating early>')
+            }
+        } catch (RuntimeException ex) {
+            if (ex.message != '<terminating early>') throw ex
+        }
+        if (version) data['fsversion'] = version
+        else data['fsversionerr'] = "Cannot find version string in plugin file."
+    } catch (Exception ex) {
+        data['fsversionerr'] = "Cannot read securityReplication.groovy: $ex"
+    }
+    log.debug("node validation data fetched: $data")
+    return data
+}
+
+def validateRequest(baseurl, auth, chain) {
+    def resp = null, result = [:]
+    def url = (baseurl - ~'/$') + '/api/plugins/execute/secRepValidate'
+    url += '?params=chain=' + chain
+    try {
+        resp = makeRequest(new HttpGet(url), auth)
+    } catch (Exception ex) {
+        def msg = "Problem making request: $ex"
+        resp = [wrapData('js', msg), -1]
+    }
+    try {
+        if (resp[1] == 200) result = unwrapData('jo', resp[0])
+        else result['!message'] = unwrapData('js', resp[0])
+    } catch (Exception ex) {
+        def msg = "Problem parsing response data: $ex"
+        resp = [wrapData('js', msg), -1]
+    }
+    result['!status'] = resp[1]
+    return result
 }
 
 def getCronJob() {
@@ -164,14 +438,17 @@ def getCronJob() {
         slurped = new JsonSlurper().parse(jsonFile)
     } catch (JsonException ex) {
         log.error("ALL: problem getting $jsonFile, using default")
+        cronExpression = defaultcron
         return defaultcron
     }
     def cron_job = slurped?.securityReplication?.cron_job
     if (cron_job) {
         log.debug("ALL: config cron job is being set at: $cron_job")
+        cronExpression = cron_job
         return cron_job
     }  else {
         log.debug("ALL: cron job is not configured, using default")
+        cronExpression = defaultcron
         return defaultcron
     }
 }
@@ -205,6 +482,16 @@ jobs {
             return
         }
         log.debug("MASTER: Available instances are: $upList")
+        def ver = getArtifactoryVersion()
+        if (incompatibleVersions(ver, upList.values(), 5, 6)) {
+            log.debug("MASTER: Cannot continue, some instances are incompatible versions")
+            return
+        }
+        if (slurped.securityReplication.safety != 'off' && checkArtifactoryVersion(ver[0])) {
+            log.error("MASTER: Cannot continue, Artifactory version is too new; please update this plugin")
+            return
+        }
+        upList = simplifyFingerprints(upList)
         log.debug("MASTER: Let's do some updates")
         log.debug("MASTER: Getting the golden file")
         def golden = findBestGolden(upList, whoami, auth)
@@ -240,33 +527,87 @@ def writeFile(fname, content) {
     }
 }
 
+def incompatibleVersions(ver, upList, maj, min) {
+    def isnew = compareVersions(ver[0], maj, min) >= 0
+    for (v in ver) {
+        if ((compareVersions(v, maj, min) >= 0) != isnew) return true
+    }
+    for (inst in upList) {
+        if (!inst?.version) return true
+        for (vers in inst.version) {
+            if ((compareVersions(vers, maj, min) >= 0) != isnew) return true
+        }
+    }
+    return false
+}
+
+def compareVersions(version, major, minor) {
+    def vers = version.split('\\.')
+    def maj = vers[0] as int
+    def min = vers[1] as int
+    return (maj != major) ? (maj <=> major) : (min <=> minor)
+}
+
+def checkArtifactoryVersion(version) {
+    def artvers = version.split('\\.')
+    def plugvers = pluginVersion.split('\\.')
+    def artmaj = artvers[0] as int
+    def plugmaj = plugvers[0] as int
+    if (artmaj != plugmaj) return artmaj > plugmaj
+    def artmid = artvers[1] as int
+    def plugmid = plugvers[1] as int
+    if (artmid != plugmid) return artmid > plugmid
+    def artmin = artvers[2] as int
+    def plugmin = plugvers[2] as int
+    return artmin > plugmin
+}
+
+def simplifyFingerprints(upList) {
+    return upList.collectEntries { k, v ->
+        [k, (v?.cs && v?.ts) ? ['cs': v.cs, 'ts': v.ts] : null]
+    }
+}
+
+def getArtifactoryVersion() {
+    if (!ArtifactoryHome.get().isHaConfigured()) {
+        return [ctx.centralConfig.versionInfo.version]
+    }
+    def sserv = ctx.beanForType(ArtifactoryServersCommonService)
+    return sserv.allArtifactoryServers*.artifactoryVersion
+}
+
 def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
     def exurl = "$baseurl/api/plugins/execute"
     def me = whoami == baseurl
-    switch(method) {
-        case 'json':
-            def req = new HttpPut("$exurl/securityReplication")
-            return makeRequest(req, auth, data, "text/plain")
-        case 'plugin':
-            def req = new HttpPut("$baseurl/api/plugins/securityReplication")
-            return makeRequest(req, auth, data, "text/plain")
-        case 'data_send':
-            if (me) return applyAggregatePatch(wrapData('js', unwrapData('js', data)))
-            def req = new HttpPost("$exurl/secRepDataPost")
-            return makeRequest(req, auth, data, "application/json")
-        case 'data_retrieve':
-            if (me) return getRecentPatch(data)
-            def req = new HttpPost("$exurl/secRepDataGet")
-            return makeRequest(req, auth, data, "application/json")
-        case 'recoverySync':
-            if (me) return getGoldenFile()
-            def req = new HttpGet("$exurl/getUserDB")
-            return makeRequest(req, auth)
-        case 'ping':
-            if (me) return getPingAndFingerprint()
-            def req = new HttpGet("$exurl/secRepPing")
-            return makeRequest(req, auth)
-        default: throw new RuntimeException("Invalid method $method")
+    try {
+        switch(method) {
+            case 'json':
+                def req = new HttpPut("$exurl/securityReplication")
+                return makeRequest(req, auth, data, "text/plain")
+            case 'plugin':
+                def req = new HttpPut("$baseurl/api/plugins/securityReplication")
+                return makeRequest(req, auth, data, "text/plain")
+            case 'data_send':
+                def datacp = wrapData('js', unwrapData('js', data))
+                if (me) return applyAggregatePatch(datacp)
+                def req = new HttpPost("$exurl/secRepDataPost")
+                return makeRequest(req, auth, data, "application/json")
+            case 'data_retrieve':
+                if (me) return getRecentPatch(data)
+                def req = new HttpPost("$exurl/secRepDataGet")
+                return makeRequest(req, auth, data, "application/json")
+            case 'recoverySync':
+                if (me) return getGoldenFile()
+                def req = new HttpGet("$exurl/getUserDB")
+                return makeRequest(req, auth)
+            case 'ping':
+                if (me) return getPingAndFingerprint()
+                def req = new HttpGet("$exurl/secRepPing")
+                return makeRequest(req, auth)
+            default: throw new RuntimeException("Invalid method $method")
+        }
+    } catch (Exception ex) {
+        return [wrapData('js', "Exception during call: $ex.message", 500)]
     }
 }
 
@@ -351,6 +692,7 @@ def findBestGolden(upList, whoami, auth) {
 
 def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
     def fingerprint = [cs: null, ts: System.currentTimeMillis()]
+    fingerprint.version = getArtifactoryVersion()
     if (golden.fingerprint && fingerprint.ts <= golden.fingerprint.ts) {
         fingerprint.ts = 1 + golden.fingerprint.ts
     }
@@ -395,9 +737,11 @@ def checkInstances(distList, whoami, auth) {
                 master = true
             }
             try {
-                upList[instance] = unwrapData('jo', resp[0])
+                def data = unwrapData('jo', resp[0])
+                if (data == null) upList[instance] = ['version': null]
+                else upList[instance] = data
             } catch (Exception ex) {
-                upList[instance] = null
+                upList[instance] = ['version': null]
             }
         }
     }
@@ -409,15 +753,18 @@ def checkInstances(distList, whoami, auth) {
     return upList
 }
 
-def grabStuffFromSlaves(golden, upList, whoami, auth) {
+def grabStuffFromSlaves(mygolden, upList, whoami, auth) {
     def bigDiff = []
     for (inst in upList.entrySet()) {
         log.debug("MASTER: Accessing $inst.key, give me your stuff")
         def resp = null
+        def golden = mygolden.collectEntries { k, v -> [k, v] }
         def data = wrapData('jo', golden)
         if (golden.fingerprint && golden.fingerprint.cs == inst.value?.cs) {
             resp = remoteCall(whoami, inst.key, auth, 'data_retrieve')
         } else {
+            if (golden.fingerprint == null) golden.fingerprint = [:]
+            golden.fingerprint.version = getArtifactoryVersion()
             resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data)
         }
         if (resp[1] != 200) {
@@ -509,8 +856,9 @@ def getPingAndFingerprint() {
     def is = null
     try {
         is = readFile('fingerprint')
-        if (is) return [wrapData('js', unwrapData('js', is)), 200]
-        else return [wrapData('jo', null), 200]
+        def fingerprint = is ? unwrapData('jo', is) : [:]
+        fingerprint.version = getArtifactoryVersion()
+        return [wrapData('jo', fingerprint), 200]
     } finally {
         if (is) unwrapData('ji', is).close()
     }
@@ -534,11 +882,18 @@ def getRecentPatch(newgolden) {
             if (is) unwrapData('ji', is).close()
         }
     } else {
+        def ver = getArtifactoryVersion()
+        if (incompatibleVersions(ver, [newgoldenuw.fingerprint], 5, 6)) {
+            def msg = "Cannot merge golden, incompatible version."
+            log.error(msg)
+            return [wrapData('js', msg), 400]
+        }
         def goldendiff = buildDiff(baseSnapShot, goldenDB)
         def extractdiff = buildDiff(baseSnapShot, extracted)
         def mergeddiff = merge([goldendiff, extractdiff])
         extracted = applyDiff(baseSnapShot, mergeddiff)
         updateDatabase(null, extracted)
+        newgoldenuw.fingerprint.version = ver
         writeFile('fingerprint', wrapData('jo', newgoldenuw.fingerprint))
         writeFile('golden', wrapData('jo', goldenDB))
     }
@@ -560,6 +915,12 @@ def getRecentPatch(newgolden) {
 def applyAggregatePatch(newpatch) {
     def goldenDB = null, oldGoldenDB = null
     def patch = unwrapData('jo', newpatch)
+    def ver = getArtifactoryVersion()
+    if (incompatibleVersions(ver, [patch.fingerprint], 5, 6)) {
+        def msg = "Cannot update, incompatible version."
+        log.error(msg)
+        return [wrapData('js', msg), 400]
+    }
     if (verbose == true) {
         log.debug("SLAVE: newpatch: $patch")
     }
@@ -582,6 +943,8 @@ def applyAggregatePatch(newpatch) {
         log.debug("SLAVE: new slave Golden is $goldenDB")
     }
     patch.fingerprint.cs = getHash(goldenDB)
+    def masterver = patch.fingerprint.version
+    patch.fingerprint.version = ver
     writeFile('fingerprint', wrapData('jo', patch.fingerprint))
     writeFile('golden', wrapData('jo', goldenDB))
     is = null
@@ -596,6 +959,7 @@ def applyAggregatePatch(newpatch) {
     } finally {
         if (is) unwrapData('ji', is).close()
     }
+    patch.fingerprint.version = masterver
     return [wrapData('jo', patch.fingerprint), 200]
 }
 
@@ -898,8 +1262,14 @@ def extract() {
     }
     // users
     if (filter >= 1) {
-        def users = [:], usrs = secserv.getAllUsers(true)
+        def users = [:], usrs = null
+        try {
+            usrs = secserv.getAllUsers(true, true)
+        } catch (MissingMethodException ex) {
+            usrs = secserv.getAllUsers(true)
+        }
         for (usr in usrs) {
+            if (usr.username == 'access-admin') continue
             def user = [:]
             user.password = usr.password
             user.salt = usr.salt
@@ -997,8 +1367,11 @@ def update(ptch) {
                    path[0] in ['users', 'groups'] && path[2] == 'permissions') {
             // aces
             def isgroup = path[0] == 'groups'
+            if (!isgroup && path[1] == 'access-admin') continue
             def principal = oper == ':~' ? path[3] : key
-            def acl = infact.copyAcl(secserv.getAcl(principal))
+            def acl = secserv.getAcl(principal)
+            if (acl == null) continue
+            acl = infact.copyAcl(acl)
             def aces = acl.aces
             if (oper == ';+') {
                 def ace = infact.createAce()
@@ -1023,6 +1396,7 @@ def update(ptch) {
                    path[0] in ['users', 'groups', 'permissions']) {
             // users, groups, and permissions
             if (oper == ';+' && path[0] == 'users') {
+                if (key == 'access-admin') continue
                 def user = infact.createUser()
                 user.username = key
                 user.password = new SaltedPassword(val.password, val.salt)
@@ -1046,11 +1420,14 @@ def update(ptch) {
                     ace.principal = key
                     ace.group = false
                     ace.mask = makeMask(perm.value)
-                    def acl = infact.copyAcl(secserv.getAcl(perm.key))
+                    def acl = secserv.getAcl(perm.key)
+                    if (acl == null) continue
+                    acl = infact.copyAcl(acl)
                     acl.aces = acl.aces + ace
                     secserv.updateAcl(acl)
                 }
             } else if (oper == ';-' && path[0] == 'users') {
+                if (key == 'access-admin') continue
                 secserv.deleteUser(key)
             } else if (oper == ';+' && path[0] == 'groups') {
                 def group = infact.createGroup()
@@ -1068,7 +1445,9 @@ def update(ptch) {
                     ace.principal = key
                     ace.group = true
                     ace.mask = makeMask(perm.value)
-                    def acl = infact.copyAcl(secserv.getAcl(perm.key))
+                    def acl = secserv.getAcl(perm.key)
+                    if (acl == null) continue
+                    acl = infact.copyAcl(acl)
                     acl.aces = acl.aces + ace
                     secserv.updateAcl(acl)
                 }
@@ -1089,6 +1468,7 @@ def update(ptch) {
         } else if ((pathsize == 3 && oper in [';+', ';-'] ||
                     pathsize == 4 && oper == ':~') &&
                    path[0] == 'users' && path[2] == 'properties') {
+            if (path[1] == 'access-admin') continue
             // user properties, including API keys
             if (oper == ';+') {
                 modifyProp(secserv, 'create', path[1], key, val)
@@ -1099,13 +1479,19 @@ def update(ptch) {
             }
         } else if (pathsize == 3 && oper in [':+', ':-'] &&
                    path[0] == 'users' && path[2] == 'groups') {
+            if (path[1] == 'access-admin') continue
             // user/group memberships
-            if (oper == ':+') {
-                secserv.addUsersToGroup(key, [path[1]])
-            } else {
-                secserv.removeUsersFromGroup(key, [path[1]])
+            try {
+                if (oper == ':+') {
+                    secserv.addUsersToGroup(key, [path[1]])
+                } else {
+                    secserv.removeUsersFromGroup(key, [path[1]])
+                }
+            } catch (RuntimeException ex) {
+                log.debug("Exception changing group membership: $ex")
             }
         } else if (pathsize == 3 && oper == ':~' && path[0] == 'users') {
+            if (path[1] == 'access-admin') continue
             // simple user attributes (email, is admin, etc)
             def user = infact.copyUser(secserv.findUser(path[1]))
             if (path[2] == 'password') {
@@ -1287,10 +1673,25 @@ def applyDiff(oldver, ptch) {
     return patch([], ptch.sort(diffsort), normalize(oldver))
 }
 
+def updatePasswords(snapshot) {
+    for (user in snapshot.users.values()) {
+        def pass = user.password, salt = user.salt
+        if (salt != null && pass ==~ '[a-f0-9]{32}') {
+            user.password = 'md5$1$' + salt + '$' + pass
+            user.salt = null
+        }
+    }
+}
+
 def updateDatabase(oldver, newver) {
     // current state of the database (might have changed since oldver)
     def currver = extract()
     if (oldver == null) oldver = currver
+    // update any old passwords if necessary
+    if (compareVersions(ctx.centralConfig.versionInfo.version, 5, 6) >= 0) {
+        updatePasswords(oldver)
+        updatePasswords(newver)
+    }
     // newver from oldver
     def newdiff = buildDiff(oldver, newver)
     // currver from oldver
