@@ -1,6 +1,9 @@
 Artifactory Security Replication User Plugin
 ============================================
 
+**&ast;&ast;&ast; IMPORTANT &ast;&ast;&ast;**  
+*The validation of the Artifactory Security Replication user plugin with Artifactory 5.6.0 is in progress. As such, if you use this plugin, please hold off on upgrading Artifactory until the validation is complete. If you really need to upgrade Artifactory to 5.6.0, it is important that you disable this user plugin by removing the securityReplication.groovy on all your Artifactory instances and restart Artifactory. This plugin can be found in $ARTIFACTORY_HOME/etc/plugins. Please refer to https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/securityReplication for updates.*
+
 This plugin continuously synchronizes security data between multiple Artifactory
 instances. So, any change made to any instance's security data will be
 automatically replicated to the others. This allows, for example, a user to
