@@ -26,7 +26,6 @@ import org.artifactory.security.groups.LdapGroupsSettings
 realms {
     myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.ADDITIVE]) {
         authenticate { username, credentials ->
-            if (user.realm == 'internal') return false
             def settings = new LdapGroupsSettings()
             // 'il-users' is an existing Ldap Group Setting Name in Artifactory
             // All the permissions given to the group will be inherited by the user
@@ -36,7 +35,7 @@ realms {
         }
 
         userExists { username ->
-            return user.realm != 'internal'
+            return true
         }
     }
 }
