@@ -62,7 +62,21 @@ def propList = ['key': [
         { c, v -> c.autoCreateUser = v ?: false }
     ], 'emailAttribute': [
         CharSequence.class, 'string',
-        { c, v -> c.emailAttribute = v ?: null }]]
+        { c, v -> c.emailAttribute = v ?: null }
+    ], 'ldapPoisoningProtection': [
+        Boolean.class, 'boolean',
+        { c, v ->
+            try {
+                c.ldapPoisoningProtection = (v instanceof Boolean) ? v : true
+            } catch (MissingPropertyException ex) {}
+        }
+    ], 'allowUserToAccessProfile': [
+        Boolean.class, 'boolean',
+        { c, v ->
+            try {
+                c.allowUserToAccessProfile = v ?: false
+            } catch (MissingPropertyException ex) {}
+        }]]
 
 executions {
     getLdapSettingsList(version: '1.0', httpMethod: 'GET') { params ->
@@ -86,6 +100,13 @@ executions {
             status = 404
             return
         }
+        def poisonprot = true, accessprof = false
+        try {
+            poisonprot = setting.getLdapPoisoningProtection() ?: false
+        } catch (MissingMethodException ex) {}
+        try {
+            accessprof = setting.isAllowUserToAccessProfile() ?: false
+        } catch (MissingMethodException ex) {}
         def json = [
             key: setting.key ?: null,
             enabled: setting.isEnabled() ?: false,
@@ -97,7 +118,9 @@ executions {
             managerDn: setting.search.managerDn ?: null,
             managerPassword: setting.search.managerPassword ?: null,
             autoCreateUser: setting.isAutoCreateUser() ?: false,
-            emailAttribute: setting.emailAttribute ?: null]
+            emailAttribute: setting.emailAttribute ?: null,
+            ldapPoisoningProtection: poisonprot,
+            allowUserToAccessProfile: accessprof]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
