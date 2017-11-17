@@ -33,7 +33,9 @@ class LdapSettingsConfigTest extends Specification {
             managerDn: null,
             managerPassword: null,
             autoCreateUser: false,
-            emailAttribute: 'mail']
+            emailAttribute: 'mail',
+            ldapPoisoningProtection: false,
+            allowUserToAccessProfile: false]
         conn = new URL("$baseurl/addLdapSetting").openConnection()
         conn.doOutput = true
         conn.setRequestProperty('Authorization', auth)
