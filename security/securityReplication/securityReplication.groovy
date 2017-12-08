@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.0
+// v1.1.1
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -39,7 +39,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.6.2"
+pluginVersion = "5.7.0"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -549,7 +549,7 @@ def compareVersions(version, major, minor) {
 }
 
 def checkArtifactoryVersion(version) {
-    def artvers = version.split('\\.')
+    def artvers = version.split('[-.]')
     def plugvers = pluginVersion.split('\\.')
     def artmaj = artvers[0] as int
     def plugmaj = plugvers[0] as int
@@ -607,6 +607,9 @@ def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
             default: throw new RuntimeException("Invalid method $method")
         }
     } catch (Exception ex) {
+        def writer = new StringWriter()
+        writer.withPrintWriter { ex.printStackTrace(it) }
+        log.error(writer.toString())
         return [wrapData('js', "Exception during call: $ex.message", 500)]
     }
 }
@@ -1146,7 +1149,11 @@ def encryptDecrypt(json, encrypt) {
         is5x = true
         def art5ch = "org.artifactory.common.crypto.CryptoHelper"
         cryptoHelper = Class.forName(art5ch)
-        if (!cryptoHelper.hasMasterKey(home)) return
+        try {
+            if (!cryptoHelper.hasArtifactoryKey(home)) return
+        } catch (MissingMethodException ex2) {
+            if (!cryptoHelper.hasMasterKey(home)) return
+        }
     }
     def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
                     'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
