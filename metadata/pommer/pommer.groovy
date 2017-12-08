@@ -20,7 +20,6 @@ import org.artifactory.api.module.ModuleInfoUtils
 import org.artifactory.maven.MavenModelUtils
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.repo.service.InternalRepositoryService
-import org.artifactory.storage.db.util.DbUtils
 import org.artifactory.storage.db.util.JdbcHelper
 import org.artifactory.util.RepoLayoutUtils
 
@@ -28,6 +27,7 @@ import com.google.common.collect.HashMultimap
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonException
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 
 storage {
   afterCreate { item ->
@@ -143,7 +143,13 @@ def getNodesList(repo) {
     }
   } finally {
     // close the result set
-    if (rs) DbUtils.close(rs)
+    if (rs) {
+        try {
+            ("org.artifactory.storage.db.util.DbUtils" as Class).close(rs)
+        } catch (GroovyCastException e) {
+            ("org.jfrog.storage.util.DbUtils" as Class).close(rs)
+        }
+    }
   }
   // return the completed node list
   return nodelist
