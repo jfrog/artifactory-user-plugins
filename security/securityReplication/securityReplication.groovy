@@ -557,7 +557,7 @@ def checkArtifactoryVersion(version) {
     def artmid = artvers[1] as int
     def plugmid = plugvers[1] as int
     if (artmid != plugmid) return artmid > plugmid
-    def artmin = artvers[2] as int
+    def artmin = artvers[2].isNumber() ? artvers[2] as int : 0
     def plugmin = plugvers[2] as int
     return artmin > plugmin
 }
