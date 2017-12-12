@@ -542,33 +542,24 @@ def incompatibleVersions(ver, upList, maj, min) {
 }
 
 def compareVersions(version, major, minor) {
-    def vers = splitVersionParts(version)
+    def vers = version.split('\\.')
     def maj = vers[0] as int
     def min = vers[1] as int
     return (maj != major) ? (maj <=> major) : (min <=> minor)
 }
 
 def checkArtifactoryVersion(version) {
-    def artvers = splitVersionParts(version)
-    def plugvers = splitVersionParts(pluginVersion)
+    def artvers = version.split('[-.]')
+    def plugvers = pluginVersion.split('\\.')
     def artmaj = artvers[0] as int
     def plugmaj = plugvers[0] as int
     if (artmaj != plugmaj) return artmaj > plugmaj
     def artmid = artvers[1] as int
     def plugmid = plugvers[1] as int
     if (artmid != plugmid) return artmid > plugmid
-    def artmin = artvers[2].isNumber() ? artvers[2] as int : 0
+    def artmin = artvers[2] as int
     def plugmin = plugvers[2] as int
     return artmin > plugmin
-}
-
-def splitVersionParts(version) {
-    def versionParts = version =~ /(\d+)\.(\d+)\.(\d+|[a-zA-Z]+)/
-    if (versionParts.size() == 0) {
-        log.error "Failed to get version parts from version $version"
-        return null
-    }
-    return [versionParts[0][1], versionParts[0][2], versionParts[0][3]]
 }
 
 def simplifyFingerprints(upList) {
