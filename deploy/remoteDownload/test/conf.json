@@ -1,7 +1,7 @@
 {
 "repo": "maven-local",
-"path": "my/new/path/artifactory.png",
-"url": "https://www.jfrog.com/wp-content/uploads/2016/05/artifactory.png",
+"path": "my/new/path/image.png",
+"url": "https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png",
 "username": "admin",
 "password": "password"
 }
