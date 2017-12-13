@@ -18,7 +18,7 @@ class RemoteDownloadTest extends Specification {
         "curl -XPOST -uadmin:password -T ./src/test/groovy/RemoteDownloadTest/conf.json http://localhost:8088/artifactory/api/plugins/execute/remoteDownload".execute().waitFor()
 
         then:
-        artifactory.repository('maven-local').file('my/new/path/artifactory.png').info()
+        artifactory.repository('maven-local').file('my/new/path/image.png').info()
 
         cleanup:
         artifactory.repository('maven-local').delete()
