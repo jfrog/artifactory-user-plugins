@@ -9,7 +9,7 @@ import spock.lang.Stepwise
  * Created by stanleyf on 27/07/2017.
  */
 @Stepwise
-class userReplication extends BaseSpec {
+class UserReplication extends BaseSpec {
     final Integer REPLICATION_DELAY = 30000; // plugin wake up timer is every 60 seconds for replication to complete - securityreplication.json is 30 second
     def masterHA = super.masterHA
     def node1HA = super.node1HA
