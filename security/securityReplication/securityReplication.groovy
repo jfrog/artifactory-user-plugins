@@ -619,7 +619,7 @@ def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
         def writer = new StringWriter()
         writer.withPrintWriter { ex.printStackTrace(it) }
         log.error(writer.toString())
-        return [wrapData('js', "Exception during call: $ex.message", 500)]
+        return [wrapData('js', "Exception during call: $ex.message"), 500]
     }
 }
 
