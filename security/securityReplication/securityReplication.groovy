@@ -628,9 +628,7 @@ def makeRequest(req, auth, data = null, ctype = null) {
         def statusCode = resp.statusLine.statusCode
         return [wrapData('js', ips.text), statusCode]
     } catch (ex) {
-        def writer = new StringWriter()
-        writer.withPrintWriter { ex.printStackTrace(it) }
-        log.error(writer.toString())
+        log.error("Problem making request: $ex.message")
         return [wrapData('js', "Problem making request: $ex.message"), 502]
     } finally {
         httpclient?.close()
