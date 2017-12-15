@@ -771,7 +771,7 @@ def grabStuffFromSlaves(mygolden, upList, whoami, auth) {
             resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data)
         }
         if (resp[1] != 200) {
-            throw new RuntimeException("failed to retrieve data from $inst.key")
+            throw new RuntimeException("failed to retrieve data from $inst.key. Status code: ${resp[1]}")
         }
         def newDiff = unwrapData('jo', resp[0])
         if (verbose == true) {
