@@ -10,7 +10,6 @@ import spock.lang.Stepwise
  */
 @Stepwise
 class UserReplication extends BaseSpec {
-    final Integer REPLICATION_DELAY = 30000; // plugin wake up timer is every 60 seconds for replication to complete - securityreplication.json is 30 second
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
@@ -21,14 +20,14 @@ class UserReplication extends BaseSpec {
         ArtUsers helper = new ArtUsers()
 
         sa.createDefaultUserList()
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         when: "Delete default users from master node"
         sa.deleteDefaultUser()
 
         then: "Verify default users are deleted from master node"
         helper.verifyNoDefaultUsers(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         and: "Verify default users are deleted from node1 from the replication"
         helper.verifyNoDefaultUsers(node1HA)
@@ -47,7 +46,7 @@ class UserReplication extends BaseSpec {
 
         then: "Verify default users are created on master node"
         helper.verifyDefaultUsers(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         and: "Verify default users are replicated on node 1"
         helper.verifyDefaultUsers(node1HA)
@@ -69,7 +68,7 @@ class UserReplication extends BaseSpec {
 
         then: "verify user count created on the master node"
         ma.getAllUsers().size() == beforeUC + count
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify user count on node 1"
         helper.getUserCount(node1HA) == beforeUC + count
@@ -86,11 +85,7 @@ class UserReplication extends BaseSpec {
 
         when: "Create 300 users on slave node 1 "
         n1.createDynamicUserList(count, "node1", 1, "jfrog")
-
-        then: "verify user count created on the node 1"
-        sleep(REPLICATION_DELAY)
-        n1.getAllUsers().size() == n1.getAllUsers().size()
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify user count on master node"
         helper.getUserCount(masterHA) == n1.getAllUsers().size()
@@ -107,7 +102,7 @@ class UserReplication extends BaseSpec {
 
         when: "Create APIKeys for each of the default users"
         helper.createApiKeyDefaultUser(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify created APIKKey accessible for each default user in all artifactory nodes"
         helper.verifyApiKeyDefaultUser(masterHA, node1HA, node2Pro)
@@ -120,7 +115,7 @@ class UserReplication extends BaseSpec {
 
         when: "Create APIKeys for each of the default users"
         helper.regenerateApiKeyDefaultUser(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify created APIKKey accessible for each default user in all artifactory nodes"
         helper.verifyApiKeyDefaultUser(masterHA, node1HA, node2Pro)
@@ -133,7 +128,7 @@ class UserReplication extends BaseSpec {
 
         when: "Create APIKeys for each of the default users"
         helper.regenerateApiKeyDefaultUser(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify created APIKKey accessible for each default user in all artifactory nodes"
         helper.verifyApiKeyDefaultUser(node2Pro, masterHA, node1HA)
@@ -147,13 +142,13 @@ class UserReplication extends BaseSpec {
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
         int beforeUC = ma.getAllUsers().size()
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         when: "create 100 users in each node in parallel"
         def master = ma.createDynamicUserList(count, "masterp", 1, "jfrog")
         def node1 = n1.createDynamicUserList(count, "node1p", 1, "jfrog")
         def node2 = n2.createDynamicUserList(count, "node2p", 1, "jfrog")
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         then: "verify user count on master"
         ma.getAllUsers().size() == beforeUC + 3*count

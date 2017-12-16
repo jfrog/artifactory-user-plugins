@@ -7,7 +7,7 @@ import spock.lang.Stepwise
 
 @Stepwise
 class Shutdown extends BaseSpec {
-    final PTIMER = 30000
+    final SLEEP_TIME = 30000
     final count = 50
 
     def "Add users while master node is down"() {
@@ -16,7 +16,7 @@ class Shutdown extends BaseSpec {
         def up = false
         def sa = new SecurityTestApi(node1HA)
         sa.createDynamicUserList(count, "node1", 150, "jfrog")
-        sleep(PTIMER)
+        super.runReplication()
 
         then:
         ArtUsers.getUserCount(node1HA) == ArtUsers.getUserCount(node2Pro)
@@ -24,7 +24,8 @@ class Shutdown extends BaseSpec {
         when:
         Control.resume('8088')
         up = true
-        sleep(PTIMER)
+        sleep(SLEEP_TIME)
+        super.runReplication()
 
         then:
         ArtUsers.getUserCount(node1HA) == ArtUsers.getUserCount(masterHA)
@@ -39,19 +40,19 @@ class Shutdown extends BaseSpec {
         def up = false
         def sa = new SecurityTestApi(masterHA)
         sa.createDynamicUserList(count, "master", 300, "jfrog")
-        sleep(PTIMER)
-        def mastercount = ArtUsers.getUserCount(masterHA)
+        super.runReplication()
 
         then:
-        mastercount == ArtUsers.getUserCount(node1HA)
+        ArtUsers.getUserCount(masterHA) == ArtUsers.getUserCount(node1HA)
 
         when:
         Control.resume('8091')
         up = true
-        sleep(PTIMER)
+        sleep(SLEEP_TIME)
+        super.runReplication()
 
         then:
-        mastercount == ArtUsers.getUserCount(node2Pro)
+        ArtUsers.getUserCount(masterHA) == ArtUsers.getUserCount(node2Pro)
 
         cleanup:
         if (!up) Control.resume('8091')
@@ -65,7 +66,7 @@ class Shutdown extends BaseSpec {
         def sa2 = new SecurityTestApi(node2Pro)
         def sr1 = sa1.createDynamicUserList(25, "test1", 300, "jfrog")
         def sr2 = sa2.createDynamicUserList(30, "test2", 300, "jfrog")
-        sleep(PTIMER)
+        super.runReplication()
         def n1count = ArtUsers.getUserCount(node1HA)
 
         then:
@@ -74,10 +75,11 @@ class Shutdown extends BaseSpec {
         when:
         Control.resume('8088')
         up = true
-        sleep(PTIMER)
+        sleep(SLEEP_TIME)
+        super.runReplication()
 
         then:
-        n1count == ArtUsers.getUserCount(masterHA)
+        ArtUsers.getUserCount(node1HA) == ArtUsers.getUserCount(masterHA)
 
         cleanup:
         if (!up) Control.resume('8088')

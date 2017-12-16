@@ -19,7 +19,7 @@ import org.jfrog.artifactory.client.Artifactory
 abstract class BaseSpec extends Specification {
 
     static public Artifactory masterHA, node1HA, node2Pro
-    def artifactory = []
+    static public artifactory = []
     boolean testGroupReplication = false
     boolean testPermissionReplication = false
 
@@ -63,17 +63,38 @@ abstract class BaseSpec extends Specification {
         createPermission(node2Pro)
 
         when: "Enable Security Replication Plugin - Test can begin"
-        startReplication()
+        setupReplication()
 
     }
 
-    def startReplication () {
+    def setupReplication () {
         try {
             masterHA.plugins().execute("distSecRep").sync()
         } catch (HttpException ex) {
             println "Test Failed - Distribution security request failed " + ex.message
             assert false: "No Tests executed"
         }
+    }
+
+    def runReplication() {
+        def requestThreads = []
+        artifactory.each { art ->
+            Thread requestThread = new Thread({
+                ArtifactoryRequest configRequest = new ArtifactoryRequestImpl().apiUrl("api/plugins/execute/testRunSecurityReplication")
+                        .method(ArtifactoryRequest.Method.POST)
+                        .responseType(ArtifactoryRequest.ContentType.TEXT)
+                try {
+                    println "Requesting replication at ${art.getUri()}"
+                    def response = art.restCall(configRequest).toString()
+                    println "Replication executed at ${art.getUri()}: $response"
+                } catch (Exception ex) {
+                    println "Failed to execute replication at ${art.getUri()}: ${ex.getMessage()}"
+                }
+            })
+            requestThreads << requestThread
+        }
+        requestThreads.each { it.start() }
+        requestThreads.each { it.join() }
     }
 
     def getSecurityReplicationFilterParam(Artifactory art) {
