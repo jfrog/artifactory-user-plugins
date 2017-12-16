@@ -7,6 +7,7 @@ import spock.lang.Stepwise
 
 @Stepwise
 class Shutdown extends BaseSpec {
+    final SLEEP_TIME = 30000
     final count = 50
 
     def "Add users while master node is down"() {
@@ -23,6 +24,7 @@ class Shutdown extends BaseSpec {
         when:
         Control.resume('8088')
         up = true
+        sleep(SLEEP_TIME)
         super.runReplication()
 
         then:
@@ -39,18 +41,18 @@ class Shutdown extends BaseSpec {
         def sa = new SecurityTestApi(masterHA)
         sa.createDynamicUserList(count, "master", 300, "jfrog")
         super.runReplication()
-        def mastercount = ArtUsers.getUserCount(masterHA)
 
         then:
-        mastercount == ArtUsers.getUserCount(node1HA)
+        ArtUsers.getUserCount(masterHA) == ArtUsers.getUserCount(node1HA)
 
         when:
         Control.resume('8091')
         up = true
+        sleep(SLEEP_TIME)
         super.runReplication()
 
         then:
-        mastercount == ArtUsers.getUserCount(node2Pro)
+        ArtUsers.getUserCount(masterHA) == ArtUsers.getUserCount(node2Pro)
 
         cleanup:
         if (!up) Control.resume('8091')
@@ -73,10 +75,11 @@ class Shutdown extends BaseSpec {
         when:
         Control.resume('8088')
         up = true
+        sleep(SLEEP_TIME)
         super.runReplication()
 
         then:
-        n1count == ArtUsers.getUserCount(masterHA)
+        ArtUsers.getUserCount(node1HA) == ArtUsers.getUserCount(masterHA)
 
         cleanup:
         if (!up) Control.resume('8088')

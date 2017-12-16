@@ -87,8 +87,8 @@ abstract class BaseSpec extends Specification {
                     println "Requesting replication at ${art.getUri()}"
                     def response = art.restCall(configRequest).toString()
                     println "Replication executed at ${art.getUri()}: $response"
-                } catch (HttpResponseException hre) {
-                    println "Failed to execute replication at ${art.getUri()}: ${hre.getMessage()}"
+                } catch (Exception ex) {
+                    println "Failed to execute replication at ${art.getUri()}: ${ex.getMessage()}"
                 }
             })
             requestThreads << requestThread
