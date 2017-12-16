@@ -10,7 +10,6 @@ import spock.lang.Stepwise
 @Stepwise
 
 class GroupReplication extends BaseSpec {
-    final Integer REPLICATION_DELAY = 30000; // plugin wake up timer is every 60 seconds for replication to complete - securityreplication.json is 30 second
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
@@ -37,7 +36,7 @@ class GroupReplication extends BaseSpec {
 
         then: "Verify default group is deleted from master node"
         helper.verifyNoDefaultGroups(masterHA)
-        sleep(2*REPLICATION_DELAY)
+        super.runReplication()
 
         and: "Verify default groups are deleted from node1 from the replication "
         helper.verifyNoDefaultGroups(node1HA)
@@ -58,7 +57,7 @@ class GroupReplication extends BaseSpec {
 
         then: "Verify default group is deleted from master node"
         helper.verifyDefaultGroups(masterHA)
-        sleep(REPLICATION_DELAY)
+        super.runReplication()
 
         and: "Verify default groups are deleted from node1 from the replication "
         helper.verifyDefaultGroups(node1HA)
@@ -78,12 +77,11 @@ class GroupReplication extends BaseSpec {
 
         when: "Create 100 groups on master"
         ma.createDynamicGroupList(count, "masterg", 1, "jfrog")
-        sleep(2*REPLICATION_DELAY)
+        super.runReplication()
 
         then: "Verify group count on master "
         ma.getGroupsList().size() == beforeGC + count
-        sleep(REPLICATION_DELAY)
-
+        
         and: "verify group count on node 1"
         helper.getGroupCount(node1HA) == beforeGC + count
 
@@ -102,11 +100,10 @@ class GroupReplication extends BaseSpec {
 
         when: "Create 100 groups on master"
         n1.createDynamicGroupList(count, "node1g", 1, "jfrog")
-        sleep(2*REPLICATION_DELAY)
+        super.runReplication()
 
         then: "Verify group count on node1 "
         n1.getGroupsList().size() == beforeGC + count
-        sleep(REPLICATION_DELAY)
 
         and: "verify group count on node 1"
         helper.getGroupCount(masterHA) == beforeGC + count

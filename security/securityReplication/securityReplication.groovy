@@ -142,7 +142,7 @@ executions {
         status = stat
     }
 
-    //TODO: Delete later, testing purposes only
+    //testing purposes only
     testSecurityDump(httpMethod: 'GET') { params ->
         status = 200
         message = new JsonBuilder(normalize(extract())).toPrettyString()
@@ -177,6 +177,13 @@ executions {
             message = validateResponse(validateMesh())
         }
         status = 200
+    }
+
+    //testing purposes only
+    testRunSecurityReplication() {
+        runSecurityReplication()
+        status = 200
+        message = "Security Replication executed"
     }
 }
 
@@ -456,57 +463,61 @@ def getCronJob() {
 //general artifactory cron job hook
 jobs {
     securityReplicationWorker(cron: getCronJob()) {
-        def slurped = null
-        def targetFile = new File(artHome, "/plugins/securityReplication.json")
-        try {
-            slurped = new JsonSlurper().parse(targetFile)
-        } catch (JsonException ex) {
-            log.error("ALL: problem getting $targetFile")
-            return
-        }
-        def whoami = slurped.securityReplication.whoami
-        def distList = slurped.securityReplication.urls
-        if (distList.size() <= 1) {
-            log.debug("ALL: I'm all alone here, no need to do work")
-            return
-        }
-        def username = slurped.securityReplication.authorization.username
-        def password = slurped.securityReplication.authorization.password
-        def encoded = "$username:$password".getBytes().encodeBase64().toString()
-        def auth = "Basic $encoded"
-        def upList = checkInstances(distList, whoami, auth)
-        if (upList == null) return
-        log.debug("MASTER: upList size: ${upList.size()}, distList size: ${distList.size()}")
-        if (2*upList.size() <= distList.size()) {
-            log.debug("MASTER: Cannot continue, majority of instances unavailable")
-            return
-        }
-        log.debug("MASTER: Available instances are: $upList")
-        def ver = getArtifactoryVersion()
-        if (incompatibleVersions(ver, upList.values(), 5, 6)) {
-            log.debug("MASTER: Cannot continue, some instances are incompatible versions")
-            return
-        }
-        if (slurped.securityReplication.safety != 'off' && checkArtifactoryVersion(ver[0])) {
-            log.error("MASTER: Cannot continue, Artifactory version is too new; please update this plugin")
-            return
-        }
-        upList = simplifyFingerprints(upList)
-        log.debug("MASTER: Let's do some updates")
-        log.debug("MASTER: Getting the golden file")
-        def golden = findBestGolden(upList, whoami, auth)
-        log.debug("MASTER: Going to slaves to get stuff")
-        def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth)
-        if (verbose == true) {
-            log.debug("MASTER: The aggragated diff is: $bigDiff")
-        }
-        def mergedPatch = merge(bigDiff)
-        if (verbose == true) {
-            log.debug("MASTER: the merged golden patch is $mergedPatch")
-        }
-        log.debug("MASTER: I gotta send the golden copy back to my slaves")
-        sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden)
+        runSecurityReplication()
     }
+}
+
+def runSecurityReplication() {
+    def slurped = null
+    def targetFile = new File(artHome, "/plugins/securityReplication.json")
+    try {
+        slurped = new JsonSlurper().parse(targetFile)
+    } catch (JsonException ex) {
+        log.error("ALL: problem getting $targetFile")
+        return
+    }
+    def whoami = slurped.securityReplication.whoami
+    def distList = slurped.securityReplication.urls
+    if (distList.size() <= 1) {
+        log.debug("ALL: I'm all alone here, no need to do work")
+        return
+    }
+    def username = slurped.securityReplication.authorization.username
+    def password = slurped.securityReplication.authorization.password
+    def encoded = "$username:$password".getBytes().encodeBase64().toString()
+    def auth = "Basic $encoded"
+    def upList = checkInstances(distList, whoami, auth)
+    if (upList == null) return
+    log.debug("MASTER: upList size: ${upList.size()}, distList size: ${distList.size()}")
+    if (2*upList.size() <= distList.size()) {
+        log.debug("MASTER: Cannot continue, majority of instances unavailable")
+        return
+    }
+    log.debug("MASTER: Available instances are: $upList")
+    def ver = getArtifactoryVersion()
+    if (incompatibleVersions(ver, upList.values(), 5, 6)) {
+        log.debug("MASTER: Cannot continue, some instances are incompatible versions")
+        return
+    }
+    if (slurped.securityReplication.safety != 'off' && checkArtifactoryVersion(ver[0])) {
+        log.error("MASTER: Cannot continue, Artifactory version is too new; please update this plugin")
+        return
+    }
+    upList = simplifyFingerprints(upList)
+    log.debug("MASTER: Let's do some updates")
+    log.debug("MASTER: Getting the golden file")
+    def golden = findBestGolden(upList, whoami, auth)
+    log.debug("MASTER: Going to slaves to get stuff")
+    def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth)
+    if (verbose == true) {
+        log.debug("MASTER: The aggragated diff is: $bigDiff")
+    }
+    def mergedPatch = merge(bigDiff)
+    if (verbose == true) {
+        log.debug("MASTER: the merged golden patch is $mergedPatch")
+    }
+    log.debug("MASTER: I gotta send the golden copy back to my slaves")
+    sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden)
 }
 
 def readFile(fname) {
@@ -726,7 +737,7 @@ def checkInstances(distList, whoami, auth) {
         def resp = remoteCall(whoami, instance, auth, 'ping')
         log.debug("ALL: ping statusCode: ${resp[1]}")
         if (resp[1] != 200) {
-            log.warn("ALL: $instance instance is down")
+            log.warn("ALL: $instance instance is down. Status code: ${resp[1]}")
         } else {
             log.debug("ALL: $instance is up")
             if (!master) {
