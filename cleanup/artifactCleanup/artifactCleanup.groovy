@@ -39,8 +39,10 @@ class Global {
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"
 
+def pluginGroup = 'cleaners'
+
 executions {
-    cleanup() { params ->
+    cleanup(groups: [pluginGroup]) { params ->
         def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
@@ -49,7 +51,7 @@ executions {
         artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
-    cleanupCtl() { params ->
+    cleanupCtl(groups: [pluginGroup]) { params ->
         def command = params['command'] ? params['command'][0] as String : ''
 
         switch ( command ) {
