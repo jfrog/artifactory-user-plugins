@@ -103,10 +103,10 @@ For Artifactory 4.x:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60|excludedPropertySet=keeper:true"` 
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60|excludePropertySet=keeper:true"` 
   
 For Artifactory 5.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60;excludedPropertySet=keeper:true"`  
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?params=lastDownloadedDays=60;excludePropertySet=keeper:true"`  
 - Archive only `*.tgz` files that are 30 days old and have not been downloaded
   in 15 days:
 
