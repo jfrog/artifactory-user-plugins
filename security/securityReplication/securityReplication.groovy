@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.1
+// v1.1.2
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -39,7 +39,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.7.0"
+pluginVersion = "5.8.0"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
