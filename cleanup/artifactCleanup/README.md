@@ -45,7 +45,7 @@ To execute the plugin:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"`
 
-
+Admin users and users inside the `cleaners` group can execute the plugin.
 
 There is also ability to control the running script. The following operations can occur
 
