@@ -107,8 +107,6 @@ executions {
 class ArchiveConstants {
     // Variable to translate days to milliseconds (24 * 60 * 60 * 1000)
     final static DAYS_TO_MILLIS = 86400000
-    // HTTP status code response for OK
-    final static HTTP_OK = 200
 }
 
 /**
@@ -264,7 +262,7 @@ private archiveOldArtifacts(
                     byte[] buf = new byte[1]
                     def status = repositories.deploy(artifact, new ByteArrayInputStream(buf))
                     log.debug('Status of deploy: {}', status)
-                    if (status.statusCode != ArchiveConstants.HTTP_OK) {
+                    if (status.isError()) {
                         log.error('Call to deploy artifact {} failed!', artifact)
                     }
 
@@ -305,7 +303,7 @@ def moveBuildArtifact(archiveRepo, RepoPath artifact, String property, time) {
     // Move the actual artifact and check that it worked
     def status = repositories.move(artifact, archiveRepoPath)
     log.debug('status of move: {}', status)
-    if (status.statusCode != ArchiveConstants.HTTP_OK) {
+    if (status.isError()) {
         log.error('Call to move artifact {} failed!', artifact)
     }
 

@@ -5,6 +5,14 @@ This plugin is used to archive artifacts from a given source repository in
 Artifactory to a given destination repository. The artifacts are chosen based on
 a mixture of available parameters.
 
+Note that this plugin will delete your artifacts. The archive process is
+designed to preserve the name, path, and properties of an artifact, but save
+disk space by deleting the file contents. The artifact contents will be replaced
+with a one-byte file, and this 'stub' file will then be moved to the archive
+repository. This plugin is to be used for build artifacts that are no longer
+needed, when it's still useful to keep the build around for auditing or history
+purposes.
+
 Installation
 ------------
 
