@@ -110,10 +110,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     monthsUntil.add(Calendar.MONTH, -months)
 
     Global.stopCleaning = false
-    int foundArtifacts = 0
-    int noDeletePermissions = 0
+    int cntFoundArtifacts = 0
+    int cntNoDeletePermissions = 0
     long bytesFound = 0
-    long bytesFoundWithNoeDeletePermission = 0
+    long bytesFoundWithNoDeletePermission = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
     artifactsCleanedUp.find {
         try {
@@ -135,23 +135,23 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
             }
 
             bytesFound += repositories.getItemInfo(it)?.getSize()
-            foundArtifacts++
+            cntFoundArtifacts++
             if (!security.canDelete(it)) {
-                bytesFoundWithNoeDeletePermission += repositories.getItemInfo(it)?.getSize()
-                noDeletePermissions++
+                bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
+                cntNoDeletePermissions++
             }
             if (dryRun) {
-                log.info "Found $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                 log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
                 log.info "\t==> canDelete: ${security.canDelete(it)}"
 
             } else {
                 if (security.canDelete(it)) {
-                    log.info "Deleting $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                     repositories.delete it
                 } else {
                     log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
-                            "$foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                            "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
@@ -167,11 +167,11 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     }
 
     if (dryRun) {
-        log.info "Dry run - nothing deleted. Found $foundArtifacts artifacts consuming $bytesFound bytes"
-        log.info "From that $noDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoeDeletePermission bytes)"
+        log.info "Dry run - nothing deleted. Found $cntFoundArtifacts artifacts consuming $bytesFound bytes"
+        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     } else {
-        log.info "Finished cleanup, try to delete $foundArtifacts artifacts that took up $bytesFound bytes"
-        log.info "From that $noDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoeDeletePermission bytes)"
+        log.info "Finished cleanup, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
+        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     }
 }
 
