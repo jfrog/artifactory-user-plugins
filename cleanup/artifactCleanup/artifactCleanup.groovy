@@ -180,7 +180,7 @@ private def getSkippedPaths(String[] repos) {
     def skip = [:]
     for (String repoKey : repos){
         def pathsTmp = []
-        def aql = "items.find({\"repo\":\"" + repoKey + "\",\"type\": \"any\",\"@cleanup.skip\":\"true\"}).include(\"path\", \"name\", \"type\")"
+        def aql = "items.find({\"repo\":\"" + repoKey + "\",\"type\": \"any\",\"@cleanup.skip\":\"true\"}).include(\"repo\", \"path\", \"name\", \"type\")"
         searches.aql(aql.toString()) {
             for (item in it) {
                 def path = item.path + '/' + item.name

@@ -1,7 +1,7 @@
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-
+import org.jfrog.artifactory.client.model.Privilege
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
 
@@ -162,5 +162,47 @@ class ArtifactCleanupTest extends Specification {
 
         cleanup:
         artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup permissions test'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+        def file = new ByteArrayInputStream('test'.bytes)
+        artifactory.repository('maven-local').upload('foo/bar/test', file).doUpload()
+        artifactory.repository('maven-local').upload('foo/ban/test', file).doUpload()
+        // create permissions
+        def group = artifactory.security().builders().groupBuilder().name('cleaners')
+        artifactory.security().createOrUpdateGroup(group.build())
+        def user = artifactory.security().builders().userBuilder().name('nobody')
+        user.email('nobody@foo.bar').password('password').admin(false).groups(['cleaners'])
+        artifactory.security().createOrUpdate(user.build())
+        def princ = artifactory.security().builders().principalBuilder().name('nobody')
+        princ.privileges(Privilege.DELETE, Privilege.DEPLOY, Privilege.READ)
+        def princs = artifactory.security().builders().principalsBuilder().users(princ.build())
+        def perm = artifactory.security().builders().permissionTargetBuilder().name('testperm')
+        perm.repositories('maven-local').includesPattern('**/ban/**').principals(princs.build())
+        artifactory.security().createOrReplacePermissionTarget(perm.build())
+
+        when:
+        create('http://localhost:8088/artifactory', 'nobody', 'password').
+            plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('months', '0').sync()
+        artifactory.repository('maven-local').file('foo/bar/test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        when:
+        artifactory.repository('maven-local').file('foo/ban/test').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+        artifactory.security().deletePermissionTarget('testperm')
+        artifactory.security().deleteUser('nobody')
+        artifactory.security().deleteGroup('cleaners')
     }
 }
