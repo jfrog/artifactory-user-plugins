@@ -64,7 +64,7 @@ args.each{
     log.info "Starting data depreciation job for repository " + repoName
     // search given repo name for folders with property DataDeprecation = true
     def repoRootPath = RepoPathFactory.create(repoName, "/")
-    List<RepoPath> deprecatePaths = searches.itemsByProperties(forMap(['SFMCDataDeprecation': 'true']))
+    List<RepoPath> deprecatePaths = searches.itemsByProperties(forMap(['DataDeprecation': 'true']))
     List<ItemInfo> folderParent 
     List<String> fillVersions =[""]
     def int numArtifacts
