@@ -1,3 +1,5 @@
+***ATTENTION: This plugin has been deprecated since Artifactory version 5.8.3 and will not be tested against newer versions of Artifactory. Please use [buildSync](../buildSync/) plugin instead.*** 
+
 Artifactory Build Replication User Plugin
 =======================================
 
