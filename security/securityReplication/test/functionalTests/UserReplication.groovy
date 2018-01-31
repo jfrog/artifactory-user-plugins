@@ -13,6 +13,38 @@ class UserReplication extends BaseSpec {
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
+    def xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
+
+    def "Delete all users and verify admin type users are not deleted across all nodes" () {
+        setup:
+        SecurityTestApi sa = new SecurityTestApi(masterHA)
+        SecurityTestApi n1 = new SecurityTestApi(node1HA)
+        SecurityTestApi n2 = new SecurityTestApi(node2Pro)
+
+        ArtUsers helper = new ArtUsers()
+
+        sa.createDynamicUserList(1, "xray", 1, "donotdeleteme-ma")
+        n1.createDynamicUserList(1, "xray", 1, "donotdeleteme-n1")
+        n2.createDynamicUserList(1, "xray", 1, "donotdeleteme-n2")
+        xrayApiKeyma = sa.createUserApiKey("xray", "donotdeleteme-ma")
+        xrayApiKeyn1 = sa.createUserApiKey("xray", "donotdeleteme-n1")
+        xrayApiKeyn2 = sa.createUserApiKey("xray", "donotdeleteme-n2")
+
+
+        when: "Delete all users from master node"
+        sa.deleteAllUsers()
+        super.runReplication()
+
+        then: "Verify admin type users are not deleted from replication"
+        helper.verifynoReplicateUsers (node1HA)
+        helper.verifynoReplicateUsers (node2Pro)
+        helper.verifynoReplicateUsers (masterHA)
+
+        then: "Verify XRAY user api key was not replicated"
+        xrayApiKeyma == sa.getUserApiKey("xray", "donotdeleteme-ma")
+        xrayApiKeyn1 == n1.getUserApiKey("xray", "donotdeleteme-n1")
+        xrayApiKeyn2 == n2.getUserApiKey("xray", "donotdeleteme-n2")
+    }
 
     def "Delete Default users and verify deletion replicated across all the nodes"() {
         setup:
@@ -34,6 +66,8 @@ class UserReplication extends BaseSpec {
 
         and: "Verify default users are deleted from node2 from the replication"
         helper.verifyNoDefaultUsers(node2Pro)
+
+        and: "Verify admin type users are not deleted from replication"
     }
 
     def "Create default Users after it was deleted"() {
@@ -160,4 +194,24 @@ class UserReplication extends BaseSpec {
         ma.getAllUsers().size() == n2.getAllUsers().size()
     }
 
+    def "Verify auto created users exists and XRAY user credentials are not replicated after user tests" () {
+        setup:
+        SecurityTestApi sa = new SecurityTestApi(masterHA)
+        SecurityTestApi n1 = new SecurityTestApi(node1HA)
+        SecurityTestApi n2 = new SecurityTestApi(node2Pro)
+        def xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
+
+        ArtUsers helper = new ArtUsers()
+        when: "check admin user not replicated"
+
+        then: "Verify admin type users are not deleted from replication"
+        helper.verifynoReplicateUsers (node1HA)
+        helper.verifynoReplicateUsers (node2Pro)
+        helper.verifynoReplicateUsers (masterHA)
+
+        and: "Verify XRAY user api key was not replicated"
+        xrayApiKeyma == sa.getUserApiKey("xray", "donotdeleteme-ma")
+        xrayApiKeyn1 == n1.getUserApiKey("xray", "donotdeleteme-n1")
+        xrayApiKeyn2 == n2.getUserApiKey("xray", "donotdeleteme-n2")
+    }
 }

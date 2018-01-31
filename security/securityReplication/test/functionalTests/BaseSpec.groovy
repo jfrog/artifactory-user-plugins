@@ -23,6 +23,7 @@ abstract class BaseSpec extends Specification {
     boolean testGroupReplication = false
     boolean testPermissionReplication = false
 
+
     //
     // pre-popluate 3 artifactory instances with default set of Repositories, Groups, Permissions and Users.
     //
@@ -152,12 +153,14 @@ abstract class BaseSpec extends Specification {
         per.createPermissionDefault()
     }
 
+
     def setupArtifactory () {
         artifactory = new ArtifactoryManager().getArtifactoryInstances() as Artifactory[]
         masterHA = artifactory[0] as Artifactory
         node1HA = artifactory[1] as Artifactory
         node2Pro = artifactory[2] as Artifactory
     }
+
 /*
     def cleanupSpec() {
         setup:
