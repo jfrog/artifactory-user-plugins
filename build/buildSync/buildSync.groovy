@@ -50,6 +50,7 @@ import org.apache.http.impl.client.AbstractHttpClient
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.params.HttpParams
+import org.artifactory.request.RequestThreadLocal
 
 /**
  * Build Synchronization plugin replicates some build info json from one
@@ -239,6 +240,13 @@ executions {
 
 build {
     afterSave { buildRun ->
+        def request = RequestThreadLocal.getRequest().getRequest()
+        def propagate = request.getParameter('propagate')
+        if ('false' == propagate) {
+            // Avoid sync loops by not firing event-base push for builds created by the plugin
+            log.debug "Build request set to not propagate."
+            return
+        }
         log.debug "Checking if ${buildRun.name} should be pushed!"
         def baseConf = baseConfHolder.getCurrent()
         if (!baseConfHolder.errors) {
@@ -515,6 +523,8 @@ class RemoteBuildService extends BuildListBase {
         lastFailure = null
         http.request(PUT, JSON) {
             uri.path = "api/build"
+            // Avoid sync loops by not firing event-base push for builds created by the plugin
+            uri.query = [propagate: 'false']
             // JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream)
             // jsonGenerator.writeObject(buildInfo)
             body = buildInfo
