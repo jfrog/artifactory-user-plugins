@@ -51,6 +51,7 @@ pluginVersion = "5.8.3"
 verbose = false
 artHome = ctx.artifactoryHome.haAwareEtcDir
 cronExpression = null
+ignoredUsers = ['anonymous', '_internal', 'xray', 'access-admin']
 
 //general artifactory plugin execution hook
 executions {
@@ -1288,7 +1289,7 @@ def extract() {
             usrs = secserv.getAllUsers(true)
         }
         for (usr in usrs) {
-            if (usr.username == 'access-admin') continue
+            if (usr.username in ignoredUsers) continue
             def user = [:]
             user.password = usr.password
             user.salt = usr.salt
@@ -1386,7 +1387,7 @@ def update(ptch) {
                    path[0] in ['users', 'groups'] && path[2] == 'permissions') {
             // aces
             def isgroup = path[0] == 'groups'
-            if (!isgroup && path[1] == 'access-admin') continue
+            if (!isgroup && path[1] in ignoredUsers) continue
             def principal = oper == ':~' ? path[3] : key
             def acl = secserv.getAcl(principal)
             if (acl == null) continue
@@ -1415,7 +1416,7 @@ def update(ptch) {
                    path[0] in ['users', 'groups', 'permissions']) {
             // users, groups, and permissions
             if (oper == ';+' && path[0] == 'users') {
-                if (key == 'access-admin') continue
+                if (key in ignoredUsers) continue
                 def user = infact.createUser()
                 user.username = key
                 user.password = new SaltedPassword(val.password, val.salt)
@@ -1446,7 +1447,7 @@ def update(ptch) {
                     secserv.updateAcl(acl)
                 }
             } else if (oper == ';-' && path[0] == 'users') {
-                if (key == 'access-admin') continue
+                if (key in ignoredUsers) continue
                 secserv.deleteUser(key)
             } else if (oper == ';+' && path[0] == 'groups') {
                 def group = infact.createGroup()
@@ -1487,7 +1488,7 @@ def update(ptch) {
         } else if ((pathsize == 3 && oper in [';+', ';-'] ||
                     pathsize == 4 && oper == ':~') &&
                    path[0] == 'users' && path[2] == 'properties') {
-            if (path[1] == 'access-admin') continue
+            if (path[1] in ignoredUsers) continue
             // user properties, including API keys
             if (oper == ';+') {
                 modifyProp(secserv, 'create', path[1], key, val)
@@ -1498,7 +1499,7 @@ def update(ptch) {
             }
         } else if (pathsize == 3 && oper in [':+', ':-'] &&
                    path[0] == 'users' && path[2] == 'groups') {
-            if (path[1] == 'access-admin') continue
+            if (path[1] in ignoredUsers) continue
             // user/group memberships
             try {
                 if (oper == ':+') {
@@ -1510,7 +1511,7 @@ def update(ptch) {
                 log.debug("Exception changing group membership: $ex")
             }
         } else if (pathsize == 3 && oper == ':~' && path[0] == 'users') {
-            if (path[1] == 'access-admin') continue
+            if (path[1] in ignoredUsers) continue
             // simple user attributes (email, is admin, etc)
             def user = infact.copyUser(secserv.findUser(path[1]))
             if (path[2] == 'password') {
