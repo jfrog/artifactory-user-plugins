@@ -21,6 +21,10 @@ class UserReplication extends BaseSpec {
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
         ArtUsers helper = new ArtUsers()
+        
+        println "Artifactory Master " + masterHA.system().info()
+        println "Artifactory Node 1 " + node1HA.system().info()
+        println "Artifactory Node 2 " + node2Pro.system().info()
 
         sa.createSingleUser("xray", "donotdeleteme-ma")
         n1.createSingleUser("xray", "donotdeleteme-n1")

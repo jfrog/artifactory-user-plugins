@@ -91,7 +91,7 @@ class SecurityTestApi {
     static def deleteAllUsers () {
         Collection<String> userNames = art.security().userNames()
         for (String userName : userNames) {
-            if (userName != "anonymous" && userName != "admin" && userName != "access-admin" && userName != '_internal' && userName != 'xray') {
+            if (userName != "anonymous" && userName != "admin" && userName != "access-admin" && userName != "_internal" && userName != "xray") {
                 art.security().deleteUser(userName)
             }
         }
