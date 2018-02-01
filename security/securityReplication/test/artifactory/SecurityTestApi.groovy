@@ -26,7 +26,7 @@ class SecurityTestApi {
 
     final static CREATE_TIMER = 20
     Users uList = new Users()
-    static Artifactory art
+    Artifactory art
 
     List<Principal> userPList = []
     List<Principal> groupPList = []
