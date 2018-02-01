@@ -1,0 +1,36 @@
+{
+  "version": "1.0.1",
+  "name": "event-test-build",
+  "number": "1",
+  "type": "MAVEN",
+  "buildAgent": {
+    "name": "Maven",
+    "version": "3.0.5"
+  },
+  "modules": [
+    {
+      "properties": {
+        "name": "3.7-SNAPSHOT",
+        "project.build.sourceEncoding": "UTF-8",
+        "test": "pass"
+      },
+      "id": "org.jfrog.test:multi2:4.2-SNAPSHOT",
+      "artifacts": [
+        {
+          "type": "war;x=10",
+          "sha1": "11782b853891790c18d6633c0feec987a3d9dfca",
+          "sha256": "ae495099ccde0087c79f60fe8ce1983bcabcc6aaa8d40eb425f86a192cbe208c",
+          "md5": "c3cfde5db5c842a95bc2a4ae33f7a664",
+          "name": "webapp-1.0-SNAPSHOT.war"
+        }
+      ]
+    }
+  ],
+  "artifactoryPluginVersion" : "2.3.1",
+  "artifactoryPrincipal" : "james",
+  "url" : "http://my-ci-server/jenkins/job/event-test-build/1/",
+  "vcsRevision" : "e4ab2e493afd369ae7bdc90d69c912e8346a3463",
+  "vcsUrl" : "https://github.com/github-user/my-project.git",
+  "started": "2017-09-08T10:53:37.660-0700",
+  "durationMillis": 12612
+}
