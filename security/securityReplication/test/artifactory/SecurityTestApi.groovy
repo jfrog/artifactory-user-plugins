@@ -53,6 +53,7 @@ class SecurityTestApi {
         UserClass user = new UserClass ()
         user.name = userName
         user.password = password
+        user.email = 'null@jfrog.com'
         createUser(user)
     }
 
