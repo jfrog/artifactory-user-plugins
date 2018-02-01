@@ -49,6 +49,13 @@ class SecurityTestApi {
         }
     }
 
+    def createSingleUser (String userName, String password) {
+        UserClass user = new UserClass ()
+        user.name = userName
+        user.password = password
+        createUser(user)
+    }
+
     def createDynamicUserList (int count, String userPrefix, int startIndex, def password) {
         uList.clearUserList()
         uList.createDynamicUserList(count, startIndex, userPrefix, password )

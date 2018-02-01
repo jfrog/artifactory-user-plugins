@@ -20,16 +20,14 @@ class UserReplication extends BaseSpec {
         SecurityTestApi sa = new SecurityTestApi(masterHA)
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
-
         ArtUsers helper = new ArtUsers()
 
-        sa.createDynamicUserList(1, "xray", 1, "donotdeleteme-ma")
-        n1.createDynamicUserList(1, "xray", 1, "donotdeleteme-n1")
-        n2.createDynamicUserList(1, "xray", 1, "donotdeleteme-n2")
+        sa.createSingleUser("xray", "donotdeleteme-ma")
+        n1.createSingleUser("xray", "donotdeleteme-n1")
+        n2.createSingleUser("xray", "donotdeleteme-n2")
         xrayApiKeyma = sa.createUserApiKey("xray", "donotdeleteme-ma")
-        xrayApiKeyn1 = sa.createUserApiKey("xray", "donotdeleteme-n1")
-        xrayApiKeyn2 = sa.createUserApiKey("xray", "donotdeleteme-n2")
-
+        xrayApiKeyn1 = n1.createUserApiKey("xray", "donotdeleteme-n1")
+        xrayApiKeyn2 = n2.createUserApiKey("xray", "donotdeleteme-n2")
 
         when: "Delete all users from master node"
         sa.deleteAllUsers()
