@@ -13,7 +13,7 @@ class UserReplication extends BaseSpec {
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
-    def xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
+    static xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
 
     def "Delete all users and verify admin type users are not deleted across all nodes" () {
         setup:
