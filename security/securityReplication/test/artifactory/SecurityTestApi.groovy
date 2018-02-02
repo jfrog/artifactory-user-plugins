@@ -88,7 +88,7 @@ class SecurityTestApi {
         }
     }
 
-    static def deleteAllUsers () {
+    def deleteAllUsers () {
         Collection<String> userNames = art.security().userNames()
         for (String userName : userNames) {
             if (userName != "anonymous" && userName != "admin" && userName != "access-admin" && userName != "_internal" && userName != "xray") {
@@ -97,11 +97,11 @@ class SecurityTestApi {
         }
     }
 
-    static Collection<String> getAllUsers () {
+    def Collection<String> getAllUsers () {
         return art.security().userNames()
     }
 
-    static def deleteUser (String userId) {
+    def deleteUser (String userId) {
         art.security().deleteUser(userId)
     }
 
@@ -115,7 +115,7 @@ class SecurityTestApi {
         return defaultUserList
     }
 
-    static def revokeAllApiKeys () {
+    def revokeAllApiKeys () {
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
             .method (ArtifactoryRequest.Method.DELETE)
             .addQueryParam("deleteAll", "1")
@@ -123,13 +123,13 @@ class SecurityTestApi {
         art.restCall(securityRequest)
     }
 
-    static def revokeUserApiKey (def userName) {
+    def revokeUserApiKey (def userName) {
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey/${userName}")
             .method (ArtifactoryRequest.Method.DELETE)
         art.restCall(securityRequest)
     }
 
-    static def getUserApiKey (String userName, String password) {
+    def getUserApiKey (String userName, String password) {
         Artifactory artifactory = new ArtifactoryClient().create(art.getUri() + "/artifactory", userName, password)
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
             .method (ArtifactoryRequest.Method.GET)
@@ -138,7 +138,7 @@ class SecurityTestApi {
         return response['apiKey']
     }
 
-    static def regenerateUserApiKey (String userName, String password) {
+    def regenerateUserApiKey (String userName, String password) {
         Artifactory artifactory = new ArtifactoryClient().create(art.getUri() + "/artifactory", userName, password)
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
                 .method (ArtifactoryRequest.Method.PUT)
@@ -147,7 +147,7 @@ class SecurityTestApi {
         return response['apiKey']
     }
 
-    static def createUserApiKey (String userName, String password) {
+    def createUserApiKey (String userName, String password) {
         Artifactory artifactory = new ArtifactoryClient().create(art.uri + "/artifactory", userName, password)
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
                 .method (ArtifactoryRequest.Method.POST)
@@ -160,14 +160,14 @@ class SecurityTestApi {
 //######## Groups           ############################################
 //######################################################################
 
-    static def createDefaultGroups () {
+    def createDefaultGroups () {
         Groups defaultGroups = new Groups ()
         defaultGroups.defaultGroupList.each { group ->
             createGroup(group)
         }
     }
 
-    static def createDynamicGroupList (int count, String userPrefix, int startIndex, def password) {
+    def createDynamicGroupList (int count, String userPrefix, int startIndex, def password) {
         Groups gList = new Groups()
         gList.clearGroupsList()
         gList.createDynamicGroupList(count, startIndex, userPrefix, password )
@@ -176,7 +176,7 @@ class SecurityTestApi {
         }
     }
 
-    static private def createGroup (GroupClass group) {
+    def createGroup (GroupClass group) {
         Group grp = art.security().builders().groupBuilder()
                 .name(group.name)
                 .autoJoin(group.autoJoin)
@@ -186,7 +186,7 @@ class SecurityTestApi {
         sleep (CREATE_TIMER)
     }
 
-    static def deleteDefaultGroup () {
+    def deleteDefaultGroup () {
         Groups defaultGroups = new Groups()
         defaultGroups.defaultGroupList.each { group ->
             println "Deleting " + group.name
@@ -194,18 +194,18 @@ class SecurityTestApi {
         }
     }
 
-    static def deleteAllGroups () {
+    def deleteAllGroups () {
         List<String> groupNames = art.security().groupNames()
         for (String groupName : groupNames) {
             art.security().deleteGroup(groupName)
         }
     }
 
-    static List<String> getGroupsList () {
+    def List<String> getGroupsList () {
         return art.security().groupNames()
     }
 
-    static List<String> getDefaultGroupsList () {
+    def List<String> getDefaultGroupsList () {
         List<String> defaultGList = []
         Groups defaultGroups = new Groups ()
         defaultGroups.defaultGroupList.each {group ->
@@ -219,7 +219,7 @@ class SecurityTestApi {
 //######## Permission       ############################################
 //######################################################################
 
-    static def deleteDefaultPermission ( ) {
+    def deleteDefaultPermission ( ) {
         PermissionTargets permissions = new PermissionTargets();
 
         permissions.permissionList.each { pItem ->
@@ -260,11 +260,11 @@ class SecurityTestApi {
         }
     }
 
-    static List<String> getPermissionList () {
+    def List<String> getPermissionList () {
         return art.security().permissionTargets()
     }
 
-    private def buildUserPermission(Map<String, List> users) {
+    def buildUserPermission(Map<String, List> users) {
         userPList.clear()
         users.each { k, v ->
             Principal userP = art.security().builders().principalBuilder()
@@ -275,7 +275,7 @@ class SecurityTestApi {
         }
     }
 
-    private def buildGroupPermission(Map<String, List> groups) {
+    def buildGroupPermission(Map<String, List> groups) {
         groupPList.clear()
         groups.each { k, v ->
             Principal groupP = art.security().builders().principalBuilder()
@@ -286,14 +286,14 @@ class SecurityTestApi {
         }
     }
 
-    private def buildRepositoryPermission (def repoListofList) {
+    def buildRepositoryPermission (def repoListofList) {
         repoPList.clear()
         repoListofList.each { repo ->
             repoPList << repo.toString()
         }
     }
 
-    private def buildGroupList (def groups) {
+    def buildGroupList (def groups) {
         userGroupList.clear()
         groups.each { grp ->
             userGroupList.add(grp as String)
