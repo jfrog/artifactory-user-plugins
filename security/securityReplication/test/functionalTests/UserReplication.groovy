@@ -13,7 +13,7 @@ class UserReplication extends BaseSpec {
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
-    def xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
+    static xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
 
     def "Delete all users and verify admin type users are not deleted across all nodes" () {
         setup:
@@ -21,10 +21,6 @@ class UserReplication extends BaseSpec {
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
         ArtUsers helper = new ArtUsers()
-        
-        println "Artifactory Master " + masterHA.system().info()
-        println "Artifactory Node 1 " + node1HA.system().info()
-        println "Artifactory Node 2 " + node2Pro.system().info()
 
         sa.createSingleUser("xray", "donotdeleteme-ma")
         n1.createSingleUser("xray", "donotdeleteme-n1")
@@ -207,13 +203,16 @@ class UserReplication extends BaseSpec {
 
         ArtUsers helper = new ArtUsers()
         when: "check admin user not replicated"
+        println "Artifactory Master XRAY key " + xrayApiKeyma + " read " + sa.getUserApiKey("xray", "donotdeleteme-ma")
+        println "Artifactory Node 1 XRAY key " + xrayApiKeyn1 + " read " + n1.getUserApiKey("xray", "donotdeleteme-n1")
+        println "Artifactory Node 2 XRAY key " + xrayApiKeyn2 + " read " + n2.getUserApiKey("xray", "donotdeleteme-n2")
 
         then: "Verify admin type users are not deleted from replication"
         helper.verifynoReplicateUsers (node1HA)
         helper.verifynoReplicateUsers (node2Pro)
         helper.verifynoReplicateUsers (masterHA)
 
-        and: "Verify XRAY user api key was not replicated"
+        then: "Verify XRAY user api key was not replicated"
         xrayApiKeyma == sa.getUserApiKey("xray", "donotdeleteme-ma")
         xrayApiKeyn1 == n1.getUserApiKey("xray", "donotdeleteme-n1")
         xrayApiKeyn2 == n2.getUserApiKey("xray", "donotdeleteme-n2")
