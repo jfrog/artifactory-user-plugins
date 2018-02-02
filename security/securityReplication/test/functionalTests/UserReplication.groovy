@@ -9,11 +9,12 @@ import spock.lang.Stepwise
  * Created by stanleyf on 27/07/2017.
  */
 @Stepwise
+
 class UserReplication extends BaseSpec {
     def masterHA = super.masterHA
     def node1HA = super.node1HA
     def node2Pro = super.node2Pro
-    static xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
+    def static xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
 
     def "Delete all users and verify admin type users are not deleted across all nodes" () {
         setup:
@@ -200,12 +201,13 @@ class UserReplication extends BaseSpec {
         SecurityTestApi sa = new SecurityTestApi(masterHA)
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
+        def currentkeyma, currentkeyn1, currentkeyn2
 
         ArtUsers helper = new ArtUsers()
         when: "check admin user not replicated"
-        println "Artifactory Master XRAY key " + xrayApiKeyma + " read " + sa.getUserApiKey("xray", "donotdeleteme-ma")
-        println "Artifactory Node 1 XRAY key " + xrayApiKeyn1 + " read " + n1.getUserApiKey("xray", "donotdeleteme-n1")
-        println "Artifactory Node 2 XRAY key " + xrayApiKeyn2 + " read " + n2.getUserApiKey("xray", "donotdeleteme-n2")
+        currentkeyma = sa.getUserApiKey("xray", "donotdeleteme-ma")
+        currentkeyn1 = n1.getUserApiKey("xray", "donotdeleteme-n1")
+        currentkeyn2 = n2.getUserApiKey("xray", "donotdeleteme-n2")
 
         then: "Verify admin type users are not deleted from replication"
         helper.verifynoReplicateUsers (node1HA)
@@ -213,8 +215,8 @@ class UserReplication extends BaseSpec {
         helper.verifynoReplicateUsers (masterHA)
 
         then: "Verify XRAY user api key was not replicated"
-        xrayApiKeyma == sa.getUserApiKey("xray", "donotdeleteme-ma")
-        xrayApiKeyn1 == n1.getUserApiKey("xray", "donotdeleteme-n1")
-        xrayApiKeyn2 == n2.getUserApiKey("xray", "donotdeleteme-n2")
+        xrayApiKeyma == currentkeyma
+        xrayApiKeyn1 == currentkeyn1
+        xrayApiKeyn2 == currentkeyn2
     }
 }
