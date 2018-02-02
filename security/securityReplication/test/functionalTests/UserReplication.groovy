@@ -204,7 +204,6 @@ class UserReplication extends BaseSpec {
         SecurityTestApi sa = new SecurityTestApi(masterHA)
         SecurityTestApi n1 = new SecurityTestApi(node1HA)
         SecurityTestApi n2 = new SecurityTestApi(node2Pro)
-        def xrayApiKeyma, xrayApiKeyn1, xrayApiKeyn2
 
         ArtUsers helper = new ArtUsers()
         when: "check admin user not replicated"
