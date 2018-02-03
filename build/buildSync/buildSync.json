@@ -40,6 +40,14 @@
             "activateOnSave": false
         },
         {
+            "key": "PushTo8081WithPromotions",
+            "destinations": ["local-1"],
+            "buildNames": ["test-build"],
+            "delete": false,
+            "activateOnSave": false,
+            "syncPromotions": true 
+        },
+        {
             "key": "EventPushTo8081",
             "destinations": ["local-1"],
             "buildNames": ["event-test-build"],
