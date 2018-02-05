@@ -257,12 +257,16 @@ executions {
 
 build {
     afterSave { buildRun ->
-        def request = RequestThreadLocal.getRequest()?.getRequest()
-        def propagate = request?.getParameter('propagate')
-        if ('false' == propagate) {
-            // Avoid sync loops by not firing event-base push for builds created by the plugin
-            log.debug "Build request set to not propagate."
-            return
+        try {
+            def request = RequestThreadLocal.getRequest()?.getRequest()
+            def propagate = request?.getParameter('propagate')
+            if ('false' == propagate) {
+                // Avoid sync loops by not firing event-base push for builds created by the plugin
+                log.debug "Build request set to not propagate."
+                return
+            }
+        } catch (MissingMethodException e) {
+            log.warn "Artifactory 4.x or older does not support event push Build replication loop"
         }
         log.debug "Checking if ${buildRun.name} should be pushed!"
         def baseConf = baseConfHolder.getCurrent()
