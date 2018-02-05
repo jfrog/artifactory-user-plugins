@@ -150,7 +150,5 @@ Creating A buildSync.json
    ```
 
    Everything is the same as pull configurations, except:
-   - The `activateOnSave` flag will add a listener in this plugin that will
-     trigger push as soon as a new build arrives. (Optional, false by default)
-   - The `syncPromotions` flag will check and synchronize promotion status. Requires `ignoreStartDate` set to `true`  (Optional, false by default)
+   - The `activateOnSave` flag will add a listener in this plugin that will trigger push as soon as a new build arrives. (Optional, false by default)   
    - In Push mode a full reinsert is done on the remote server.
