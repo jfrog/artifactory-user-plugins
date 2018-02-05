@@ -23,7 +23,7 @@ To kick off replication, make a simple REST request.
   (need example output)
   ```
 
-- Event push replication will happend after every Build creation.
+- Event push replication will happen automatically after every Build creation.
 
 Boom, your builds will be replicated to the appropriate server.
 
