@@ -174,6 +174,13 @@ executions {
             def forceS = params?.get('force')?.get(0) as String
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PullConfig pullConf = baseConf.pullConfigs[confKey]
+
+            if (!baseConf.ignoreStartDate && pullConf.syncPromotions) {
+                status = 400
+                message = "ignoreStartDate must be set to true when syncing promotions"
+                return
+            }
+
             def res = doSync(
                 new RemoteBuildService(pullConf.source, log, baseConf.ignoreStartDate),
                 new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins, baseConf.ignoreStartDate),
@@ -214,12 +221,17 @@ executions {
             def forceS = params?.get('force')?.get(0) as String
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PushConfig pushConf = baseConf.pushConfigs[confKey]
-            def localBuildService = new LocalBuildService(ctx, log, false, false, baseConf.ignoreStartDate)
+
+            if (!baseConf.ignoreStartDate && pushConf.syncPromotions) {
+                status = 400
+                message = "ignoreStartDate must be set to true when syncing promotions"
+                return
+            }
 
             List<String> res = []
             pushConf.destinations.each { destServer ->
                 res.addAll(doSync(
-                    localBuildService,
+                    new LocalBuildService(ctx, log, false, false, baseConf.ignoreStartDate),
                     new RemoteBuildService(destServer, log, baseConf.ignoreStartDate),
                     pushConf.buildNames,
                     pushConf.delete, 0, force, baseConf.maxThreads, baseConf.ignoreStartDate,
@@ -245,8 +257,8 @@ executions {
 
 build {
     afterSave { buildRun ->
-        def request = RequestThreadLocal.getRequest().getRequest()
-        def propagate = request.getParameter('propagate')
+        def request = RequestThreadLocal.getRequest()?.getRequest()
+        def propagate = request?.getParameter('propagate')
         if ('false' == propagate) {
             // Avoid sync loops by not firing event-base push for builds created by the plugin
             log.debug "Build request set to not propagate."
@@ -317,7 +329,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                     if (max == 0 || submitted < max) {
                         submitted++
                         buildThreadPool.submit( {
-                            Build buildInfo = src.getBuildInfo(sb, ignoreStartDate)
+                            Build buildInfo = src.getBuildInfo(sb)
                             if (buildInfo) {
                                 dest.addBuild(buildInfo)
                             }
@@ -335,7 +347,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                             if (max == 0 || submitted < max) {
                                 submitted++
                                 futures << buildThreadPool.submit({
-                                    Build buildInfo = src.getBuildInfo(sb, ignoreStartDate)
+                                    Build buildInfo = src.getBuildInfo(sb)
                                     if (buildInfo) {
                                         dest.deleteBuild(db)
                                         dest.addBuild(buildInfo)
@@ -369,7 +381,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
 
 abstract class BuildListBase {
     def log
-    boolean ignoreStartDate = false
+    boolean ignoreStartDate = true
     private NavigableSet<BuildRun> _allLatestBuilds = null
 
     BuildListBase(log, ignoreStartDate) {
@@ -423,7 +435,7 @@ abstract class BuildListBase {
 
     abstract NavigableSet<BuildRun> getBuildNumbers(String buildName, boolean includePromotions)
 
-    abstract Build getBuildInfo(BuildRun b, boolean ignoreStartDate)
+    abstract Build getBuildInfo(BuildRun b)
 
     abstract def addBuild(Build buildInfo)
 
@@ -529,7 +541,7 @@ class RemoteBuildService extends BuildListBase {
                     json.results.each { b ->
                         result << createBuildRunFromJson(buildName,
                                 b['build.number'],
-                                //TODO: Fix started date
+                                //TODO: Handle started date. Depends on RTFACT-15799
                                 b['build.created'] as String,
                                 b['build.promotions'])
                     }
@@ -550,10 +562,10 @@ class RemoteBuildService extends BuildListBase {
     }
 
     @Override
-    Build getBuildInfo(BuildRun b, boolean ignoreStartDate) {
+    Build getBuildInfo(BuildRun b) {
         lastFailure = null
         def uri = "api/build/${b.name}/${b.number}"
-        queryParams = [:]
+        def queryParams = [:]
         if (!ignoreStartDate) {
             queryParams << [started: b.started]
         }
@@ -598,12 +610,16 @@ class RemoteBuildService extends BuildListBase {
     @Override
     def deleteBuild(BuildRun buildRun) {
         lastFailure = null
-        http.request(DELETE, JSON) {
-            uri.path = "api/build/${buildRun.name}"
-            uri.query = [buildNumbers: buildRun.number, artifacts: 0, deleteAll: 0]
-            response.success = {
-                log.info "Successfully deleted build ${buildRun.name}/${buildRun.number}"
+        if (ignoreStartDate) {
+            http.request(DELETE, JSON) {
+                uri.path = "api/build/${buildRun.name}"
+                uri.query = [buildNumbers: buildRun.number, artifacts: 0, deleteAll: 0]
+                response.success = {
+                    log.info "Successfully deleted build ${buildRun.name}/${buildRun.number}"
+                }
             }
+        } else {
+            //TODO: Handle started date. Depends on RTFACT-15799
         }
         if (lastFailure != null) {
             def msg = "Could not delete build ${buildRun.name}/${buildRun.number} in ${server.url} got: ${lastFailure.reasonPhrase}"
@@ -655,7 +671,7 @@ class LocalBuildService extends BuildListBase {
                 result.each { b ->
                     res << createBuildRunFromJson(buildName,
                             b['build.number'],
-                            //TODO: Fix started date
+                            //TODO: Handle started date. Depends on RTFACT-15799
                             b['build.created'] as String,
                             b['build.promotions'])
                 }
@@ -695,17 +711,22 @@ class LocalBuildService extends BuildListBase {
 
     @Override
     def deleteBuild(BuildRun buildRun) {
-        try {
-            log.info "Deleting local build $buildRun"
-            builds.deleteBuild(buildRun)
-        } catch (Exception e) {
-            String message = "Deletion of build ${buildRun} failed due to: ${e.getMessage()}"
-            log.warn(message, e)
+        if (ignoreStartDate) {
+            def buildRuns = builds.getBuilds(buildRun.name, buildRun.number, null)
+            buildRuns.each { builds.deleteBuild(it) }
+        } else {
+            try {
+                log.info "Deleting local build $buildRun"
+                builds.deleteBuild(buildRun)
+            } catch (Exception e) {
+                String message = "Deletion of build ${buildRun} failed due to: ${e.getMessage()}"
+                log.warn(message, e)
+            }
         }
     }
 
     @Override
-    Build getBuildInfo(BuildRun b, boolean ignoreStartDate) {
+    Build getBuildInfo(BuildRun b) {
         if (!ignoreStartDate) {
             return buildStoreService.getBuildJson(b)
         } else {
