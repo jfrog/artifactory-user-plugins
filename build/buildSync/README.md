@@ -23,12 +23,7 @@ To kick off replication, make a simple REST request.
   (need example output)
   ```
 
-- Call an event push replication
-
-  ```
-  >>> Needs an example
-  (need example output)
-  ```
+- Event push replication will happend after every Build creation.
 
 Boom, your builds will be replicated to the appropriate server.
 
@@ -41,6 +36,7 @@ Features
 - Regex build name replication.
 - Optional turn on/off listening of build save plugins when replication is
   fired.
+- Replicate promotion status.
 
 Installation
 ------------
@@ -105,7 +101,8 @@ Creating A buildSync.json
            "buildNames": [".*"],
            "delete": true,
            "reinsert": false,
-           "activatePlugins": true
+           "activatePlugins": true,
+           "syncPromotions": false
        },
        ...
    ]
@@ -132,6 +129,7 @@ Creating A buildSync.json
      - Activate all Users Plugins.
    - The `activatePlugins` flag will add the new build info as is and activate
      only the User Plugins. (Optional, false by default)
+   - The `syncPromotions` flag will check and synchronize promotion status. Requires `ignoreStartDate` set to `true`  (Optional, false by default)
    - The `maxThreads` setting defines the number of threads to use when syncing.  
      The default is 10, set it higher for faster performance on larger servers.
 
@@ -144,7 +142,8 @@ Creating A buildSync.json
            "destinations": [ "local-2", "local-3" ],
            "buildNames": [".*"],
            "delete": true,
-           "activateOnSave": false
+           "activateOnSave": false,
+           "syncPromotions": false
        },
        ...
    ]
@@ -153,4 +152,5 @@ Creating A buildSync.json
    Everything is the same as pull configurations, except:
    - The `activateOnSave` flag will add a listener in this plugin that will
      trigger push as soon as a new build arrives. (Optional, false by default)
+   - The `syncPromotions` flag will check and synchronize promotion status. Requires `ignoreStartDate` set to `true`  (Optional, false by default)
    - In Push mode a full reinsert is done on the remote server.
