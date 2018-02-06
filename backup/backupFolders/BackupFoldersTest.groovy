@@ -1,6 +1,6 @@
 import groovy.json.JsonBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
-import org.jfrog.pluginsdevenv.Control
+import org.jfrog.lilypad.Control
 import spock.lang.Specification
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create

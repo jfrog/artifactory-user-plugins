@@ -1,5 +1,5 @@
 import spock.lang.Specification
-import org.jfrog.pluginsdevenv.Control
+import org.jfrog.lilypad.Control
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 import groovy.json.JsonSlurper

@@ -5,7 +5,7 @@ import org.jfrog.artifactory.client.model.Privilege
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
 import spock.lang.Shared
 import spock.lang.Specification
-import org.jfrog.pluginsdevenv.util.Docker
+import org.jfrog.lilypad.util.Docker
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 
