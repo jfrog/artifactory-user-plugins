@@ -1,7 +1,7 @@
 Artifacts delete based on artifact properties User Plugin
 =====================================
 ##Description:
-This plugin deletes all builds that are. It can be run automatically as a scheduled job.
+This plugin deletes builds based on properties defined on repositories . It can be run automatically as a scheduled job.
 
 ##Features:
 This plugin Takes the Parameters from the Artifact/Repository
