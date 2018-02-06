@@ -34,10 +34,10 @@ def depreciateData(repoName){
         log.info "Depreciating data for path " + repoPath
         
 
-        String deprecateMethodStr = repositories.getProperty(repoPath, 'DataDeprecationMethod')   //majormoduleversion:4 This is the Property on the artifact
+        String deprecateMethodStr = repositories.getProperty(repoPath, 'DataDeprecationMethod')   //version:4 This is the Property on the artifact
 if (deprecateMethodStr !=null)
 {
-    String[] depreciateMethodOpts = deprecateMethodStr.split(':')   //  (majorversion) : (4) 
+    String[] depreciateMethodOpts = deprecateMethodStr.split(':')   //  (version) : (4) 
 
     String[] depreciateMethodArgs = depreciateMethodOpts[1]
 moduleMajorVersion(repoPath,repoName,depreciateMethodArgs)
@@ -50,7 +50,7 @@ moduleMajorVersion(repoPath,repoName,depreciateMethodArgs)
 }
 /**
     Deprecate files by Module name and major version, removing by build number
-    Keep last x amount of semantic versions of an Artifact
+    Keep last x number of semantic versions of an Artifact
     args is assumed to be a single integer value (but as a string) for number of files to keep
 */
 def moduleMajorVersion(RepoPath repoPath, repoName,String[] args){
@@ -147,8 +147,8 @@ def verToKeep =[]
 sortedMajorUniqueVersions.each {
 def String versionToPass = it
 def startwithparam = sorted.findAll { y -> y.startsWith(versionToPass)}
-def top5values = startwithparam.take(numbersToKeep)
-verToKeep.addAll(top5values)
+def topxvalues = startwithparam.take(numbersToKeep)
+verToKeep.addAll(topxvalues) 
 }
 
 return verToKeep
