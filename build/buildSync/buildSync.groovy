@@ -176,7 +176,7 @@ executions {
             PullConfig pullConf = baseConf.pullConfigs[confKey]
 
             if (!baseConf.ignoreStartDate && pullConf.syncPromotions) {
-                status = 400
+                status = 409
                 message = "ignoreStartDate must be set to true when syncing promotions"
                 return
             }
@@ -223,7 +223,7 @@ executions {
             PushConfig pushConf = baseConf.pushConfigs[confKey]
 
             if (!baseConf.ignoreStartDate && pushConf.syncPromotions) {
-                status = 400
+                status = 409
                 message = "ignoreStartDate must be set to true when syncing promotions"
                 return
             }
