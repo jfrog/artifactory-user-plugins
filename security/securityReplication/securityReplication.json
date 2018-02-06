@@ -1,5 +1,6 @@
 {
     "securityReplication": {
+        "safety": true,
         "authorization": {
             "password": "password",
             "username": "admin"

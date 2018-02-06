@@ -2,7 +2,7 @@ import groovy.json.JsonSlurper
 import groovy.xml.XmlUtil
 import spock.lang.Shared
 import spock.lang.Specification
-import org.jfrog.pluginsdevenv.util.Docker
+import org.jfrog.lilypad.util.Docker
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 

@@ -5,6 +5,14 @@ This plugin is used to archive artifacts from a given source repository in
 Artifactory to a given destination repository. The artifacts are chosen based on
 a mixture of available parameters.
 
+Note that this plugin will delete your artifacts. The archive process is
+designed to preserve the name, path, and properties of an artifact, but save
+disk space by deleting the file contents. The artifact contents will be replaced
+with a one-byte file, and this 'stub' file will then be moved to the archive
+repository. This plugin is to be used for build artifacts that are no longer
+needed, when it's still useful to keep the build around for auditing or history
+purposes.
+
 Installation
 ------------
 
@@ -103,10 +111,11 @@ For Artifactory 4.x:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=lastDownloadedDays=60|excludedPropertySet=keeper:true|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=lastDownloadedDays=60|excludePropertySet=keeper:true|archiveRepo=build-packages-archived"`
 
 For Artifactory 5.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages;params=lastDownloadedDays=60;excludedPropertySet=keeper:true;archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages;params=lastDownloadedDays=60;excludePropertySet=keeper:true;archiveRepo=build-packages-archived"`
+
 - Archive only `*.tgz` files that are 30 days old and have not been downloaded
   in 15 days:
 

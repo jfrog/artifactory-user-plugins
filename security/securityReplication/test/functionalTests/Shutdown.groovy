@@ -2,7 +2,7 @@ package SecurityReplicationTest
 
 import artifactory.SecurityTestApi
 import common.ArtUsers
-import org.jfrog.pluginsdevenv.Control
+import org.jfrog.lilypad.Control
 import spock.lang.Stepwise
 
 @Stepwise

@@ -62,6 +62,20 @@ class ArtUsers {
         return true
     }
 
+    static def verifynoReplicateUsers (Artifactory art) {
+        SecurityTestApi sa = new SecurityTestApi(art)
+        List<String> noDeleteUsersList = ['xray', '_internal', 'access-admin']
+        try {
+           noDeleteUsersList.each { defaultUser ->
+                art.security().user(defaultUser)
+            }
+        } catch (HttpResponseException he) {
+            println "Did not find a do not delete user at: " + art.getUri() + ". Error: " + he.message
+            return false
+        }
+        return true
+    }
+
     static def getUserCount (Artifactory art) {
         SecurityTestApi sa = new SecurityTestApi(art)
         return sa.getAllUsers().size()

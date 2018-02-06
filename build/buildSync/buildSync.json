@@ -29,15 +29,47 @@
             "delete": false,
             "activatePlugins": true,
             "reinsert": false
+        },
+        {
+            "key": "PullFrom8081",
+            "source": "local-1",
+            "buildNames": ["test-build"],
+            "delete": false,
+            "activatePlugins": true,
+            "reinsert": false
+        },
+        {
+            "key": "PullFrom8081WithPromotions",
+            "source": "local-1",
+            "buildNames": ["test-build"],
+            "delete": false,
+            "activatePlugins": false,
+            "reinsert": false,
+            "syncPromotions": true
         }
     ],
     "pushConfigs": [
         {
-            "key": "PushAllTo8080",
+            "key": "PushTo8081",
             "destinations": ["local-1"],
-            "buildNames": [".*"],
+            "buildNames": ["test-build"],
             "delete": false,
             "activateOnSave": false
+        },
+        {
+            "key": "PushTo8081WithPromotions",
+            "destinations": ["local-1"],
+            "buildNames": ["test-build"],
+            "delete": false,
+            "activateOnSave": false,
+            "syncPromotions": true
+        },
+        {
+            "key": "EventPushTo8081",
+            "destinations": ["local-1"],
+            "buildNames": ["event-test-build"],
+            "delete": false,
+            "activateOnSave": true
         }
     ]
 }

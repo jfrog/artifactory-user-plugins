@@ -129,31 +129,6 @@
             "salt": null,
             "updatable": true
         },
-        "anonymous": {
-            "admin": false,
-            "bintray": null,
-            "email": null,
-            "enabled": true,
-            "expired": false,
-            "groups": [
-                
-            ],
-            "locked": false,
-            "passkey": null,
-            "password": "bcrypt$$2a$08$paWfyuaWcUIQImCKbognSunZbLpHwRb0TtNWiwNxXTa/eUxCF2tU.",
-            "permissions": {
-                "Any Remote": "rw",
-                "Anything": "r",
-                "changeme": "dmnrw"
-            },
-            "privatekey": null,
-            "properties": {
-                
-            },
-            "publickey": null,
-            "salt": null,
-            "updatable": false
-        },
         "changeme": {
             "admin": true,
             "bintray": null,

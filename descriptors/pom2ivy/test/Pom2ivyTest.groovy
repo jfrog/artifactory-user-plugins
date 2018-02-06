@@ -1,7 +1,7 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.IvyRepositorySettingsImpl
-import org.jfrog.pluginsdevenv.Control
+import org.jfrog.lilypad.Control
 
 import static org.jfrog.artifactory.client.ArtifactoryClient.create
 

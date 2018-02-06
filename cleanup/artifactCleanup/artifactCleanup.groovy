@@ -39,8 +39,10 @@ class Global {
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"
 
+def pluginGroup = 'cleaners'
+
 executions {
-    cleanup() { params ->
+    cleanup(groups: [pluginGroup]) { params ->
         def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
@@ -49,7 +51,7 @@ executions {
         artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
-    cleanupCtl() { params ->
+    cleanupCtl(groups: [pluginGroup]) { params ->
         def command = params['command'] ? params['command'][0] as String : ''
 
         switch ( command ) {
@@ -108,8 +110,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     monthsUntil.add(Calendar.MONTH, -months)
 
     Global.stopCleaning = false
-    int foundArtifacts = 0
+    int cntFoundArtifacts = 0
+    int cntNoDeletePermissions = 0
     long bytesFound = 0
+    long bytesFoundWithNoDeletePermission = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
     artifactsCleanedUp.find {
         try {
@@ -131,12 +135,24 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
             }
 
             bytesFound += repositories.getItemInfo(it)?.getSize()
-            foundArtifacts++
+            cntFoundArtifacts++
+            if (!security.canDelete(it)) {
+                bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
+                cntNoDeletePermissions++
+            }
             if (dryRun) {
-                log.info "Found $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
+                log.info "\t==> canDelete: ${security.canDelete(it)}"
+
             } else {
-                log.info "Deleting $it, $foundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                repositories.delete it
+                if (security.canDelete(it)) {
+                    log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    repositories.delete it
+                } else {
+                    log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
+                            "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                }
             }
         } catch (ItemNotFoundRuntimeException ex) {
             log.info "Failed to find $it, skipping"
@@ -151,9 +167,11 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     }
 
     if (dryRun) {
-        log.info "Dry run - nothing deleted. found $foundArtifacts artifacts consuming $bytesFound bytes"
+        log.info "Dry run - nothing deleted. Found $cntFoundArtifacts artifacts consuming $bytesFound bytes"
+        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     } else {
-        log.info "Finished cleanup, deleted $foundArtifacts artifacts that took up $bytesFound bytes"
+        log.info "Finished cleanup, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
+        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     }
 }
 
@@ -162,7 +180,7 @@ private def getSkippedPaths(String[] repos) {
     def skip = [:]
     for (String repoKey : repos){
         def pathsTmp = []
-        def aql = "items.find({\"repo\":\"" + repoKey + "\",\"type\": \"any\",\"@cleanup.skip\":\"true\"}).include(\"path\", \"name\", \"type\")"
+        def aql = "items.find({\"repo\":\"" + repoKey + "\",\"type\": \"any\",\"@cleanup.skip\":\"true\"}).include(\"repo\", \"path\", \"name\", \"type\")"
         searches.aql(aql.toString()) {
             for (item in it) {
                 def path = item.path + '/' + item.name
