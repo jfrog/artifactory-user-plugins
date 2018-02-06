@@ -98,12 +98,12 @@ Sample REST Calls
 
 - Archive any artifact over 30 days old:
 
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=ageDays=30|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|ageDays=30|includePropertySet=deleteme:true;junk:true|archiveRepo=build-packages-archived"`
+
 - Archive any artifact that is 30 days old and has the following properties set:
 
-
 For Artifactory 4.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=ageDays=30|includedPropertySet=deleteme:true;junk:true|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|ageDays=30|archiveRepo=build-packages-archived"`
 
 
 - Archive any artifact that has not been downloaded in 60 days, excluding those
@@ -111,27 +111,27 @@ For Artifactory 4.x:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=lastDownloadedDays=60|excludePropertySet=keeper:true|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|lastDownloadedDays=60|excludePropertySet=keeper:true|archiveRepo=build-packages-archived"`
 
 For Artifactory 5.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages;params=lastDownloadedDays=60;excludePropertySet=keeper:true;archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages;lastDownloadedDays=60;excludePropertySet=keeper:true;archiveRepo=build-packages-archived"`
 
 - Archive only `*.tgz` files that are 30 days old and have not been downloaded
   in 15 days:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages|params=filePattern=*.tgz|ageDays=30|lastDownloadedDays=15|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|filePattern=*.tgz|ageDays=30|lastDownloadedDays=15|archiveRepo=build-packages-archived"`
 
 
-For Artifactory 5.x: 
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive\_old_artifacts?srcRepo=build-packages;params=filePattern=*.tgz;ageDays=30;lastDownloadedDays=15;archiveRepo=build-packages-archived"`
+For Artifactory 5.x:
+  `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages;filePattern=*.tgz;ageDays=30;lastDownloadedDays=15;archiveRepo=build-packages-archived"`
 
   `artifact.delete`:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?srcRepo=build-packages|params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|params=filePattern=*.tgz|ageDays=30|includePropertySet=artifact.delete|archiveRepo=build-packages-archived"`
 
 For Artifactory 5.x:
 `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?srcRepo=build-packages;params=filePattern=*.tgz;ageDays=30;includePropertySet=artifact.delete;archiveRepo=build-packages-archived"`
@@ -140,11 +140,11 @@ For Artifactory 5.x:
 
 
 For Artifactory 4.x:
-  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?srcRepo=build-packages|params=filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true|archiveRepo=build-packages-archived"`
+  `curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages|filePattern=*.tgz|ageDays=15|includePropertySet=artifact.delete:true|archiveRepo=build-packages-archived"`
 
 
 For Artifactory 5.x:
-`curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?srcRepo=build-packages;params=filePattern=*.tgz;ageDays=15;includePropertySet=artifact.delete:true;archiveRepo=build-packages-archived"`
+`curl -X POST -v -u <admin_user>:<admin_password> "http://localhost:8080/artifactory/api/plugins/execute/archive_old_artifacts?params=srcRepo=build-packages;filePattern=*.tgz;ageDays=15;includePropertySet=artifact.delete:true;archiveRepo=build-packages-archived"`
 
 Archive Process
 ---------------
