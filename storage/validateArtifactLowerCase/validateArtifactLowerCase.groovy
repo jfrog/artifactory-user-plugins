@@ -13,7 +13,7 @@ storage {
         def repositories = new JsonSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, 'plugins/validateArtifactLowerCase.json'))
         repositories.each {
 
-            if (repositorykey == lt) {
+            if (repositorykey == it) {
 
                 def a = item.name
                 def b = a.toLowerCase()

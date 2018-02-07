@@ -2,7 +2,7 @@ Artifacts Upload Validation Checks for lowercase Artifact Upload.
 =====================================
 ##Description:
 This plugin helps you validate upload to artifact based on your condition in this case its a lowercase artifact name example. 
-It can be run automatically as a scheduled job.
+
 
 ##Features:
 This plugin lets you upload artifact with lowercase names only
