@@ -8,6 +8,6 @@ It can be run automatically as a scheduled job.
 This plugin lets you upload artifact with lowercase names only
 
 ##Installation:
-Add the name of the repository you want to have this validation on with `def repositoryname ='yourrepositoryName'` in the code 
-Copy the groovy script plugin file under ${ARTIFACTORY_HOME}/etc/plugins.
+Add the name of the repository you want to have this validation in the validateArtifactLowerCase.json file.
+Copy the groovy script plugin and the json file under ${ARTIFACTORY_HOME}/etc/plugins.
 
