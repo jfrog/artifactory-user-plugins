@@ -129,7 +129,7 @@ Creating A buildSync.json
      - Activate all Users Plugins.
    - The `activatePlugins` flag will add the new build info as is and activate
      only the User Plugins. (Optional, false by default)
-   - The `syncPromotions` flag will check and synchronize promotion status. Requires `ignoreStartDate` set to `true`  (Optional, false by default)
+   - The `syncPromotions` flag will check and synchronize promotion status. (Optional, false by default)
    - The `maxThreads` setting defines the number of threads to use when syncing.  
      The default is 10, set it higher for faster performance on larger servers.
 
