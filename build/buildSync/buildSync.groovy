@@ -175,12 +175,6 @@ executions {
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PullConfig pullConf = baseConf.pullConfigs[confKey]
 
-            if (!baseConf.ignoreStartDate && pullConf.syncPromotions) {
-                status = 409
-                message = "ignoreStartDate must be set to true when syncing promotions"
-                return
-            }
-
             def res = doSync(
                 new RemoteBuildService(pullConf.source, log, baseConf.ignoreStartDate),
                 new LocalBuildService(ctx, log, pullConf.reinsert, pullConf.activatePlugins, baseConf.ignoreStartDate),
@@ -222,12 +216,6 @@ executions {
             boolean force = forceS ? (forceS == "1" || forceS == "true") : false
             PushConfig pushConf = baseConf.pushConfigs[confKey]
 
-            if (!baseConf.ignoreStartDate && pushConf.syncPromotions) {
-                status = 409
-                message = "ignoreStartDate must be set to true when syncing promotions"
-                return
-            }
-
             List<String> res = []
             pushConf.destinations.each { destServer ->
                 res.addAll(doSync(
@@ -248,7 +236,7 @@ executions {
             }
         } catch (Exception e) {
             // aborts during execution
-            log.error("Failed pull config", e)
+            log.error("Failed push config", e)
             status = 500
             message = e.message
         }
@@ -542,11 +530,16 @@ class RemoteBuildService extends BuildListBase {
                 contentType = JSON
                 body = "builds.find({\"name\":{\"\$eq\":\"$buildName\"}}).include(\"promotion\")"
                 response.success = { resp, json ->
+
+                    if (json.results && !json.results[0].containsKey('build.date') && !ignoreStartDate) {
+                        def msg = "Server ${server.url} does not support promotions sync with ignoreStartDate set to false"
+                        throw new CancelException(msg, 409)
+                    }
+
                     json.results.each { b ->
                         result << createBuildRunFromJson(buildName,
                                 b['build.number'],
-                                //TODO: Handle started date. Depends on RTFACT-15799
-                                b['build.created'] as String,
+                                b.containsKey('build.date') ? b['build.date'] as String : b['build.created'] as String,
                                 b['build.promotions'])
                     }
                 }
@@ -614,16 +607,15 @@ class RemoteBuildService extends BuildListBase {
     @Override
     def deleteBuild(BuildRun buildRun) {
         lastFailure = null
-        if (ignoreStartDate) {
-            http.request(DELETE, JSON) {
-                uri.path = "api/build/${buildRun.name}"
-                uri.query = [buildNumbers: buildRun.number, artifacts: 0, deleteAll: 0]
-                response.success = {
-                    log.info "Successfully deleted build ${buildRun.name}/${buildRun.number}"
-                }
+        http.request(DELETE, JSON) {
+            uri.path = "api/build/${buildRun.name}"
+            uri.query = [buildNumbers: buildRun.number, artifacts: 0, deleteAll: 0]
+            if (!ignoreStartDate) {
+                uri.query << [started: buildRun.started]
             }
-        } else {
-            //TODO: Handle started date. Depends on RTFACT-15799
+            response.success = {
+                log.info "Successfully deleted build ${buildRun.name}/${buildRun.number}"
+            }
         }
         if (lastFailure != null) {
             def msg = "Could not delete build ${buildRun.name}/${buildRun.number} in ${server.url} got: ${lastFailure.reasonPhrase}"
@@ -672,11 +664,16 @@ class LocalBuildService extends BuildListBase {
         } else {
             def aqlQuery = "builds.find({\"name\":{\"\$eq\":\"$buildName\"}}).include(\"promotion\")"
             searches.aql(aqlQuery) { result ->
+                def index = 0
                 result.each { b ->
+                    if (index == 0 && !b.containsKey('build.date') && !ignoreStartDate) {
+                        def msg = "This server does not support promotions sync with ignoreStartDate set to false"
+                        throw new CancelException(msg, 409)
+                    }
+                    index++
                     res << createBuildRunFromJson(buildName,
                             b['build.number'],
-                            //TODO: Handle started date. Depends on RTFACT-15799
-                            b['build.created'] as String,
+                            b.containsKey('build.date') ? b['build.date'] as String : b['build.created'] as String,
                             b['build.promotions'])
                 }
             }
