@@ -17,10 +17,10 @@ This should only take a minute to complete and is a one-time process.
 ## Acceptance Criteria ##
 
 - Plugin files must be placed inside a folder. The plugin groovy file and its folder must share the same name. The plugin folder can be placed inside a category folder to group plugins under the same subject.
-- Update the README.md to be consistent with the changes. If you are proposing a new plugin or if the README.md file is missing, use the README.md template below to create a new one.
+- Update the *README.md* to be consistent with the changes. If you are proposing a new plugin or if the README.md file is missing, use the template below to create a new one.
 - Provide at least one automated test case. If you cannot provide working test cases, use the template below to add a always fail test case to your plugin. This will make easier for us to identify plugins missing actual test cases that need our attention.
-- Test case groovy files must have the `Test` suffix in their names. Example: `MyPluginTest.groovy`
-- Test case groovy files can be placed at root level of plugin folder or at a subfolder called `test`. If you have multiple files as part of your tests, you must use the subfolder method.
+- Test case groovy files must have the *Test* suffix in their names. Example: MyPluginTest.groovy
+- Test case groovy files can be placed at root level of plugin folder or at a subfolder called *test*. If you have multiple files as part of your tests, you must use the subfolder method.
 
 ## README.md Template ##
 
