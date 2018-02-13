@@ -11,8 +11,8 @@ This should only take a minute to complete and is a one-time process.
 
 - Fork this repository.
 - Clone the forked repository to your local machine and perform the proposed changes. You can use the steps provided at [artifactory-user-plugins-devenv](https://github.com/JFrogDev/artifactory-user-plugins-devenv) to setup your development environment.
-- Make sure your changes respect the Acceptance Criteria below.
-- When you are confident about the changes, crate a Pull Request pointing to the master branch of this repo. 
+- Make sure your changes follow the Acceptance Criteria below.
+- When you are confident about the changes, crate a Pull Request pointing to the master branch of this repository. 
 
 ## Acceptance Criteria ##
 
