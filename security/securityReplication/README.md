@@ -19,9 +19,10 @@ changes in the security data, and syncs those changes to the other instances.
 For this reason, changes made may not synchronize immediately.
 
 Replicated security data includes all users, groups, and permissions, and all
-associated data, including user passwords, API keys, OAuth keys, etc. It is
-possible to restrict this to only users, or only users and groups, rather than
-all three. This can be done in the configuration file, as specified below.
+associated data, including user passwords, API keys, OAuth keys, etc (Note that
+JFrog Access tokens are not replicated). It is possible to restrict this to only
+users, or only users and groups, rather than all three. This can be done in the
+configuration file, as specified below.
 
 Upgrading
 ---------
