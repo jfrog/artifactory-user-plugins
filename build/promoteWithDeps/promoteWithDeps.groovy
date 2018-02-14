@@ -93,7 +93,7 @@ executions {
                 def props = jsonSlurper.parseText("{ \"properties\":{\"parent.buildName\":[\"${buildName}\"],\"parent.buildNumber\":[\"${buildNumber}\"]}}");
                 bodyJson.putAll(props);
 
-                promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
+                promotion = getPromotionInstance(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
                         getTargetRepo(bodyJson.targetRepo, depBuildName), bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties, bodyJson.failFast == null ? true : bodyJson.failFast)
 
                 List<BuildRun> depBuildRun = builds.getBuilds(depBuildName, depBuildNumber, depBuildStartTime)
@@ -111,7 +111,7 @@ executions {
         }
 
 
-        promotion = new Promotion(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
+        promotion = getPromotionInstance(bodyJson.status, bodyJson.comment, bodyJson.ciUser, bodyJson.timestamp, bodyJson.dryRun ?: false,
                 getTargetRepo(bodyJson.targetRepo, buildName), bodyJson.sourceRepo, bodyJson.copy ?: false, bodyJson.artifacts == null ? true : bodyJson.artifacts, bodyJson.dependencies ?: false, bodyJson.scopes as Set<String>, bodyJson.properties as Map<String, Collection<String>>, bodyJson.failFast == null ? true : bodyJson.failFast)
 
         try {
@@ -124,6 +124,24 @@ executions {
         log.info message
         status = 200
     }
+}
+
+private Promotion getPromotionInstance(String status, String comment, String ciUser, String timestamp, boolean dryRun, String targetRepo, String sourceRepo, boolean copy, boolean artifacts, boolean dependencies, Set<String> scopes, Map<String, Collection<String>> properties, boolean failFast) {
+    Promotion promotion = new Promotion();
+    promotion.setStatus(status);
+    promotion.setComment(comment);
+    promotion.setCiUser(ciUser);
+    promotion.setTimestamp(timestamp);
+    promotion.setDryRun(dryRun);
+    promotion.setTargetRepo(targetRepo);
+    promotion.setSourceRepo(sourceRepo);
+    promotion.setCopy(copy);
+    promotion.setArtifacts(artifacts);
+    promotion.setDependencies(dependencies);
+    promotion.setScopes(scopes);
+    promotion.setProperties(properties);
+    promotion.setFailFast(failFast);
+    return promotion;
 }
 
 private String getStringProperty(params, pName, mandatory) {
@@ -144,6 +162,6 @@ private String getTargetRepo(def targetRepo, String depBuildName) {
     } else {
         def depTargetRepo = targetRepo[depBuildName]
 	log.warn "Found target repo $depTargetRepo for build $depBuildName"
-	return depTargetRepo 
+	return depTargetRepo
     }
 }

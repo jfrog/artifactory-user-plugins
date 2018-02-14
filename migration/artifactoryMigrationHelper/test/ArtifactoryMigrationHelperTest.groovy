@@ -1,6 +1,6 @@
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
-import org.jfrog.artifactory.client.model.PackageType
+import org.jfrog.artifactory.client.model.impl.PackageTypeImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.DockerRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
@@ -45,7 +45,7 @@ class ArtifactoryMigrationHelperTest extends Specification {
         def targetMavenVirtual = getRepo(targetArtifactory, MAVEN_VIRTUAL_KEY)
         then:
         targetMavenLocal != null
-        targetMavenLocal.repositorySettings.packageType == PackageType.maven
+        targetMavenLocal.repositorySettings.packageType == PackageTypeImpl.maven
         targetMavenRemote != null
         targetMavenVirtual != null
 
@@ -83,7 +83,7 @@ class ArtifactoryMigrationHelperTest extends Specification {
         def targetDockerLocal = getRepo(targetArtifactory, DOCKER_LOCAL_KEY)
         then:
         targetDockerLocal != null
-        targetDockerLocal.repositorySettings.packageType == PackageType.docker
+        targetDockerLocal.repositorySettings.packageType == PackageTypeImpl.docker
 
         // Check docker repo replication was set
         when:
