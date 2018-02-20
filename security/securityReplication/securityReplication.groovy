@@ -39,7 +39,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.8.3"
+pluginVersion = "5.9.0"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -1122,20 +1122,27 @@ writesort = { left, right ->
 }
 
 def encryptDecrypt(json, encrypt) {
-    def encodedKeyPair = null, decodedKeyPair = null
+    def encodedKeyPair = null, encodedKeyPairFromDecoded = null
+    def decodedKeyPair = null
     def decryptionStatusHolder = null
     try {
         def statpath = "org.jfrog.security.crypto.result.DecryptionStatusHolder"
-        def keypairpath = "org.jfrog.security.crypto.EncodedKeyPair"
+        def encodedkeypairpath = "org.jfrog.security.crypto.EncodedKeyPair"
+        def decodedkeypairpath = "org.jfrog.security.crypto.DecodedKeyPair"
         decryptionStatusHolder = Class.forName(statpath)
-        def keypairclass = Class.forName(keypairpath)
-        encodedKeyPair = keypairclass.getConstructor(String, String)
-        for (constructor in keypairclass.getConstructors()) {
+        def encodedkeypairclass = Class.forName(encodedkeypairpath)
+        def decodedkeypairclass = Class.forName(decodedkeypairpath)
+        encodedKeyPair = encodedkeypairclass.getConstructor(String, String)
+        for (constructor in encodedkeypairclass.getConstructors()) {
             if (constructor.parameterCount != 2) continue;
             if (constructor.parameterTypes[0] == String) continue;
+            encodedKeyPairFromDecoded = constructor
+        }
+        for (constructor in decodedkeypairclass.getConstructors()) {
+            if (constructor.parameterCount != 1) continue;
             decodedKeyPair = constructor
         }
-        if (decodedKeyPair == null) {
+        if (encodedKeyPairFromDecoded == null || decodedKeyPair == null) {
             def msg = "Could not find classes required for encryption, assuming"
             msg += " an old version of Artifactory."
             log.debug(msg)
@@ -1153,7 +1160,7 @@ def encryptDecrypt(json, encrypt) {
         return
     }
     def home = ArtifactoryHome.get()
-    def is5x = false, cryptoHelper = null
+    def is5x = false, cryptoHelper = null, masterWrapper = null
     try {
         def art4ch = "org.artifactory.security.crypto.CryptoHelper"
         cryptoHelper = Class.forName(art4ch)
@@ -1170,18 +1177,24 @@ def encryptDecrypt(json, encrypt) {
     }
     def encprops = ['basictoken', 'ssh.basictoken', 'sumologic.access.token',
                     'sumologic.refresh.token', 'docker.basictoken', 'apiKey']
-    def masterWrapper = ArtifactoryHome.get().masterEncryptionWrapper
-    def wrapper = encrypt ? masterWrapper : null
+
+    try {
+        masterWrapper = ArtifactoryHome.get().getArtifactoryEncryptionWrapper()
+    } catch (MissingMethodException ex) {
+        masterWrapper = ArtifactoryHome.get().getMasterEncryptionWrapper()
+    }
+    def encryptWrapper = encrypt ? masterWrapper : null
+    def decryptWrapper = encrypt ? null : masterWrapper
     for (user in json.users.values()) {
         if (user.privatekey && user.publickey) {
             def pair = encodedKeyPair.newInstance(user.privatekey, user.publickey)
             try {
                 def status = decryptionStatusHolder.newInstance()
-                pair = pair.decode(masterWrapper, status)
+                pair = decodedKeyPair.newInstance(pair.decode(decryptWrapper, status).createKeyPair())
             } catch (MissingMethodException ex) {
-                pair = pair.decode(masterWrapper)
+                pair = pair.decode(decryptWrapper)
             }
-            pair = decodedKeyPair.newInstance(pair, wrapper)
+            pair = encodedKeyPairFromDecoded.newInstance(pair, encryptWrapper)
             user.privatekey = pair.encodedPrivateKey
             user.publickey = pair.encodedPublicKey
         }
