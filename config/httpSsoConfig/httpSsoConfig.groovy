@@ -54,6 +54,10 @@ executions {
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
         if (!(json instanceof Map)) {
             message = "Provided JSON value must be a JSON object"

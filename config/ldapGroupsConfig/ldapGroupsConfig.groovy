@@ -118,6 +118,10 @@ executions {
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
         if (!(json instanceof Map)) {
             message = 'Provided value must be a JSON object'
@@ -221,6 +225,10 @@ executions {
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
+        }finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
         if (!(json instanceof Map)) {
             message = 'Provided JSON value must be a JSON object'
@@ -262,7 +270,7 @@ executions {
             status = 400
             return
         }
-        if ('enabledLdap' in json.keySet()) {
+        if ('enabledLdap' in json.keySet() && json['enabledLdap'] != ' ') {
             def enabledLdap = cfg.security.getLdapSettings(json['enabledLdap'])
             if (enabledLdap == null) {
                 message = "Setting with key '${json['enabledLdap']}' specified"

@@ -17,12 +17,17 @@
 import groovy.json.JsonBuilder
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.HaAddon
+import org.artifactory.addon.ha.HaCommonAddon
+import org.artifactory.state.ArtifactoryServerState
+import org.artifactory.storage.db.servers.model.ArtifactoryServer
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 
 import java.text.SimpleDateFormat
 
 executions {
     haClusterDump(httpMethod: 'GET') { params ->
+        def addonsManager = ctx.beanForType(AddonsManager.class)
+        HaCommonAddon haCommonAddon = addonsManager.addonByType(HaCommonAddon.class)
         def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXX")
         ArtifactoryServersCommonService sserv = ctx.beanForType(ArtifactoryServersCommonService.class)
         def curr = sserv.currentMember
@@ -35,14 +40,27 @@ executions {
              address: "${new URL(it.contextUrl).host}:$it.membershipPort",
              contextUrl: it.contextUrl,
              heartbeat: df.format(new Date(it.lastHeartbeat)),
-             serverState: it.serverState.name(),
+             serverState: getServerState(haCommonAddon, it),
              serverRole: it.serverRole.prettyName,
-             artifactoryVersion: it.artifactoryVersion]
+             artifactoryVersion: it.artifactoryVersion,
+             licenseHash: it.licenseKeyHash]
         }
-        def addonsManager = ctx.beanForType(AddonsManager.class)
         def haAddon = addonsManager.addonByType(HaAddon.class)
         def json = [active: haAddon.isHaEnabled(), members: members]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
+
+    getNodeId(httpMethod: 'GET') { params ->
+        message = ctx.getServerId()
+        status = 200
+    }
+}
+
+static def getServerState(HaCommonAddon haCommonAddon, ArtifactoryServer server) {
+    boolean hasHeartbeat = haCommonAddon.artifactoryServerHasHeartbeat(server)
+    if(!hasHeartbeat) {
+        return ArtifactoryServerState.UNAVAILABLE.name()
+    }
+    return server.serverState.name()
 }
