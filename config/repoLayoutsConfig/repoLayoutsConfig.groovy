@@ -19,6 +19,7 @@ import groovy.json.JsonSlurper
 import org.artifactory.descriptor.repo.RepoLayout
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.util.AlreadyExistsException
+import org.artifactory.util.RepoLayoutUtils
 
 def propList = ['name': [
         CharSequence.class, 'string',
@@ -50,9 +51,15 @@ def validatePathPattern(pattern) {
 
 executions {
     getLayoutsList(version: '1.0', httpMethod: 'GET') { params ->
+        def json
+        def nonreservedonly = params?.get('nonreservedonly')?.get(0) as Boolean
         def cfg = ctx.centralConfig.descriptor.repoLayouts
-        if (cfg == null) cfg = []
-        def json = cfg.collect { it.name }
+        if (cfg == null) cfg = []        
+        if (nonreservedonly) {
+            json = cfg.findAll { !RepoLayoutUtils.isReservedName(it.name) }.collect {it.name}
+        } else {
+            json = cfg.collect { it.name }
+        }
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }
@@ -111,6 +118,10 @@ executions {
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
         if (!(json instanceof Map)) {
             message = 'Provided value must be a JSON object'
@@ -201,7 +212,11 @@ executions {
             message = "Problem parsing JSON: $ex.message"
             status = 400
             return
-        }
+        } finally {
+             if (reader != null) {
+                 reader.close();
+             }
+         }
         if (!(json instanceof Map)) {
             message = 'Provided JSON value must be a JSON object'
             status = 400

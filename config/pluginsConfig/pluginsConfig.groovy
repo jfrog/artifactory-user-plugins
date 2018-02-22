@@ -16,7 +16,6 @@
 
 import groovy.io.FileType
 import groovy.json.JsonBuilder
-import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 
 executions {
   def artHome = ctx.artifactoryHome.haAwareEtcDir
