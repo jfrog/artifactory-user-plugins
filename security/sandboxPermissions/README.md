@@ -7,6 +7,8 @@ properties.  This plugin assumes that the user already has write permissions on 
 repository in question, and allows any user with the annotate permission to modify 
 permissions on objects.
 
+Only repositories in the list checkedRepositories declared at top are checked.
+
 Permissions are managed by the property: sandboxPerms.ownerUsers  this is a COMMA SEPARATED LIST
 of users, and can be modified by anyone with the annotate permission.  If the property does not
 exist, the file may not be deleted and the next deploy to the namespace will set the property.
