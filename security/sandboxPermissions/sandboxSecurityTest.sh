@@ -22,7 +22,7 @@ deploygroupanduser() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+        -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
     if [ ! $response -eq $expecterror ]; then 
       echo "....FAILED - Test 1 - fail to upload: error $response repository $repo"
     fi
@@ -31,7 +31,7 @@ deploygroupanduser() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/abc.jar)
+        -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/abc.jar)
     if [ ! $response -eq $expecterror ]; then
       echo "....FAILED - Test 2 - fail to upload: error $response repository $repo"
     fi
@@ -40,7 +40,7 @@ deploygroupanduser() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/$repo/rootjar.jar)
+        -X PUT http://mill.jfrog.team:12020/artifactory/$repo/rootjar.jar)
       if [ ! $response -eq 403 ]; then
         echo "....FAILED - Test 3 - fail: should not be able to upload to root directory;  error $response repository $repo"
       fi
@@ -59,7 +59,7 @@ deployadmin() {
       --write-out %{http_code} \
       --silent \
       --output /dev/null \
-      -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/admin.jar)
+      -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/admin.jar)
     if [ ! $response -eq 403 ]; then 
         echo "....FAILED - Test 7 - Admin user should not upload: error $response repository $repo"
     fi
@@ -68,7 +68,7 @@ deployadmin() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/admin.jar)
+        -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/admin.jar)
     if [ ! $response -eq 403 ]; then
         echo "....FAILED - Test 8 - Admin fail to upload: error $response repository $repo"
     fi
@@ -77,7 +77,7 @@ deployadmin() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/$repo/rootjar.jar)
+        -X PUT http://mill.jfrog.team:12020/artifactory/$repo/rootjar.jar)
       if [ ! $response -eq 201 ]; then
           echo "....FAILED - Test 9 - Admin fail: should be able to upload to root directory;  error $response repository $repo"
       fi
@@ -95,7 +95,7 @@ changeproperty() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=nobody)                                 
+        -X PUT http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=nobody)                                 
       if [ ! $response -eq 204 ]; then
           echo "....FAILED - Could not change property.  error $response repository $repo"
       fi
@@ -105,7 +105,7 @@ changeproperty() {
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 403 ]; then 
         echo "....FAILED - property changed, should not be able to deploy. error $response repository $repo"
       fi
@@ -115,14 +115,14 @@ changeproperty() {
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$namespace) 
+          -X PUT http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$namespace) 
 
       response=$( 
         curl -u$user:jfrog \
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 201 ]; then 
         echo "....FAILED - property changed back to original should be able to deploy. error $response repository $repo"
       fi
@@ -140,7 +140,7 @@ resetproperty() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$user)                                 
+        -X PUT http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$user)                                 
       if [ ! $response -eq 204 ]; then
           echo "....FAILED - Could not change property.  error $response repository $repo"
       fi
@@ -161,7 +161,7 @@ changepropertylist() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X PUT http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$userlist)                                 
+        -X PUT http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers\=$userlist)                                 
       if [ ! $response -eq 204 ]; then
           echo "....FAILED - Could not change property.  error $response repository $repo"
       fi
@@ -171,27 +171,27 @@ changepropertylist() {
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 201 ]; then 
         echo "....FAILED - property changed to user list. Should be able to deploy. error $response repository $repo"
       fi
 
       response=$( 
-        curl -u$jagans:jfrog \
+        curl -ujagans:jfrog \
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 201 ]; then 
         echo "....FAILED - property changed to user list. jagans should be able to deploy. error $response repository $repo"
       fi
 
       response=$( 
-        curl -u$ankushc:jfrog \
+        curl -uankushc:jfrog \
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq $altstatus ]; then 
         echo "....FAILED - ankushc not in list should not be able to deploy but has permission to deploy. error $response repository $repo OR"
         echo "....FAILED - ankushc belongs to development-team and should be able to deploy. error $response repository $repo"
@@ -212,7 +212,7 @@ deleteproperty() {
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$namespace/$user/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/$user/http-builder-0.5.2.jar)
       if [ ! $response -eq 403 ]; then 
         echo "....FAILED - Should not be able to deploy with $user. Should be able to deploy. error $response repository $repo"
       fi
@@ -222,7 +222,7 @@ deleteproperty() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X DELETE http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers)                                 
+        -X DELETE http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers)                                 
       if [ ! $response -eq 204 ]; then
           echo "....FAILED - Could not delete property.  error $response repository $repo"
       fi
@@ -232,27 +232,27 @@ deleteproperty() {
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$namespace/$user/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/$user/http-builder-0.5.2.jar)
       if [ ! $response -eq 201 ]; then 
         echo "....FAILED - property deleted, Dev2 should be able to deploy. error $response repository $repo"
       fi
 
       response=$( 
-        curl -u$jagans:jfrog \
+        curl -ujagans:jfrog \
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 403 ]; then 
         echo "....FAILED - jagans should be not be able to deploy. error $response repository $repo"
       fi
 
       response=$( 
-        curl -u$ankushc:jfrog \
+        curl -uankushc:jfrog \
           --write-out %{http_code} \
           --silent \
           --output /dev/null \
-          -X PUT http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+          -X PUT http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
       if [ ! $response -eq 403 ]; then 
         echo "....FAILED - ankushc not in list should not be able to deploy. error $response repository $repo"
       fi
@@ -271,7 +271,7 @@ deleteartifactsbyadmin() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X DELETE http://mill.jfrog.info:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
+        -X DELETE http://mill.jfrog.team:12020/artifactory/$repo/$namespace/http-builder-0.5.2.jar)
     if [ ! $response -eq 204 ]; then 
       echo "....FAILED - fail to delete artifact if property set or cleared : error $response repository $repo"
     fi
@@ -281,7 +281,7 @@ deleteartifactsbyadmin() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X DELETE http://mill.jfrog.info:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/abc.jar)
+        -X DELETE http://mill.jfrog.team:12020/artifactory/$repo/$namespace/org/jfrog/com/folder/abc.jar)
       if [ ! $response -eq 204 ]; then
         echo "....FAILED - fail to delete artifact if property set or cleared : error $response repository $repo"
       fi
@@ -300,7 +300,7 @@ clearproperty() {
         --write-out %{http_code} \
         --silent \
         --output /dev/null \
-        -X DELETE http://mill.jfrog.info:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers)                                 
+        -X DELETE http://mill.jfrog.team:12020/artifactory/api/storage/$repo/$namespace\?properties\=sandboxPerms.ownerUsers)                                 
       if [ ! $response -eq 204 ]; then
           echo "....FAILED - Could not delete property.  error $response repository $repo"
       fi
@@ -313,10 +313,10 @@ deploydocker() {
     password=$2
     repo=$4
     docker pull hello-world:latest
-    docker login -u$user -p$password mill.jfrog.info:12021
-    docker tag hello-world:latest mill.jfrog.info:12021/$repo/$namespace:latest
+    docker login -u$user -p$password mill.jfrog.team:12021
+    docker tag hello-world:latest mill.jfrog.team:12021/$repo/$namespace:latest
     response=$(
-      docker push mill.jfrog.info\:12021/$repo/$namespace\:latest)
+      docker push mill.jfrog.team\:12021/$repo/$namespace\:latest)
     echo $response
 }
 

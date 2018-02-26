@@ -17,7 +17,7 @@
 import org.artifactory.exception.CancelException
 import org.artifactory.repo.*
 
-def checkedRepositories = ["test-generic-local"]
+def checkedRepositories = ["test-generic-local", "docker"]
 
 storage {
     beforeDelete { item ->
