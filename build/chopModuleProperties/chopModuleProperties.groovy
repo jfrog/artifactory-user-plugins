@@ -15,7 +15,6 @@
  */
 
 import org.artifactory.build.DetailedBuildRun
-import org.jfrog.build.api.Build
 
 /**
  * This plugin is responsible to check whether the module properties are longer
@@ -30,8 +29,7 @@ build {
     beforeSave { DetailedBuildRun buildRun ->
         log.info("choppoing properties of ${buildRun.name} that are longer" +
                  " than 900 characters.")
-        Build build = buildRun.build
-        build.modules.each { m ->
+        buildRun.build.modules.each { m ->
             log.debug "m.properties: ${m.properties}"
             Map<String, String> changed = [:]
             m.properties.each { String k, String v ->

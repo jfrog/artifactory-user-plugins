@@ -15,18 +15,16 @@
  */
 
 import org.artifactory.build.DetailedBuildRun
-import org.jfrog.build.api.Build
 
 build {
     beforeSave { DetailedBuildRun buildRun ->
         log.debug("Checking if ${buildRun.name} should be modified before" +
                   " saving!")
-        Build build = buildRun.build
-        build.modules.each { m ->
+        buildRun.modules.each { m ->
             m.artifacts.each { a ->
                 def type = a.getType()
                 if (type.contains(';')) {
-                    a.setType(type.substring(0, type.indexOf(';')))
+                    a.buildArtifact.setType(type.substring(0, type.indexOf(';')))
                 }
             }
         }

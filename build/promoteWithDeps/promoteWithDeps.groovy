@@ -1,16 +1,11 @@
-import org.artifactory.build.*
+import org.artifactory.build.BuildRun
+import org.artifactory.build.DetailedBuildRun
 import org.artifactory.exception.CancelException
 import org.jfrog.build.api.release.Promotion
 import groovy.json.JsonSlurper
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.api.build.BuildService
-import org.artifactory.common.StatusHolder
-
-
 import java.lang.reflect.Array
-
-import static groovy.xml.XmlUtil.serialize
-import static org.artifactory.repo.RepoPathFactory.create
 
 executions {
 

@@ -1,16 +1,7 @@
-import org.artifactory.build.*
-import org.artifactory.exception.CancelException
-import org.jfrog.build.api.release.Promotion
-import groovy.json.JsonSlurper
+import org.artifactory.build.BuildRun
+import org.artifactory.build.DetailedBuildRun
 import groovy.json.JsonBuilder
-import org.artifactory.resource.ResourceStreamHandle
-import org.artifactory.api.build.BuildService
-import java.io.File
-import org.artifactory.common.StatusHolder
 import java.lang.reflect.Array
-
-import static groovy.xml.XmlUtil.serialize
-import static org.artifactory.repo.RepoPathFactory.create
 
 executions {
 
@@ -74,9 +65,6 @@ executions {
         }
 
         List<Array> buildDependencies = stageBuild.build.buildDependencies
-
-        buildService = ctx.beanForType(BuildService.class)
-
 
         if (buildDependencies != null) {
             for (int i = 0; i < buildDependencies.size(); i++) {

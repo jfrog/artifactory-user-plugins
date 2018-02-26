@@ -16,14 +16,8 @@
 
 
 import groovy.transform.Field
-import org.artifactory.common.*
-import org.artifactory.fs.*
-import org.artifactory.repo.*
-import org.artifactory.build.*
-import org.artifactory.exception.*
-import org.artifactory.request.*
-import org.artifactory.util.*
-import org.artifactory.resource.*
+import org.artifactory.fs.ItemInfo
+import org.artifactory.repo.RepoPath
 
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.client.WhitesourceService;

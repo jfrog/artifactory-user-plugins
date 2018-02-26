@@ -15,7 +15,6 @@
  */
 
 import org.artifactory.exception.CancelException
-import org.artifactory.repo.*
 
 storage {
     beforePropertyCreate { item, name, values ->

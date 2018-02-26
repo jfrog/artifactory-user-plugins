@@ -1,13 +1,4 @@
-import groovy.json.JsonBuilder
-import groovy.transform.Field
-import org.artifactory.api.common.BasicStatusHolder
-import org.artifactory.api.build.BuildService
-import org.artifactory.exception.CancelException
-import static com.google.common.collect.Multimaps.forMap
 import org.artifactory.repo.RepoPath
-import com.google.common.collect.HashMultimap
-import com.google.common.collect.SetMultimap
-import org.artifactory.search.*
 import org.artifactory.search.aql.AqlResult
 import org.artifactory.repo.RepoPathFactory
 

@@ -15,13 +15,11 @@
  */
 
 import org.artifactory.build.DetailedBuildRun
-import org.jfrog.build.api.Build
 
 build {
     beforeSave { DetailedBuildRun buildRun ->
         log.debug "removing properties of ${buildRun.name}."
-        Build build = buildRun.build
-        build.modules.each { m ->
+        buildRun.build.modules.each { m ->
             // log.debug "property: ${m.properties}"
             m.properties = new Properties()
             // log.debug "property: ${m.properties}"

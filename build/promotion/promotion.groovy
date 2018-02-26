@@ -16,7 +16,12 @@
 
 import groovy.transform.Field
 import groovy.xml.StreamingMarkupBuilder
-import org.artifactory.build.*
+import org.artifactory.build.BuildRun
+import org.artifactory.build.DetailedBuildRun
+import org.artifactory.build.Module
+import org.artifactory.build.Artifact
+import org.artifactory.build.Dependency
+import org.artifactory.build.ReleaseStatus
 import org.artifactory.common.StatusHolder
 import org.artifactory.exception.CancelException
 import org.artifactory.fs.FileInfo
