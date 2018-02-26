@@ -76,13 +76,13 @@ def Boolean userIsAuthorized(RepoPath namespaceRepoPath)
 // Throws the CancelException if user is unauthorized, true if they are, false if the property doesn't exist
 { 
     if(repositories.hasProperty(namespaceRepoPath,ownerUsersProp())) {
-        ownerUsersList=repositories.getProperty(namespaceRepoPath,ownerUsersProp()).split(',')
+        ownerUsersList=repositories.getProperty(namespaceRepoPath,ownerUsersProp()).split('/')
         if (!(security.currentUsername in ownerUsersList))
         {
             log.info("User "+security.currentUsername +" Not Found in list:"+ownerUsersList.toString())
             if(repositories.hasProperty(namespaceRepoPath,ownerGroupsProp()))
             {
-                ownerGroupsList=repositories.getProperty(namespaceRepoPath,ownerGroupsProp()).split(',')
+                ownerGroupsList=repositories.getProperty(namespaceRepoPath,ownerGroupsProp()).split('/')
                 userGroups=security.getCurrentUserGroupNames()
                 isGroupInList=false
                 ownerGroupsList.each { group ->

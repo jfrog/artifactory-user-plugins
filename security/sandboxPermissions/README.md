@@ -9,8 +9,8 @@ permissions on objects.
 
 Only repositories in the list checkedRepositories declared at top are checked.
 
-Permissions are managed by the property: sandboxPerms.ownerUsers  this is a COMMA SEPARATED LIST
-of users, and can be modified by anyone with the annotate permission.  If the property does not
+Permissions are managed by the property: sandboxPerms.ownerUsers  this is a SLASH DELIMITED LIST
+of users (e.g. markg/stanleyf/dev1), and can be modified by anyone with the annotate permission.  If the property does not
 exist, the file may not be deleted and the next deploy to the namespace will set the property.
 
 You may also declare allowed groups with the property sandboxPerms.ownerGroups - there still
