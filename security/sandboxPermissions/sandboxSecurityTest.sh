@@ -461,19 +461,24 @@ deploydocker() {
     deploygroupanduser dev1 jfrog deletebyotheruser 201
     deleteartifactsbyadmin dev2 jfrog deletebyotheruser 403
 ####    
-    echo "Test17 - docker deploy"
+    echo "Test17 - delete artifact with no owner"
+    deploygroupanduser dev1 jfrog deletenoowner 201
+    clearproperty dev1 jfrog deletenoowner
+    deleteartifactsbyadmin dev1 jfrog deletenoowner 403
+####     
+    echo "Test20 - docker deploy"
     echo "Expect test to pass"
     deploydocker dev1 jfrog alpine docker-local "alpine"
 ####
-    echo "Test18 - docker deploy with another user than the namespace owner"
+    echo "Test21 - docker deploy with another user than the namespace owner"
     echo "Expect manifest error"     
     deploydocker dev2 jfrog alpine docker-local "hello-world"
 ####
-    echo "Test19 - docker deploy with virtual repository"
+    echo "Test22 - docker deploy with virtual repository"
     echo "Expect test to pass"
     deploydocker dev1 jfrog alpinevirtual docker "alpine"
 ####
-    echo "Test20 - docker deploy with another user than the namespace owner using virtual repository"
+    echo "Test23 - docker deploy with another user than the namespace owner using virtual repository"
     echo "Expect manifest error"
     deploydocker dev2 jfrog alpinevirtual docker "alpine"
 
