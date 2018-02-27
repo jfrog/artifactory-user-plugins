@@ -399,7 +399,6 @@ deploydocker() {
     echo $response
 }
 
-testsuite() {
 #### Begin Test Suites
 ####
     echo "Test1 - deploy by user belonging to artifactory group"
@@ -415,7 +414,8 @@ testsuite() {
     deployadmin stanleyf jfrog test2 403
 ####
     echo "Test5 - attempt to override namespace by another member of artifactory group"
-    deploygroupanduser dev2 jfrog test1 403
+    deploygroupanduser dev1 jfrog override 201
+    deploygroupanduser dev2 jfrog override 403
 ####
     echo "Test6 - change sandbox property by different user than owner; deploy fail; change property back"
     changeproperty dev1 jfrog test1
@@ -453,14 +453,18 @@ testsuite() {
     deleteartifactsbyadmin admin password deletepropartifact
 ####
     echo "Test15 - docker deploy"
-     deploydocker dev1 jfrog alpine docker-local "alpine"
+    echo "Expect test to pass"
+    deploydocker dev1 jfrog alpine docker-local "alpine"
 ####
-    echo "Test16 - docker deploy with another user than the namespace owner"    
+    echo "Test16 - docker deploy with another user than the namespace owner"
+    echo "Expect manifest error"     
     deploydocker dev2 jfrog alpine docker-local "hello-world"
 ####
     echo "Test17 - docker deploy with virtual repository"
+    echo "Expect test to pass"
     deploydocker dev1 jfrog alpinevirtual docker "alpine"
 ####
     echo "Test18 - docker deploy with another user than the namespace owner using virtual repository"
+    echo "Expect manifest error"
     deploydocker dev2 jfrog alpinevirtual docker "alpine"
-}
+
