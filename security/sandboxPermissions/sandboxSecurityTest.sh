@@ -340,6 +340,7 @@ deleteartifactsbyadmin() {
   namespace=$3
   user=$1
   password=$2
+  expectedstatus=$4
 
   for repo in "${dev1List[@]}"
   do
@@ -349,7 +350,7 @@ deleteartifactsbyadmin() {
             --silent \
             --output /dev/null \
             -X DELETE $artbaseurl/$repo/$namespace/http-builder-0.5.2.jar)
-        if [ ! $response -eq 204 ]; then
+        if [ ! $response -eq $expectedstatus ]; then
               echo "....FAILED - fail to delete artifact if property set or cleared : error $response repository $repo"
         fi
 
@@ -359,7 +360,7 @@ deleteartifactsbyadmin() {
             --silent \
             --output /dev/null \
             -X DELETE $artbaseurl/$repo/$namespace/org/jfrog/com/folder/abc.jar)
-          if [ ! $response -eq 204 ]; then
+          if [ ! $response -eq $expectedstatus ]; then
             echo "....FAILED - fail to delete artifact if property set or cleared : error $response repository $repo"
           fi
   done
@@ -441,30 +442,38 @@ deploydocker() {
 ####
     echo "Test12 - admin should be able to delete if property set"
     deploygroupanduser dev1 jfrog admindeleteartifact 201
-    deleteartifactsbyadmin admin password admindeleteartifact
+    deleteartifactsbyadmin admin password admindeleteartifact 204
 ####
     echo "Test13 - user with admin priveleges should be able if property set"
     deploygroupanduser dev1 jfrog aduserdeleteartifact 201
-    deleteartifactsbyadmin stanleyf jfrog aduserdeleteartifact
+    deleteartifactsbyadmin stanleyf jfrog aduserdeleteartifact 204
 ####
     echo "Test14 - delete property then delete artifacts by admin"
     deploygroupanduser dev1 jfrog deletepropartifact 201
     clearproperty dev1 jfrog deletepropartifact
-    deleteartifactsbyadmin admin password deletepropartifact
-####
-    echo "Test15 - docker deploy"
+    deleteartifactsbyadmin admin password deletepropartifact 204
+#### 
+    echo "Test15 - delete artifact by owner "
+    deploygroupanduser dev1 jfrog deletebyuser 201
+    deleteartifactsbyadmin dev1 jfrog deletebyuser 204
+####    
+    echo "Test16 - delete artifact by user another than owner"
+    deploygroupanduser dev1 jfrog deletebyotheruser 201
+    deleteartifactsbyadmin dev2 jfrog deletebyotheruser 403
+####    
+    echo "Test17 - docker deploy"
     echo "Expect test to pass"
     deploydocker dev1 jfrog alpine docker-local "alpine"
 ####
-    echo "Test16 - docker deploy with another user than the namespace owner"
+    echo "Test18 - docker deploy with another user than the namespace owner"
     echo "Expect manifest error"     
     deploydocker dev2 jfrog alpine docker-local "hello-world"
 ####
-    echo "Test17 - docker deploy with virtual repository"
+    echo "Test19 - docker deploy with virtual repository"
     echo "Expect test to pass"
     deploydocker dev1 jfrog alpinevirtual docker "alpine"
 ####
-    echo "Test18 - docker deploy with another user than the namespace owner using virtual repository"
+    echo "Test20 - docker deploy with another user than the namespace owner using virtual repository"
     echo "Expect manifest error"
     deploydocker dev2 jfrog alpinevirtual docker "alpine"
 
