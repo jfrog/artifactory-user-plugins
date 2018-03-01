@@ -3,7 +3,7 @@ Artifactory Sample User Plugins
 
 A collection of sample [groovy user plugins] for [Artifactory].
 
-To contribute, please see [artifactory-user-plugins-devenv](https://github.com/JFrogDev/artifactory-user-plugins-devenv) tools.
+To contribute, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Copyright &copy; 2011-, JFrog Ltd.
 
