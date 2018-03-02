@@ -6,8 +6,8 @@ namespace (defined as a top-level directory in repository root) and manage it vi
 properties.
 
 This plugin assumes that the user already has write permissions on the
-repository in question, and allows any user with the annotate permission to modify 
-permissions on objects.
+repository in question, annotate permissions are required to change permissions, and any user
+who has the ability to modify a namespace will be able to modify its permissions.
 
 A result of this plugin is that no user will be allowed to write to the root directory of
 a repository.  It requires that all data pushed to the repository have a namespace.  Note
