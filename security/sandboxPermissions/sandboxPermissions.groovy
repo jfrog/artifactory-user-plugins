@@ -41,6 +41,32 @@ storage {
             }
         }
     }
+
+    beforePropertyCreate { item, name, values ->
+        if(item.repoPath.repoKey in checkedRepositories && !security.isAdmin())
+        {
+            log.trace("sandbox beforePropertyCreate: "+name)
+            checkPropChangeSandboxAuthorization(item, name)
+        }
+    }
+
+    beforePropertyDelete { item, name ->
+        log.trace("sandbox beforePropertyDelete: "+name+" with user: "+security.currentUsername)
+        if(item.repoPath.repoKey in checkedRepositories && !security.isAdmin())
+        {
+            log.trace("sandbox beforePropertyDelete: "+name)
+            checkPropChangeSandboxAuthorization(item, name)
+        }
+    }
+
+}
+
+def checkPropChangeSandboxAuthorization(item, name) {
+    if(name==ownerUsersProp() || name==ownerGroupsProp()) //only valid if its one of the sandboxPermissions properties
+    {
+        namespaceRepoPath = getNamespaceRepoPath(item.repoPath)
+        userIsAuthorized(namespaceRepoPath)
+    }
 }
 
 def getNamespaceRepoPath(RepoPath itemRepoPath)
