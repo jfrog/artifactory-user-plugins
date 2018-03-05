@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.5
+// v1.1.6
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -39,7 +39,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.8.4"
+pluginVersion = "5.9.0"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -121,24 +121,26 @@ executions {
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet -d <data>
     //Internal Use
-    secRepDataGet(httpMethod: 'POST') { ResourceStreamHandle body ->
+    secRepDataGet(httpMethod: 'POST') { params, ResourceStreamHandle body ->
+        def filter = params?.getAt('filter')?.getAt(0) ?: null as Integer
         def arg = wrapData('jo', null)
         log.debug("SLAVE: secRepDataGet is called")
         def bodytext = body.inputStream.text
         if (bodytext.length() > 0) {
             arg = wrapData('js', bodytext)
         }
-        def (msg, stat) = getRecentPatch(arg)
+        def (msg, stat) = getRecentPatch(arg, filter)
         message = unwrapData('js', msg)
         status = stat
     }
 
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataPost -d <data>
     //Internal Use
-    secRepDataPost(httpMethod: 'POST') { ResourceStreamHandle body ->
+    secRepDataPost(httpMethod: 'POST') { params, ResourceStreamHandle body ->
         log.debug("SLAVE: secRepDataPost is called")
+        def filter = params?.getAt('filter')?.getAt(0) ?: null as Integer
         def arg = wrapData('ji', body.inputStream)
-        def (msg, stat) = applyAggregatePatch(arg)
+        def (msg, stat) = applyAggregatePatch(arg, filter)
         message = unwrapData('js', msg)
         status = stat
     }
@@ -146,12 +148,12 @@ executions {
     //testing purposes only
     testSecurityDump(httpMethod: 'GET') { params ->
         status = 200
-        message = new JsonBuilder(normalize(extract())).toPrettyString()
+        message = new JsonBuilder(normalize(extract(null))).toPrettyString()
     }
 
     testDBUpdate() { params, ResourceStreamHandle body ->
         def json = new JsonSlurper().parse(body.inputStream)
-        updateDatabase(null, json)
+        updateDatabase(null, json, null)
         status = 200
         message = "Completed, try dumping now"
     }
@@ -477,6 +479,7 @@ def runSecurityReplication() {
         log.error("ALL: problem getting $targetFile")
         return
     }
+    def filter = slurped.securityReplication.filter
     def whoami = slurped.securityReplication.whoami
     def distList = slurped.securityReplication.urls
     if (distList.size() <= 1) {
@@ -509,7 +512,7 @@ def runSecurityReplication() {
     log.debug("MASTER: Getting the golden file")
     def golden = findBestGolden(upList, whoami, auth)
     log.debug("MASTER: Going to slaves to get stuff")
-    def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth)
+    def bigDiff = grabStuffFromSlaves(golden, upList, whoami, auth, filter)
     if (verbose == true) {
         log.debug("MASTER: The aggragated diff is: $bigDiff")
     }
@@ -518,7 +521,7 @@ def runSecurityReplication() {
         log.debug("MASTER: the merged golden patch is $mergedPatch")
     }
     log.debug("MASTER: I gotta send the golden copy back to my slaves")
-    sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden)
+    sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden, filter)
 }
 
 def readFile(fname) {
@@ -588,7 +591,7 @@ def getArtifactoryVersion() {
     return sserv.allArtifactoryServers*.artifactoryVersion
 }
 
-def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
+def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null), filter = null) {
     def exurl = "$baseurl/api/plugins/execute"
     def me = whoami == baseurl
     try {
@@ -601,12 +604,14 @@ def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null)) {
                 return makeRequest(req, auth, data, "text/plain")
             case 'data_send':
                 def datacp = wrapData('js', unwrapData('js', data))
-                if (me) return applyAggregatePatch(datacp)
-                def req = new HttpPost("$exurl/secRepDataPost")
+                if (me) return applyAggregatePatch(datacp, filter)
+                def filterstr = (filter == null) ? '' : "?params=filter=$filter"
+                def req = new HttpPost("$exurl/secRepDataPost$filterstr")
                 return makeRequest(req, auth, data, "application/json")
             case 'data_retrieve':
-                if (me) return getRecentPatch(data)
-                def req = new HttpPost("$exurl/secRepDataGet")
+                if (me) return getRecentPatch(data, filter)
+                def filterstr = (filter == null) ? '' : "?params=filter=$filter"
+                def req = new HttpPost("$exurl/secRepDataGet$filterstr")
                 return makeRequest(req, auth, data, "application/json")
             case 'recoverySync':
                 if (me) return getGoldenFile()
@@ -706,7 +711,7 @@ def findBestGolden(upList, whoami, auth) {
     return [fingerprint: latest.value, golden: unwrapData('jo', resp[0])]
 }
 
-def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
+def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden, filter) {
     def fingerprint = [cs: null, ts: System.currentTimeMillis()]
     fingerprint.version = getArtifactoryVersion()
     if (golden.fingerprint && fingerprint.ts <= golden.fingerprint.ts) {
@@ -715,7 +720,7 @@ def sendSlavesGoldenCopy(upList, whoami, auth, mergedPatch, golden) {
     for (instance in upList.entrySet()) {
         log.debug("MASTER: Sending mergedPatch to $instance.key")
         def data = wrapData('jo', [fingerprint: fingerprint, patch: mergedPatch])
-        def resp = remoteCall(whoami, instance.key, auth, 'data_send', data)
+        def resp = remoteCall(whoami, instance.key, auth, 'data_send', data, filter)
         if (resp[1] != 200) {
             log.error("MASTER: Error sending to $instance.key the mergedPatch, statusCode: ${resp[1]}")
         }
@@ -769,7 +774,7 @@ def checkInstances(distList, whoami, auth) {
     return upList
 }
 
-def grabStuffFromSlaves(mygolden, upList, whoami, auth) {
+def grabStuffFromSlaves(mygolden, upList, whoami, auth, filter) {
     def bigDiff = []
     for (inst in upList.entrySet()) {
         log.debug("MASTER: Accessing $inst.key, give me your stuff")
@@ -777,11 +782,11 @@ def grabStuffFromSlaves(mygolden, upList, whoami, auth) {
         def golden = mygolden.collectEntries { k, v -> [k, v] }
         def data = wrapData('jo', golden)
         if (golden.fingerprint && golden.fingerprint.cs == inst.value?.cs) {
-            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve')
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', wrapData('jo', null), filter)
         } else {
             if (golden.fingerprint == null) golden.fingerprint = [:]
             golden.fingerprint.version = getArtifactoryVersion()
-            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data)
+            resp = remoteCall(whoami, inst.key, auth, 'data_retrieve', data, filter)
         }
         if (resp[1] != 200) {
             throw new RuntimeException("failed to retrieve data from ${inst.key}. Status code: ${resp[1]}")
@@ -880,11 +885,11 @@ def getPingAndFingerprint() {
     }
 }
 
-def getRecentPatch(newgolden) {
+def getRecentPatch(newgolden, filter) {
     def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
     def newgoldenuw = unwrapData('jo', newgolden)
     def goldenDB = newgoldenuw?.golden
-    def extracted = extract()
+    def extracted = extract(filter)
     def is = null
     if (!newgoldenuw) {
         try {
@@ -908,7 +913,7 @@ def getRecentPatch(newgolden) {
         def extractdiff = buildDiff(baseSnapShot, extracted)
         def mergeddiff = merge([goldendiff, extractdiff])
         extracted = applyDiff(baseSnapShot, mergeddiff)
-        updateDatabase(null, extracted)
+        updateDatabase(null, extracted, filter)
         newgoldenuw.fingerprint.version = ver
         writeFile('fingerprint', wrapData('jo', newgoldenuw.fingerprint))
         writeFile('golden', wrapData('jo', goldenDB))
@@ -928,7 +933,7 @@ def getRecentPatch(newgolden) {
     return [wrapData('jo', slavePatch), 200]
 }
 
-def applyAggregatePatch(newpatch) {
+def applyAggregatePatch(newpatch, filter) {
     def goldenDB = null, oldGoldenDB = null
     def patch = unwrapData('jo', newpatch)
     def ver = getArtifactoryVersion()
@@ -968,7 +973,7 @@ def applyAggregatePatch(newpatch) {
         is = readFile('recent')
         if (!is) throw new JsonException("Recent file not found.")
         def extracted = unwrapData('jo', is)
-        updateDatabase(extracted, goldenDB)
+        updateDatabase(extracted, goldenDB, filter)
     } catch (JsonException ex) {
         log.error("Could not parse recent.json: $ex.message")
         return [wrapData('js', "Could not parse recent.json: $ex.message"), 400]
@@ -1234,17 +1239,18 @@ def readMask(privs) {
     return mask
 }
 
-def extract() {
+def extract(filter) {
     def secserv = ctx.securityService
     def result = [:]
     // get the filter settings from the config file
-    def filter = null
-    def secRepJson = new File(artHome, '/plugins/securityReplication.json')
-    try {
-        def slurped = new JsonSlurper().parse(secRepJson)
-        filter = slurped?.securityReplication?.filter ?: 1
-    } catch (JsonException ex) {
-        filter = 1
+    if (filter == null) {
+        def secRepJson = new File(artHome, '/plugins/securityReplication.json')
+        try {
+            def slurped = new JsonSlurper().parse(secRepJson)
+            filter = slurped?.securityReplication?.filter ?: 1
+        } catch (JsonException ex) {
+            filter = 1
+        }
     }
     // permissions
     if (filter >= 3) {
@@ -1716,9 +1722,9 @@ def updatePasswords(snapshot) {
     }
 }
 
-def updateDatabase(oldver, newver) {
+def updateDatabase(oldver, newver, filter) {
     // current state of the database (might have changed since oldver)
-    def currver = extract()
+    def currver = extract(filter)
     if (oldver == null) oldver = currver
     // update any old passwords if necessary
     if (compareVersions(ctx.centralConfig.versionInfo.version, 5, 6) >= 0) {
