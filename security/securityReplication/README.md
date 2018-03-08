@@ -168,12 +168,17 @@ each of those instances:
 curl -uadmin:password -XPOST http://localhost:8088/artifactory/api/plugins/execute/distSecRep
 ```
 
+If possible, it may be best to call `distSecRep` directly on the HA node with
+the new config file, rather than going through the load balancer. This ensures
+that the correct config is distributed properly.
+
 At this point, any HA instances may need their plugin lists refreshed manually,
 for each node in the instance.
 
 Now, the plugin should be properly configured and running on all instances. You
 can easily confirm by temporarily [enabling the debug log][log] and confirming
-in `artifactory.log`.
+in `artifactory.log`, and/or by running the validation endpoint, as described
+below.
 
 [log]: https://github.com/JFrogDev/artifactory-user-plugins/tree/master/security/securityReplication#logging
 

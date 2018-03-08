@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.6
+// v1.1.7
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -73,28 +73,31 @@ executions {
 
     //Usage: curl -X PUT http://localhost:8081/artifactory/api/plugins/execute/securityReplication -T <textfile>
     //External Use
-    securityReplication(httpMethod: 'PUT') { ResourceStreamHandle body ->
-        if (ArtifactoryHome.get().isHaConfigured()) {
+    securityReplication(httpMethod: 'PUT') { params, ResourceStreamHandle body ->
+        def set = params?.getAt('set')?.getAt(0) ?: 0 as Integer
+        if (set == 0 && ArtifactoryHome.get().isHaConfigured()) {
             def sserv = ctx.beanForType(ArtifactoryServersCommonService)
-            def primary = sserv.runningHaPrimary
-            if (primary != null && primary != sserv.currentMember) {
-                def baseurl = primary.contextUrl - ~'/$'
-                def tctx = RequestThreadLocal.context.get().requestThreadLocal
-                def auth = tctx.request.getHeader('Authorization')
-                def data = wrapData('ji', body.inputStream)
-                def resp = remoteCall(null, baseurl, auth, 'json', data)
-                message = unwrapData('js', resp[0])
-                status = resp[1]
-                return
+            def tctx = RequestThreadLocal.context.get().requestThreadLocal
+            def auth = tctx.request.getHeader('Authorization')
+            def data = wrapData('js', body.inputStream.text)
+            for (node in sserv.activeMembers) {
+                if (node.serverState.name() != 'RUNNING') continue
+                def baseurl = node.contextUrl - ~'/$'
+                def resp = remoteCall(null, baseurl, auth, 'json', data, 1)
+                if (resp[1] > status) {
+                    message = unwrapData('js', resp[0])
+                    status = resp[1]
+                }
             }
-        }
-        def targetFile = new File(artHome, '/plugins/securityReplication.json')
-        try {
-            targetFile.withOutputStream { it << body.inputStream }
-            status = 200
-        } catch (Exception ex) {
-            message = "Problem writing file: $ex.message"
-            status = 400
+        } else {
+            def targetFile = new File(artHome, '/plugins/securityReplication.json')
+            try {
+                targetFile.withOutputStream { it << body.inputStream }
+                status = 200
+            } catch (Exception ex) {
+                message = "Problem writing file: $ex.message"
+                status = 400
+            }
         }
     }
 
@@ -597,7 +600,8 @@ def remoteCall(whoami, baseurl, auth, method, data = wrapData('jo', null), filte
     try {
         switch(method) {
             case 'json':
-                def req = new HttpPut("$exurl/securityReplication")
+                def setstr = (filter == null) ? '' : "?params=set=$filter"
+                def req = new HttpPut("$exurl/securityReplication$setstr")
                 return makeRequest(req, auth, data, "text/plain")
             case 'plugin':
                 def req = new HttpPut("$baseurl/api/plugins/securityReplication")
@@ -674,16 +678,17 @@ def pushData() {
     log.debug("Running distSecRep command: distList: $distList")
     def pluginData = wrapData('js', pluginFile.text)
     for (dist in distList) {
-        if (whoami == dist) continue
-        slurped.securityReplication.whoami = "$dist"
-        //push plugin to all instances
-        log.debug("sending plugin to $dist instance")
-        resp = remoteCall(whoami, dist, auth, 'plugin', pluginData)
-        if (resp[1] != 200) {
-            return [wrapData('js', "PLUGIN Push $dist Failed: ${resp[0][2]}"), resp[1]]
+        if (whoami != dist) {
+            //push plugin to all instances
+            log.debug("sending plugin to $dist instance")
+            resp = remoteCall(whoami, dist, auth, 'plugin', pluginData)
+            if (resp[1] != 200) {
+                return [wrapData('js', "PLUGIN Push $dist Failed: ${resp[0][2]}"), resp[1]]
+            }
         }
         //push json to all instances
         log.debug("sending json file to $dist instance")
+        slurped.securityReplication.whoami = "$dist"
         resp = remoteCall(whoami, dist, auth, 'json', wrapData('jo', slurped))
         if (resp[1] != 200) {
             return [wrapData('js', "JSON Push $dist Failed: ${resp[0][2]}"), resp[1]]
