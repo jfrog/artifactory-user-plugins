@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 
@@ -30,7 +33,7 @@ class Global {
 }
 
 // curl command example for running this plugin (Prior Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
-// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true,keepRelease=true"
 //
 // For a HA cluster, the following commands have to be directed at the instance running the script. Therefore it is best to invoke
 // the script directly on an instance so the below commands can operate on same instance
@@ -39,16 +42,20 @@ class Global {
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"
 
+
 def pluginGroup = 'cleaners'
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
 
 executions {
     cleanup(groups: [pluginGroup]) { params ->
         def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
-        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
-        def disablePropertiesSupport = params['disablePropertiesSupport'] ? params['disablePropertiesSupport'][0] as boolean : false
+        def dryRun = params['dryRun'] ? params['dryRun'][0].toBoolean() : false      
+        def disablePropertiesSupport = params['disablePropertiesSupport'] ? params['disablePropertiesSupport'][0].toBoolean() : false
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
-        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
+        def keepRelease = params['keepRelease'] ? params['keepRelease'][0].toBoolean() : false
+        def releaseRegex = params['releaseRegex'] ? config.regex as Pattern : ~/.*-\d\.\d\.\d\.*/
+        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport, keepRelease, releaseRegex)
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
@@ -78,8 +85,8 @@ executions {
     }
 }
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
 log.info "Schedule job policy list: $config.policies"
+log.info "Schedule regex: $config.regex"
 
 config.policies.each{ policySettings ->
     def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
@@ -88,17 +95,19 @@ config.policies.each{ policySettings ->
     def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
     def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
     def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+    def keepRelease = policySettings[ 6 ] ? policySettings[ 6 ] as Boolean : false
+    def releaseRegex = policySettings[ 7 ] ? policySettings[ 7 ] as Pattern : ~/.*-\d\.\d\.\d\.*/
 
     jobs {
         "scheduledCleanup_$cron"(cron: cron) {
-            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
-            artifactCleanup( months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport) keepRelease($keepRelease), releaseRegex($releaseRegex)"
+            artifactCleanup( months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport, keepRelease, releaseRegex )
         }
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
-    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
+private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false, keepRelease = false, releaseRegex = ~/.*-\d\.\d\.\d\.*/) {
+    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport, keepRelease: $keepRelease, releaseRegex: $releaseRegex"
 
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
     def skip = [:]
@@ -144,14 +153,14 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                 log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
                 log.info "\t==> canDelete: ${security.canDelete(it)}"
-
             } else {
-                if (security.canDelete(it)) {
+                if (security.canDelete(it) && (checkName(keepRelease, releaseRegex, it))) {
                     log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
                     repositories.delete it
                 } else {
                     log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    cntNoDeletePermissions++
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
@@ -217,4 +226,16 @@ private def getSkippedPaths(String[] repos) {
     TimeDuration duration = TimeCategory.minus(timeStop, timeStart)
     log.info "Elapsed time to retrieve paths to skip: " + duration
     return skip
+}
+
+private def checkName(keepRelease, releaseRegex, artifactName) {
+    def validator = false
+    if (keepRelease) {
+        Matcher releaseMatcher = (artifactName =~ releaseRegex)
+        validator =  (releaseMatcher.count > 0) ? false : true
+    }
+    else {
+        validator = true
+    }
+    return validator
 }
