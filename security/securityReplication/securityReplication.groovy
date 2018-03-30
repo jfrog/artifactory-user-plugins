@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.7
+// v1.1.8
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -1264,7 +1264,7 @@ def extract(filter) {
             def perm = [:]
             perm.includes = acl.permissionTarget.includes
             perm.excludes = acl.permissionTarget.excludes
-            perm.repos = acl.permissionTarget.repoKeys
+            perm.repos = acl.permissionTarget.repoKeys.collect { it - ~'-cache$' }
             perms[acl.permissionTarget.name] = perm
         }
         result['permissions'] = perms
