@@ -64,7 +64,7 @@
                 "**"
             ],
             "repos": [
-                "jcenter-cache"
+                "jcenter"
             ]
         },
         "changeme": {
