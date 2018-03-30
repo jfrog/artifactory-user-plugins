@@ -301,6 +301,17 @@ Issues and Limitations
   be too much of a problem, considering the plugin ensures that all users exist
   with the same properties on all instances, but it still might be preferred to
   have this option available.
+- If, for example, a permission target refers to a repository "test-repo", and
+  this repository exists on site A but not on site B, the permission will still
+  be replicated, and will simply refer to the nonexistant repository. If a
+  repository "test-repo" was later created on site B, the permission should now
+  grant privileges on this new repository. However, if "test-repo" is a remote
+  repository, the permission will not be able to grant privileges, because it
+  refers to "test-repo" and not "test-repo-cache" (all remote privileges are
+  granted on remote caches). To fix this, the permission must be edited and
+  re-saved, even if no changes are made to it; this triggers Artifactory to fix
+  the repository name automatically. This issue does not occur if the repository
+  already exists before the permission is first replicated.
 - When upgrading the plugin itself, do not refresh the plugin lists while the
   plugin's sync job is running. Doing this can cause the plugin to stop working
   entirely. If this happens, Artifactory must be restarted.
