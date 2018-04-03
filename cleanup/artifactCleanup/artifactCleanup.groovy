@@ -85,9 +85,6 @@ executions {
     }
 }
 
-log.info "Schedule job policy list: $config.policies"
-log.info "Schedule regex: $config.regex"
-
 config.policies.each{ policySettings ->
     def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
     def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
