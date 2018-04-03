@@ -112,7 +112,7 @@ This file takes the following information:
   synchronization occurs. Changes to this will not take effect until after the
   plugin is reloaded or Artifactory is restarted.
 - `safety`: By default, replication will not run when the Artifactory version is
-  behind the plugin version. This means that each time Artifactory is upgraded,
+  ahead of the plugin version. This means that each time Artifactory is upgraded,
   the plugin must also be updated. This is a safety measure to prevent
   accidental data loss due to incompatibilities between Artifactory and
   securityReplication. You may disable this behavior by including a `safety`
