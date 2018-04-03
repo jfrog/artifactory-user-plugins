@@ -98,6 +98,9 @@ config.policies.each{ policySettings ->
     def keepRelease = policySettings[ 6 ] ? policySettings[ 6 ] as Boolean : false
     def releaseRegex = policySettings[ 7 ] ? policySettings[ 7 ] as Pattern : ~/.*-\d\.\d\.\d\.*/
 
+    log.info "Schedule job policy list: $config.policies"
+    log.info "Schedule regex: $releaseRegex"
+
     jobs {
         "scheduledCleanup_$cron"(cron: cron) {
             log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport) keepRelease($keepRelease), releaseRegex($releaseRegex)"
