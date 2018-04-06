@@ -33,7 +33,7 @@ class Global {
 }
 
 // curl command example for running this plugin (Prior Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
-// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true,keepRelease=true"
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true;keepRelease=true"
 //
 // For a HA cluster, the following commands have to be directed at the instance running the script. Therefore it is best to invoke
 // the script directly on an instance so the below commands can operate on same instance
@@ -54,7 +54,7 @@ executions {
         def disablePropertiesSupport = params['disablePropertiesSupport'] ? params['disablePropertiesSupport'][0].toBoolean() : false
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
         def keepRelease = params['keepRelease'] ? params['keepRelease'][0].toBoolean() : false
-        def releaseRegex = params['releaseRegex'] ? config.regex as Pattern : ~/.*-\d\.\d\.\d\.*/
+        def releaseRegex = config.policies[0][7] ? config.policies[0][7] as Pattern : ~/.*-\d+\.\d+\.\d+\.*/
         artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport, keepRelease, releaseRegex)
     }
 
@@ -93,7 +93,7 @@ config.policies.each{ policySettings ->
     def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
     def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
     def keepRelease = policySettings[ 6 ] ? policySettings[ 6 ] as Boolean : false
-    def releaseRegex = policySettings[ 7 ] ? policySettings[ 7 ] as Pattern : ~/.*-\d\.\d\.\d\.*/
+    def releaseRegex = policySettings[ 7 ] ? policySettings[ 7 ] as Pattern : ~/.*-\d+\.\d+\.\d+\.*/
 
     log.info "Schedule job policy list: $config.policies"
     log.info "Schedule regex: $releaseRegex"
@@ -106,7 +106,7 @@ config.policies.each{ policySettings ->
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false, keepRelease = false, releaseRegex = ~/.*-\d\.\d\.\d\.*/) {
+private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false, keepRelease = false, releaseRegex = ~/.*-\d+\.\d+\.\d+\.*/) {
     log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport, keepRelease: $keepRelease, releaseRegex: $releaseRegex"
 
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
@@ -150,9 +150,17 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 cntNoDeletePermissions++
             }
             if (dryRun) {
-                log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
-                log.info "\t==> canDelete: ${security.canDelete(it)}"
+                if (checkName(keepRelease, releaseRegex, it)) {
+                    log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
+                    log.info "\t==> canDelete: ${security.canDelete(it)}"
+                }
+                else {
+                    log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
+                    log.info "\t==> canDelete: ${security.canDelete(it)}"
+                    log.info "\t==> protected by regex: ${releaseRegex}"
+                }
             } else {
                 if (security.canDelete(it) && (checkName(keepRelease, releaseRegex, it))) {
                     log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
@@ -229,13 +237,5 @@ private def getSkippedPaths(String[] repos) {
 }
 
 private def checkName(keepRelease, releaseRegex, artifactName) {
-    def validator = false
-    if (keepRelease) {
-        Matcher releaseMatcher = (artifactName =~ releaseRegex)
-        validator =  (releaseMatcher.count > 0) ? false : true
-    }
-    else {
-        validator = true
-    }
-    return validator
+    return !keepRelease || !((artifactName =~ releaseRegex).count > 0)
 }
