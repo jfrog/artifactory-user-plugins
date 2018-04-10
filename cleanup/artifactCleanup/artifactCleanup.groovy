@@ -57,7 +57,6 @@ executions {
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
         def keepRelease = params['keepRelease'] ? params['keepRelease'][0].toBoolean() : false
         def releaseRegex = params['releaseRegex'] ? params['releaseRegex'] as Pattern : regex
-        // def releaseRegex = config.policies[0][7] ? config.policies[0][7] as Pattern : ~/-\d+\.\d+\.\d+/
         artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport, keepRelease, releaseRegex)
     }
 
