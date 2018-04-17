@@ -34,7 +34,7 @@ executions {
             json {
                 // create a list of all repositories from the params
                 stats((params['paths'] as List).findResults { path ->
-                    repoPath = RepoPathFactory.create("$path/")
+                    def repoPath = RepoPathFactory.create("$path/")
                     // if the path exists and was typed correctly, get its
                     // artifact count and size and insert to the json
                     if (repositories.exists(repoPath)) {
