@@ -1,26 +1,25 @@
 {
     "groups": {
-        "changeme": {
+        "addme": {
             "admin": false,
-            "description": "update this group",
+            "description": "add this group",
             "isdefault": false,
             "permissions": {
-                "changeme": "nrw",
-                "deleteme": "nrw"
+                "changeme": "nrw"
             },
             "realm": "internal",
             "realmattrs": null
         },
-        "deleteme": {
+        "changeme": {
             "admin": false,
-            "description": "delete this group",
-            "isdefault": false,
+            "description": "this group has been updated",
+            "isdefault": true,
             "permissions": {
-                "changeme": "dnrw",
-                "deleteme": "dnrw"
+                "addme": "dnrw",
+                "changeme": "dnrw"
             },
-            "realm": "internal",
-            "realmattrs": null
+            "realm": "yrotcafitra",
+            "realmattrs": "yrotcafitra"
         },
         "readers": {
             "admin": false,
@@ -28,8 +27,7 @@
             "isdefault": true,
             "permissions": {
                 "Anything": "r",
-                "changeme": "dmnrw",
-                "deleteme": "dmnrw"
+                "changeme": "dmnrw"
             },
             "realm": "internal",
             "realmattrs": null
@@ -58,18 +56,7 @@
                 "ANY"
             ]
         },
-        "changeme": {
-            "excludes": [
-                "baz"
-            ],
-            "includes": [
-                "**"
-            ],
-            "repos": [
-                "jcenter"
-            ]
-        },
-        "deleteme": {
+        "addme": {
             "excludes": [
                 
             ],
@@ -79,9 +66,46 @@
             "repos": [
                 "jcenter"
             ]
+        },
+        "changeme": {
+            "excludes": [
+                "bar"
+            ],
+            "includes": [
+                "foo"
+            ],
+            "repos": [
+                "libs-release-local",
+                "libs-snapshot-local"
+            ]
         }
     },
     "users": {
+        "addme": {
+            "admin": false,
+            "bintray": null,
+            "email": "addme@foo.bar",
+            "enabled": true,
+            "expired": false,
+            "groups": [
+                "addme",
+                "changeme",
+                "readers"
+            ],
+            "locked": false,
+            "passkey": null,
+            "password": "bcrypt$$2a$08$Lji9jdZMHNnG2ZTG4UbnnudTk3N1/p.p1xD0ftBsRhAfUIgkks49C",
+            "permissions": {
+                "changeme": "dnrw"
+            },
+            "privatekey": null,
+            "properties": {
+                
+            },
+            "publickey": null,
+            "salt": null,
+            "updatable": true
+        },
         "admin": {
             "admin": true,
             "bintray": null,
@@ -106,56 +130,29 @@
             "updatable": true
         },
         "changeme": {
-            "admin": false,
-            "bintray": "changeme:foobar",
-            "email": "changeme@foo.bar",
-            "enabled": true,
-            "expired": false,
-            "groups": [
-                "changeme",
-                "deleteme",
-                "readers"
-            ],
-            "locked": false,
-            "passkey": null,
-            "password": "bcrypt$$2a$08$Lji9jdZMHNnG2ZTG4UbnnudTk3N1/p.p1xD0ftBsRhAfUIgkks49C",
-            "permissions": {
-                "changeme": "dnrw",
-                "deleteme": "dnrw"
-            },
-            "privatekey": "JR2YxGPoiQWMe5LjB88jM6zCPHBf5zHCsebJyWwzaWCr1UH7XRipx17G9pmr95QPWpSsVZoUAYmcdstDvsrYJLwdpvFJjYbMY7AJaavuJwchCnqt6gcbQLA8B9yQA1ew5EVPuNHoGivDmDoYmdVX4NSJPgTgEj9TtyQs8wfeuqmgBhQRsGx1QzT4wTPjdBPX3CECS4rQx6uyAAVJYLyryfsMaaWtxRJRZ5UeFRuaDd7bnqjxm2fGbk5P2FgQJXKJreuZPeb46SycWQHHQskfVYCSWnMquPKYr5JMXJ9pzqYWFvkqhZKdzRRcJ7jqcqp2s9hBMugigzEdciuhUmXS5viVNZ91bwtadwZmUAtmr6bmuAi7aX9LGqE8mfeHzCTERYDm67PKuDuJjSNzFtFRVY4CgBiXmMSnC8waasoLEyWmxdjWVpqDoN9QT1BvhRmonCPDTp92hvc3jZiiCfNds9oqAiP",
-            "properties": {
-                "apiKey": "AKCp2V77CZw9VKd8J97FttrGpxqcPcpKwZxrf9zcwhaeAV9oSLrT14m9qLH2msUbRbJssQ6iz"
-            },
-            "publickey": "JUHfDLxBPMe4YZbWLKdbams2ZTPq3rmG1zxgSbvZJaaMaREwiQdtoeavTp7QUuxvt23CaPhdKosG9VDkSWSVgKvXu3BveKqLA52bby72v9mi86MLpCR6Ecsvu7WuzN1muAGSa",
-            "salt": null,
-            "updatable": true
-        },
-        "deleteme": {
-            "admin": false,
+            "admin": true,
             "bintray": null,
-            "email": "deleteme@foo.bar",
+            "email": "changed@foo.bar",
             "enabled": true,
-            "expired": false,
+            "expired": true,
             "groups": [
-                "changeme",
-                "deleteme",
+                "addme",
                 "readers"
             ],
-            "locked": false,
+            "locked": true,
             "passkey": null,
-            "password": "bcrypt$$2a$08$Lji9jdZMHNnG2ZTG4UbnnudTk3N1/p.p1xD0ftBsRhAfUIgkks49C",
+            "password": "bcrypt$$2a$08$I7Q7pDX5pDpZhuHaZk/4CO7VJqxOexsDQfemsFxlsEwvmzaLSjQd6",
             "permissions": {
-                "changeme": "nrw",
-                "deleteme": "nrw"
+                "addme": "nrw",
+                "changeme": "nrw"
             },
             "privatekey": null,
             "properties": {
-                
+                "sshPublicKey": "ssh-rsa foobar"
             },
             "publickey": null,
             "salt": null,
-            "updatable": true
+            "updatable": false
         }
     }
 }

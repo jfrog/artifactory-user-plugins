@@ -17,7 +17,8 @@ class SecurityReplicationTest extends Specification {
     conn.disconnect()
     def major = version[0] as int
     def minor = version[1] as int
-    def vtest = (major > 5 || (major == 5 && minor >= 6)) ? '' : 'old'
+    def vtest = (major > 5 || (major == 5 && minor >= 6)) ? '-56' : 'old'
+    vtest = (major > 5 || (major == 5 && minor >= 10)) ? '' : vtest
     conn = new URL("$baseurl/testSecurityDump").openConnection()
     conn.requestMethod = 'GET'
     conn.setRequestProperty('Authorization', auth)
