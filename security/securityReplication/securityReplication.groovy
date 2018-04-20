@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.8
+// v1.1.9
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -1257,6 +1257,7 @@ def extract(filter) {
             filter = 1
         }
     }
+    log.debug("ALL: Using filter level $filter")
     // permissions
     if (filter >= 3) {
         def perms = [:], acls = secserv.allAcls
