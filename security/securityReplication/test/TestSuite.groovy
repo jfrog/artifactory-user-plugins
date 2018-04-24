@@ -10,6 +10,7 @@ import org.junit.runners.Suite
         SecurityReplicationTest.class,
         UserReplication.class,
         GroupReplication.class,
+        PermissionReplication.class,
         Shutdown.class
 ])
 class TestSuite {

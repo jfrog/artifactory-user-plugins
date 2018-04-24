@@ -74,7 +74,7 @@ executions {
     //Usage: curl -X PUT http://localhost:8081/artifactory/api/plugins/execute/securityReplication -T <textfile>
     //External Use
     securityReplication(httpMethod: 'PUT') { params, ResourceStreamHandle body ->
-        def set = params?.getAt('set')?.getAt(0) ?: 0 as Integer
+        def set = (params?.getAt('set')?.getAt(0) ?: 0) as Integer
         if (set == 0 && ArtifactoryHome.get().isHaConfigured()) {
             def sserv = ctx.beanForType(ArtifactoryServersCommonService)
             def tctx = RequestThreadLocal.context.get().requestThreadLocal
@@ -125,7 +125,7 @@ executions {
     //Usage: curl -X POST http://localhost:8081/artifactory/api/plugins/execute/secRepDataGet -d <data>
     //Internal Use
     secRepDataGet(httpMethod: 'POST') { params, ResourceStreamHandle body ->
-        def filter = params?.getAt('filter')?.getAt(0) ?: null as Integer
+        def filter = (params?.getAt('filter')?.getAt(0) ?: null) as Integer
         def arg = wrapData('jo', null)
         log.debug("SLAVE: secRepDataGet is called")
         def bodytext = body.inputStream.text
@@ -141,7 +141,7 @@ executions {
     //Internal Use
     secRepDataPost(httpMethod: 'POST') { params, ResourceStreamHandle body ->
         log.debug("SLAVE: secRepDataPost is called")
-        def filter = params?.getAt('filter')?.getAt(0) ?: null as Integer
+        def filter = (params?.getAt('filter')?.getAt(0) ?: null) as Integer
         def arg = wrapData('ji', body.inputStream)
         def (msg, stat) = applyAggregatePatch(arg, filter)
         message = unwrapData('js', msg)
@@ -1257,7 +1257,11 @@ def extract(filter) {
             filter = 1
         }
     }
-    log.debug("ALL: Using filter level $filter")
+    def msg = "ALL: Using filter level $filter, replicating "
+    if (filter >= 1) msg += "users "
+    if (filter >= 2) msg += "groups "
+    if (filter >= 3) msg += "permissions"
+    log.debug(msg)
     // permissions
     if (filter >= 3) {
         def perms = [:], acls = secserv.allAcls
