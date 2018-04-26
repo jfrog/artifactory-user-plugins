@@ -12,6 +12,7 @@ class PermissionReplication extends Specification {
         setup:
         def pass1ct
         def pass2ct
+        def pass3ct
 
         when: "create fifteen permissions on master and run replication"
         createPerms('8088', 'temptest-fifteen-', 15)
@@ -28,13 +29,14 @@ class PermissionReplication extends Specification {
         setLevel('8090', 2)
         setLevel('8091', 2)
         setLevel('8092', 2)
-        createPerms('8088', 'temptest-hundred-', 100)
+        createPerms('8088', 'temptest-master-hundred-', 100)
+        createPerms('8090', 'temptest-slave-hundred-', 100)
         doReplication('8088')
-        pass2ct = countPerms('8088', 'temptest-')
+        pass2ct = pass1ct + 100
 
         then: "ensure permissions did not replicate"
-        pass2ct == pass1ct + 100
-        pass1ct == countPerms('8090', 'temptest-')
+        pass2ct == countPerms('8088', 'temptest-')
+        pass2ct == countPerms('8090', 'temptest-')
         pass1ct == countPerms('8091', 'temptest-')
         pass1ct == countPerms('8092', 'temptest-')
 
@@ -43,19 +45,20 @@ class PermissionReplication extends Specification {
 
         then: "ensure that nothing changed"
         pass2ct == countPerms('8088', 'temptest-')
-        pass1ct == countPerms('8090', 'temptest-')
+        pass2ct == countPerms('8090', 'temptest-')
         pass1ct == countPerms('8091', 'temptest-')
         pass1ct == countPerms('8092', 'temptest-')
 
         when: "change master-primary config to l3 and run replication"
         setLevel('8088', 3)
         doReplication('8088')
+        pass3ct = pass1ct + 200
 
         then: "ensure all nodes have the new number of permissions"
-        pass2ct == countPerms('8088', 'temptest-')
-        pass2ct == countPerms('8090', 'temptest-')
-        pass2ct == countPerms('8091', 'temptest-')
-        pass2ct == countPerms('8092', 'temptest-')
+        pass3ct == countPerms('8088', 'temptest-')
+        pass3ct == countPerms('8090', 'temptest-')
+        pass3ct == countPerms('8091', 'temptest-')
+        pass3ct == countPerms('8092', 'temptest-')
 
         cleanup:
         deletePerms('8088', 'temptest-')

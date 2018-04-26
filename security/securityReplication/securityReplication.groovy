@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// v1.1.9
+// v1.1.10
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonException
@@ -519,7 +519,7 @@ def runSecurityReplication() {
     if (verbose == true) {
         log.debug("MASTER: The aggragated diff is: $bigDiff")
     }
-    def mergedPatch = merge(bigDiff)
+    def mergedPatch = merge(golden.golden, bigDiff)
     if (verbose == true) {
         log.debug("MASTER: the merged golden patch is $mergedPatch")
     }
@@ -698,9 +698,7 @@ def pushData() {
 }
 
 def findBestGolden(upList, whoami, auth) {
-    def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
-    def synched = upList.every { k, v -> v?.cs == upList[whoami]?.cs }
-    if (synched) return [fingerprint: upList[whoami], golden: baseSnapShot]
+    def baseSnapShot = [:]
     def latest = null, golden = null
     for (inst in upList.entrySet()) {
         if (!inst.value) continue
@@ -891,7 +889,7 @@ def getPingAndFingerprint() {
 }
 
 def getRecentPatch(newgolden, filter) {
-    def baseSnapShot = ["users":[:],"groups":[:],"permissions":[:]]
+    def baseSnapShot = [:]
     def newgoldenuw = unwrapData('jo', newgolden)
     def goldenDB = newgoldenuw?.golden
     def extracted = extract(filter)
@@ -916,7 +914,7 @@ def getRecentPatch(newgolden, filter) {
         }
         def goldendiff = buildDiff(baseSnapShot, goldenDB)
         def extractdiff = buildDiff(baseSnapShot, extracted)
-        def mergeddiff = merge([goldendiff, extractdiff])
+        def mergeddiff = merge(baseSnapShot, [goldendiff, extractdiff])
         extracted = applyDiff(baseSnapShot, mergeddiff)
         updateDatabase(null, extracted, filter)
         newgoldenuw.fingerprint.version = ver
@@ -1257,10 +1255,13 @@ def extract(filter) {
             filter = 1
         }
     }
-    def msg = "ALL: Using filter level $filter, replicating "
-    if (filter >= 1) msg += "users "
-    if (filter >= 2) msg += "groups "
-    if (filter >= 3) msg += "permissions"
+    def msg = "ALL: Using filter level $filter, replicating"
+    if (filter < 1) msg += " nothing"
+    else {
+        if (filter >= 1) msg += " users"
+        if (filter >= 2) msg += ", groups"
+        if (filter >= 3) msg += ", permissions"
+    }
     log.debug(msg)
     // permissions
     if (filter >= 3) {
@@ -1665,12 +1666,41 @@ def normalize(json) {
     } else throw new RuntimeException("Bad JSON value '$json'")
 }
 
-def merge(patches) {
+def expandPatch(base, line) {
+    if (line[1] != ';+') return [line]
+    if (!(line[2] in ['users', 'groups', 'permissions'])) return [line]
+    def result = [], lnsize = line[0].size()
+    if (lnsize == 0) {
+        if (!(line[2] in base)) base[line[2]] = [:]
+        return line[3].collect { k, v ->
+            [[line[2]], ';+', k, v]
+        }
+    } else if (lnsize == 2 && line[2] == 'permissions') {
+        if (line[0][0] == 'permissions') return [line]
+        if (!(line[2] in base[line[0][0]][line[0][1]])) {
+            base[line[0][0]][line[0][1]][line[2]] = [:]
+        }
+        return line[3].collect { k, v ->
+            [[line[0][0], line[0][1], line[2]], ';+', k, v]
+        }
+    } else if (lnsize == 2 && line[2] == 'groups') {
+        if (line[0][0] != 'users') return [line]
+        if (!(line[2] in base[line[0][0]][line[0][1]])) {
+            base[line[0][0]][line[0][1]][line[2]] = []
+        }
+        return line[3].collect {
+            [[line[0][0], line[0][1], line[2]], ':+', it]
+        }
+    } else return [line]
+}
+
+def merge(base, patches) {
     def result = []
+    def norm = normalize(base)
     // `patches` is a list of patchsets (a patchset is a list of changes).
     // `result` should be a single patchset, which is all the patchsets in
     // `patches` concatenated.
-    patches.each { result.addAll(it) }
+    patches.each { xs -> xs.each { x -> result.addAll(expandPatch(norm, x)) } }
     // Uniquify `result` by removing all but the first 'equivalent' element.
     // Since `patches` is passed to this function in priority order, the highest
     // priority result will always be kept.
@@ -1709,7 +1739,7 @@ def merge(patches) {
         // and a map delete, so prune the change.
         return 0
     }
-    return result
+    return buildDiff(base, applyDiff(norm, result))
 }
 
 def buildDiff(oldver, newver) {
@@ -1746,7 +1776,7 @@ def updateDatabase(oldver, newver, filter) {
     // currver from oldver
     def currdiff = buildDiff(oldver, currver)
     // newver + currver from oldver
-    def truediff = merge([currdiff, newdiff])
+    def truediff = merge(oldver, [currdiff, newdiff])
     // newver + currver
     def truever = applyDiff(oldver, truediff)
     // newver + currver from currver
