@@ -3,13 +3,14 @@ import groovy.json.JsonSlurper
 
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class HaClusterDumpTest extends Specification {
     def 'cluster dump test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         when:
         def pluginmembers = [] as Set
@@ -22,7 +23,7 @@ class HaClusterDumpTest extends Specification {
         def pluginreq = new ArtifactoryRequestImpl().apiUrl(pluginpath)
         pluginreq.method(ArtifactoryRequest.Method.GET)
         pluginreq.responseType(ArtifactoryRequest.ContentType.TEXT)
-        def pluginstream = artifactory.restCall(pluginreq)
+        def pluginstream = artifactory.restCall(pluginreq).getRawBody()
         def pluginout = new JsonSlurper().parseText(pluginstream)
         for (member in pluginout.members) {
             pluginmembers << '/' + member.address
@@ -39,7 +40,7 @@ class HaClusterDumpTest extends Specification {
         def integreq = new ArtifactoryRequestImpl().apiUrl(integpath)
         integreq.method(ArtifactoryRequest.Method.GET)
         integreq.responseType(ArtifactoryRequest.ContentType.TEXT)
-        def integstream = artifactory.restCall(integreq)
+        def integstream = artifactory.restCall(integreq).getRawBody()
 
         // parse integrated data
         def regex = '^\t([^=]*)(?:=(.*))?$'

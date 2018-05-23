@@ -4,14 +4,14 @@ import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class BuildSyncTest extends Specification {
 
     @Shared def baseurl1 = 'http://localhost:8088/artifactory'
-    @Shared def artifactory1 = create(baseurl1, 'admin', 'password')
+    @Shared def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
     @Shared def baseurl2 = 'http://localhost:8081/artifactory'
-    @Shared def artifactory2 = create(baseurl2, 'admin', 'password')
+    @Shared def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
 
     def setupSpec() {
         // Crate replication user
@@ -127,13 +127,13 @@ class BuildSyncTest extends Specification {
         def checkreq = new ArtifactoryRequestImpl().apiUrl("api/build/$buildName/$buildNumber")
         checkreq.method(ArtifactoryRequest.Method.GET)
         checkreq.responseType(ArtifactoryRequest.ContentType.JSON)
-        return artifactory.restCall(checkreq)
+        return new groovy.json.JsonSlurper().parseText( artifactory.restCall(checkreq).getRawBody())
     }
 
     def deleteBuild(artifactory, buildName) {
         def deletereq = new ArtifactoryRequestImpl().apiUrl("api/build/$buildName")
         deletereq.method(ArtifactoryRequest.Method.DELETE)
-        deletereq.setQueryParams(deleteAll: 1)
+        deletereq.setQueryParams(deleteAll: "1")
         artifactory.restCall(deletereq)
     }
 

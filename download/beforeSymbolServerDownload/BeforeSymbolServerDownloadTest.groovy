@@ -1,8 +1,7 @@
 import org.jfrog.lilypad.Control
 import spock.lang.Specification
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.NugetRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
 import org.artifactory.repo.*
 
 class BeforeSymbolServerDownloadTest extends Specification {
@@ -19,8 +18,10 @@ class BeforeSymbolServerDownloadTest extends Specification {
         setup:
         Control.setLoggerLevel(8088, 'org.apache.http.wire', 'debug')
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
-        def artifactory2 = create('http://localhost:8081/artifactory', 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl('http://localhost:8081/artifactory')
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def builder2 = artifactory2.repositories().builders()
 

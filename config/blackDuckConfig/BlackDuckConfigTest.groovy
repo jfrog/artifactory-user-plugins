@@ -2,8 +2,6 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-
 class BlackDuckConfigTest extends Specification {
     def 'black duck plugin test'() {
         setup:

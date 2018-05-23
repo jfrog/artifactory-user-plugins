@@ -1,17 +1,19 @@
 import groovy.json.JsonBuilder
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class ProtectPropertiesEditTest extends Specification {
     def 'property edit protect test'() {
         setup:
         def baseurl = "http://localhost:8088/artifactory"
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
-        def artifactory = create(baseurl, "admin", "password")
-        def artuser = create(baseurl, "newuser", "password")
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
+        def artuser = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('newuser').setPassword('password').build()
         def conn = new URL(baseurl + '/api/security/users/newuser').openConnection()
         def json = new JsonBuilder()
         json name: 'newuser', email: 'newuser@jfrog.com', password: "password", admin: true

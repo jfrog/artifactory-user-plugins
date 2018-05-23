@@ -1,6 +1,6 @@
 package artifactory
 
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.Artifactory
 import data.RepositoryList
 import definitions.RepositoryClass
@@ -64,7 +64,7 @@ class RepositoryTestApi {
                 .method(ArtifactoryRequest.Method.GET)
                 .responseType(ArtifactoryRequest.ContentType.JSON)
 
-        def response = art.restCall(repositoryRequest) as ArrayList<Map>
+        def response = new groovy.json.JsonSlurper().parseText( art.restCall(repositoryRequest).getRawBody()) as ArrayList<Map>
         return response.findAll { it.type == repoType }.collect {
             [key: (it.key).toLowerCase()]
         } as RepositoryClass[]

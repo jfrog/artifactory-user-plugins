@@ -1,5 +1,5 @@
 import spock.lang.Specification
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.ArtifactoryRequest
@@ -11,7 +11,8 @@ class BuildPropertySetterTest extends Specification {
 
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('libs-snapshots-local')
@@ -88,7 +89,7 @@ class BuildPropertySetterTest extends Specification {
         cleanup:
         artifactory.repository("libs-snapshots-local").delete()
         ArtifactoryRequest delete = new ArtifactoryRequestImpl().apiUrl("api/build/unit-test")
-        .setQueryParams(deleteAll: 1)
+        .setQueryParams(deleteAll: "1")
         .method(ArtifactoryRequest.Method.DELETE)
         artifactory.restCall(delete)
 

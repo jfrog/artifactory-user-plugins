@@ -8,7 +8,7 @@ import spock.lang.Specification
 
 import javax.xml.ws.http.HTTPBinding
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 /*
  * Copyright (C) 2017 JFrog Ltd.
@@ -40,7 +40,7 @@ class TaggingPromotionTest extends Specification {
     static final buildNumber = 1
     static final promotionName = 'cloudPromote'
 
-    @Shared artifactory = create(baseurl, user, password)
+    @Shared artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername(user).setPassword(password).build()
 
     def setupSpec() {
         // Create dev repo
@@ -71,10 +71,12 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(HttpResponseException)
-
+        notThrown(exception)
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.staging')[0] == 'true'
+
+        where:
+        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def 'Promote to oss test'() {
@@ -87,10 +89,12 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(HttpResponseException)
-
+        notThrown(exception)
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.oss')[0] == 'true'
+
+        where:
+        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def 'Promote to production test'() {
@@ -103,10 +107,12 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(HttpResponseException)
-
+        notThrown(exception)
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.prod')[0] == 'true'
+
+        where:
+        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def createLocalMavenRepo(String key) {

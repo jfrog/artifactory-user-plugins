@@ -3,7 +3,7 @@ import groovy.json.*
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
@@ -11,7 +11,8 @@ class BeforeDownloadRequestTest extends Specification {
     def 'before download request test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
 

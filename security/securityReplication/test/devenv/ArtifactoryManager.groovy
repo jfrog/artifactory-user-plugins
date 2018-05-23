@@ -1,7 +1,7 @@
 package devenv
 
 import org.jfrog.artifactory.client.Artifactory
-import org.jfrog.artifactory.client.ArtifactoryClient
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 
 /**
@@ -65,7 +65,7 @@ class ArtifactoryManager {
     private void getActiveArtifactory () {
         artifactoryList.each { art ->
             if (art['active'] == 'true') {
-                artifactoryClientList << ArtifactoryClient.create (art.artifactoryurl, art.userid, art.password)
+                artifactoryClientList << ArtifactoryClientBuilder.create().setUrl(art.artifactoryurl).setUsername(art.userid).setPassword(art.password).build()
             }
         }
     }

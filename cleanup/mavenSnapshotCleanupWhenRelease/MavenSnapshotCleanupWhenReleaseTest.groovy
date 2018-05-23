@@ -1,10 +1,10 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.jfrog.artifactory.client.Artifactory
 import org.jfrog.artifactory.client.model.impl.SnapshotVersionBehaviorImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import spock.lang.Specification
 
 class MavenSnapshotCleanupWhenReleaseTest extends Specification {
@@ -38,7 +38,8 @@ class MavenSnapshotCleanupWhenReleaseTest extends Specification {
     def 'Maven Snapshot Cleanup When Release promotion move same repo test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         createClientAndMavenRepo(artifactory, 'maven-local', true, true, true)
 
         artifactory.plugins().execute('mavenSnapshotCleanupWhenReleaseConfig').
@@ -71,7 +72,8 @@ class MavenSnapshotCleanupWhenReleaseTest extends Specification {
     def 'Maven Snapshot Cleanup When Release promotion move two repo test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         createClientAndMavenRepo(artifactory, TEST_REPO_RELEASES, true, false, true)
         createClientAndMavenRepo(artifactory, TEST_REPO_SNAPSHOTS, false, true)
         artifactory.plugins().execute('mavenSnapshotCleanupWhenReleaseConfig').
@@ -110,7 +112,8 @@ class MavenSnapshotCleanupWhenReleaseTest extends Specification {
     def 'Maven Snapshot Cleanup When Release disable test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         createClientAndMavenRepo(artifactory, TEST_REPO_RELEASES, true, false)
         createClientAndMavenRepo(artifactory, TEST_REPO_SNAPSHOTS, false, true)
         artifactory.plugins().execute('mavenSnapshotCleanupWhenReleaseConfig').withParameter('action', 'reset').sync()
@@ -131,7 +134,8 @@ class MavenSnapshotCleanupWhenReleaseTest extends Specification {
     def 'Maven Snapshot Cleanup When Release same repo test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         createClientAndMavenRepo(artifactory, 'maven-local', true, true)
 
         artifactory.plugins().execute('mavenSnapshotCleanupWhenReleaseConfig').
@@ -165,7 +169,8 @@ class MavenSnapshotCleanupWhenReleaseTest extends Specification {
     def 'Maven Snapshot Cleanup When Release classic test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+          .setUsername('admin').setPassword('password').build()
         createClientAndMavenRepo(artifactory, TEST_REPO_RELEASES, true, false)
         createClientAndMavenRepo(artifactory, TEST_REPO_SNAPSHOTS, false, true)
         artifactory.plugins().execute('mavenSnapshotCleanupWhenReleaseConfig').

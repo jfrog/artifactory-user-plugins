@@ -2,13 +2,14 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.MavenReposito
 import org.jfrog.artifactory.client.model.repository.settings.impl.PypiRepositorySettingsImpl
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class AddPypiNormalizedNameTest extends Specification {
     def 'pypi normalized name test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def stream = new File('./src/test/groovy/AddPypiNormalizedNameTest/binparse-1.2.tar.gz')
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('pypi-local')
@@ -32,7 +33,8 @@ class AddPypiNormalizedNameTest extends Specification {
     def 'non pypi dir test'(){
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
@@ -53,7 +55,8 @@ class AddPypiNormalizedNameTest extends Specification {
     def 'pypi dir no pypi.name test'(){
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('pypi-local2')
         .repositorySettings(new PypiRepositorySettingsImpl()).build()

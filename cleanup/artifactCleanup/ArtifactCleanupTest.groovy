@@ -1,8 +1,8 @@
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.Privilege
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import spock.lang.Specification
 
 class ArtifactCleanupTest extends Specification {
@@ -10,7 +10,8 @@ class ArtifactCleanupTest extends Specification {
     private def createClientAndMavenRepo(String repoName){
 
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def repository = builder.localRepositoryBuilder().key(repoName)
@@ -183,8 +184,9 @@ class ArtifactCleanupTest extends Specification {
         perm.repositories('maven-local').includesPattern('**/ban/**').principals(princs.build())
         artifactory.security().createOrReplacePermissionTarget(perm.build())
 
-        when:
-        create('http://localhost:8088/artifactory', 'nobody', 'password').
+        when:        
+        ArtifactoryClientBuilder.create().setUrl('http://localhost:8088/artifactory')
+            .setUsername('nobody').setPassword('password').build().
             plugins().execute('cleanup').
             withParameter('repos', 'maven-local').
             withParameter('months', '0').sync()
