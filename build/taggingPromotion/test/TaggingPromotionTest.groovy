@@ -71,12 +71,9 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(exception)
+        noExceptionThrown()
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.staging')[0] == 'true'
-
-        where:
-        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def 'Promote to oss test'() {
@@ -89,12 +86,9 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(exception)
+        noExceptionThrown()
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.oss')[0] == 'true'
-
-        where:
-        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def 'Promote to production test'() {
@@ -107,12 +101,9 @@ class TaggingPromotionTest extends Specification {
 
         then:
         // Check artifact available in promotion repo
-        notThrown(exception)
+        noExceptionThrown()
         // Check artifact tagged properly
         promotedWar.getPropertyValues('aol.prod')[0] == 'true'
-
-        where:
-        exception << [HttpResponseException, org.apache.http.client.HttpResponseException]
     }
 
     def createLocalMavenRepo(String key) {
