@@ -1,13 +1,14 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import groovyx.net.http.HttpResponseException
 
 class NexusPushTest extends Specification {
     def 'nexus push test'() {
         setup:
         def artifactory_baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(artifactory_baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(artifactory_baseurl)
+            .setUsername('admin').setPassword('password').build()
         def artifactory_auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
 
         def nexus_baseurl = 'http://localhost:8081/nexus'

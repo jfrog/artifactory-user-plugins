@@ -5,7 +5,7 @@ import artifactory.SecurityTestApi
 import common.ArtUsers
 import devenv.ArtifactoryManager
 import groovy.json.JsonSlurper
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.apache.http.HttpException
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
@@ -105,7 +105,7 @@ abstract class BaseSpec extends Specification {
             .method(ArtifactoryRequest.Method.GET)
             .responseType(ArtifactoryRequest.ContentType.TEXT)
         try {
-             def response = new JsonSlurper().parseText(art.restCall(configRequest).toString())
+             def response = new JsonSlurper().parseText(art.restCall(configRequest).getRawBody())
              filter = response.securityReplication.filter
         } catch (HttpResponseException hre) {
             System.out.println("Could not retrieve the security replication configuration from ${art.getUri()}. Status: ${hre.getStatusCode()}, ${hre.getMessage()}")

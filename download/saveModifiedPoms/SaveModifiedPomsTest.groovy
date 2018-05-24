@@ -1,14 +1,15 @@
 import spock.lang.Specification
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class SaveModifiedPomsTest extends Specification {
     def 'save modified poms test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def reposource = builder.localRepositoryBuilder().key('source-repo')
         reposource.repositorySettings(new GenericRepositorySettingsImpl())

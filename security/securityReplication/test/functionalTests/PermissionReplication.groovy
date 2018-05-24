@@ -116,7 +116,7 @@ class PermissionReplication extends Specification {
             .apiUrl('api/plugins/execute/secRepJson')
             .method(ArtifactoryRequest.Method.GET)
             .responseType(ArtifactoryRequest.ContentType.TEXT)
-        def resp1 = art.restCall(req1)
+        def resp1 = art.restCall(req1).getRawBody()
         def json = new JsonSlurper().parseText(resp1)
         json.securityReplication.filter = level
         def req2 = new ArtifactoryRequestImpl()
@@ -124,7 +124,7 @@ class PermissionReplication extends Specification {
             .method(ArtifactoryRequest.Method.PUT)
             .requestType(ArtifactoryRequest.ContentType.TEXT)
             .requestBody(new JsonBuilder(json).toString())
-        def resp2 = art.restCall(req2)
+        def resp2 = art.restCall(req2).getRawBody()
     }
 
     void doReplication(port) {

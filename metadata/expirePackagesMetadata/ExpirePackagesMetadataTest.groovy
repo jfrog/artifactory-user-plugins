@@ -4,7 +4,7 @@ import org.jfrog.artifactory.client.model.Item
 import org.jfrog.artifactory.client.model.repository.settings.impl.DebianRepositorySettingsImpl
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 /*
  * Copyright (C) 2017 JFrog Ltd.
@@ -31,7 +31,8 @@ class ExpirePackagesMetadataTest extends Specification {
 
     def 'Packages.gz not expired download test'() {
         setup:
-        def artifactory = create(baseUrl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
@@ -55,7 +56,8 @@ class ExpirePackagesMetadataTest extends Specification {
 
     def 'Packages.gz expired download test'() {
         setup:
-        def artifactory = create(baseUrl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
         // Set packages.gz cache time to 1 second

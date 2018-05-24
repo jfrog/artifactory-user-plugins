@@ -10,7 +10,7 @@ import javax.mail.Address
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.Artifactory
@@ -30,7 +30,8 @@ class QuotaWarnTest extends Specification {
 
     def 'test log sending quota warn emails'() {
         setup:
-        artifactory = create(artUrl, "admin", "password")
+        artifactory = ArtifactoryClientBuilder.create().setUrl(artUrl)
+            .setUsername('admin').setPassword('password').build()
         ServerSetup setup = new ServerSetup(smtpPort, smtpHost, "smtp");
         GreenMail greenMail = new GreenMail(setup)
         greenMail.start()
@@ -97,7 +98,7 @@ class QuotaWarnTest extends Specification {
                 .apiUrl("api/storageinfo")
                 .responseType(ArtifactoryRequest.ContentType.JSON)
                 .method(ArtifactoryRequest.Method.GET)
-        Map<String, Object> result = artifactory.restCall(storageRequest)
+        def result = new groovy.json.JsonSlurper().parseText( artifactory.restCall(storageRequest).getRawBody())
         String pctUsedFullStr = result.fileStoreSummary.usedSpace
         def pctUsed = ((pctUsedFullStr =~ '\\(([0-9]+)')[0][1])
         def pctUsedInt = (pctUsed as Integer) - 1

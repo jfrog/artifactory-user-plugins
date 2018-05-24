@@ -1,7 +1,7 @@
 package common
 
 import artifactory.SecurityTestApi
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.Artifactory
 
 

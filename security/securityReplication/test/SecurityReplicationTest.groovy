@@ -2,8 +2,6 @@ package SecurityReplicationTest
 import spock.lang.Specification
 import groovy.json.JsonSlurper
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-
 class SecurityReplicationTest extends Specification {
   def 'update extract diff patch test'() {
     setup:

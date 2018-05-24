@@ -1,15 +1,15 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.NugetRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
 import groovy.util.XmlParser
 import groovy.xml.XmlUtil
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class UniqueNugetDeployTest extends Specification {
     def 'unique nuget deploy test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('nuget-local')

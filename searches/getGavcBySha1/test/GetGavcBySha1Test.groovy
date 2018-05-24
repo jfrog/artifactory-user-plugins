@@ -1,14 +1,15 @@
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class GetGavcBySha1Test extends Specification {
     def 'get gavc by sha1 test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')

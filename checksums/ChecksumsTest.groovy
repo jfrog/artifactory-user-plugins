@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 /*
  * Copyright (C) 2017 JFrog Ltd.
@@ -27,7 +27,7 @@ class ChecksumsTest extends Specification {
     static final message = 'Lorem ipsum dolor sit amet'
     static final artifactPath = 'testfile'
     static final repoKey = 'maven-local'
-    @Shared artifactory = create(baseurl, 'admin', 'password')
+    @Shared artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername('admin').setPassword('password').build()
 
     def 'checksum test'() {
         setup:

@@ -1,7 +1,7 @@
 import spock.lang.Specification
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.builder.UserBuilder
 
@@ -9,7 +9,7 @@ class PreventOverrideTest extends Specification {
     def 'prevent override test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory1 = create(baseurl, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername('admin').setPassword('password').build()
 
         UserBuilder userBuilder = artifactory1.security().builders().userBuilder()
         def user1 = userBuilder.name("non-admin")
@@ -20,7 +20,8 @@ class PreventOverrideTest extends Specification {
         .build();
         artifactory1.security().createOrUpdate(user1)
 
-        def artifactory2 = create(baseurl, 'non-admin', 'password')
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl)
+                .setUsername('non-admin').setPassword('password').build()
         def xmlfile = new File('./src/test/groovy/PreventOverrideTest/maven-metadata.xml')
 
         def builder = artifactory1.repositories().builders()

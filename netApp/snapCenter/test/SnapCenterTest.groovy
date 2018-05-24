@@ -5,11 +5,12 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class SnapCenterTest extends Specification {
     def baseurl = 'http://localhost:8088/artifactory'
-    def artifactory = create(baseurl, 'admin', 'password')
+    def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+        .setUsername('admin').setPassword('password').build()
     def auth = "Basic ${("admin:password").bytes.encodeBase64().toString()}"
     final def snapCenterMockServerPort = 8146
     final def snapCenterMockServerUrl = "http://localhost:$snapCenterMockServerPort/"

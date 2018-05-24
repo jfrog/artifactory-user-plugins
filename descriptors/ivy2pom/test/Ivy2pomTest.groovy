@@ -3,7 +3,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.MavenReposito
 import org.jfrog.artifactory.client.model.repository.settings.impl.IvyRepositorySettingsImpl
 import org.jfrog.lilypad.Control
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class Ivy2pomTest extends Specification {
     def 'simple ivy to pom plugin test'() {
@@ -12,7 +12,8 @@ class Ivy2pomTest extends Specification {
         moveAntJars()
 
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def ivy = builder.localRepositoryBuilder().key('ivy-local')
