@@ -10,6 +10,26 @@ import org.artifactory.security.UserInfo
 // 1. property file with scheduler config
 // 2. fix numberArtifactsToKeep to keep provided number of artifacts, not deleting as much artifacts instead
 
+@Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
+
+config.policies.each{ policySettings ->
+    def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
+    def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+    def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
+    def dryRun = policySettings[ 3 ] ? policySettings[ 3 ] as Boolean : false
+    def numberArtifactsToKeep = policySettings[ 4 ] ? policySettings[ 4 ] as int : 3
+
+    log.info "Schedule job policy list: $config.policies"
+
+    jobs {
+        "scheduledCleanup_$cron"(cron: cron) {
+            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), dryrun($dryRun), numberArtifactsToKeep($numberArtifactsToKeep)"
+            artifactDeprecate( months, repos, log, dryRun, numberArtifactsToKeep )
+        }
+    }
+}
+
 def pluginGroup = 'deprecates'
 
 executions {
@@ -35,8 +55,8 @@ private def artifactDeprecate(int months, String[] repos, log, dryRun = false, n
     int cntNoDeletePermissions = 0
     def artifactsCleanedUp = searches.artifactsCreatedOrModifiedInRange(null, monthsUntil, repos)
     def sortedArtifactsCleanedUp = artifactsCleanedUp.sort { repositories.getItemInfo(it)?.lastUpdated }
-    // Here we can use sortedArtifactsCleanedUp.length - numberArtifactsToKeep 
-    def artifactsToDelete = sortedArtifactsCleanedUp.take(numberArtifactsToKeep)
+    int numberArtifactsToDelete = sortedArtifactsCleanedUp.size - numberArtifactsToKeep 
+    def artifactsToDelete = sortedArtifactsCleanedUp.take(numberArtifactsToDelete)
 
 
     log.info "\n ===> sortedArtifactsCleanedUp: $sortedArtifactsCleanedUp\n\n ===> artifactsToDelete: $artifactsToDelete"
