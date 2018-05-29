@@ -46,16 +46,16 @@ class UniqueNugetDeployTest extends Specification {
         conn.disconnect()
 
         def jquery = new File('./src/test/groovy/UniqueNugetDeployTest/jquery.3.1.1.nupkg')
-        
+
         when:
-        def resp = artifactory.repository('nuget-local').upload('jQuery Foundation, Inc./jQuery/jQuery.3.1.1.nupkg', jquery).doUpload()
-        
+        def resp = artifactory.repository('nuget-local').upload('jQuery%20Foundation,%20Inc./jQuery/jQuery.3.1.1.nupkg', jquery).doUpload()
+
         then:
         resp.size == 0
 
         when:
-        resp = artifactory.repository('nuget-local').upload('jQuery Foundation, Inc./jQuery/jQuery.2.3.0.nupkg', jquery).doUpload()
-    
+        resp = artifactory.repository('nuget-local').upload('jQuery%20Foundation,%20Inc./jQuery/jQuery.2.3.0.nupkg', jquery).doUpload()
+
         then:
         resp.size > 0
 

@@ -2,6 +2,7 @@ import spock.lang.Specification
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder
+import org.apache.http.client.HttpResponseException
 
 class RestrictOverwriteTest extends Specification {
     def 'restrict overwrite test'() {
@@ -22,7 +23,7 @@ class RestrictOverwriteTest extends Specification {
         def resp = localrepo.upload('some/path/file', is2).doUpload()
 
         then:
-        resp.checksums == null
+        thrown(HttpResponseException)
 
         cleanup:
         localrepo?.delete()
