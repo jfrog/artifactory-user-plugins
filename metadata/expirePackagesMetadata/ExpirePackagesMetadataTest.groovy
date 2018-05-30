@@ -31,7 +31,7 @@ class ExpirePackagesMetadataTest extends Specification {
 
     def 'Packages.gz not expired download test'() {
         setup:
-        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
             .setUsername('admin').setPassword('password').build()
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
@@ -56,7 +56,7 @@ class ExpirePackagesMetadataTest extends Specification {
 
     def 'Packages.gz expired download test'() {
         setup:
-        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
             .setUsername('admin').setPassword('password').build()
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
