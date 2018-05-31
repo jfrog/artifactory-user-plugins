@@ -92,7 +92,12 @@ storage {
         } catch (MissingPropertyException ex) {}
         if (ngsps4 != null) {
             def params = [ps4] as Object[]
-            context.nuGetSearchParameters = ngsps4.newInstance(params)
+            try {
+                context.nuGetSearchParameters = ngsps4.newInstance(params)
+            } catch (GroovyRuntimeException e) {
+                params = [ps4, true] as Object[]
+                context.nuGetSearchParameters = ngsps4.newInstance(params)
+            }
         } else {
             def params = [ps3, ''] as Object[]
             context.nuGetSearchParameters = ngsps3.newInstance(params)
