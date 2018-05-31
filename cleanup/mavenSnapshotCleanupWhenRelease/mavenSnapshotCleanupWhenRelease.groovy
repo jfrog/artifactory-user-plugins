@@ -39,7 +39,14 @@ executions {
     mavenSnapshotCleanupWhenReleaseConfig() { params ->
         log.info "Update configuration with parameters: " + params
         def action = params['action'] ? params['action'][0] as String : "add"
-        def repositoriesString = params['repositories'] ? params['repositories'][0] as String : "[]"
+        def repositoriesString = "[]"
+        if (params['repositories']) {
+            if (params['repositories'].size == 1) {
+                repositoriesString = params['repositories'][0]
+            } else {
+                repositoriesString = params['repositories'].join(',')
+            }
+        }
         def configRepositories = new ConfigSlurper().parse('repositories=' + repositoriesString)
 
         if (action == 'reset'){

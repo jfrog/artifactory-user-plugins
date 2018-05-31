@@ -22,7 +22,7 @@ class NugetFolderMoverTest extends Specification {
         sleep(5000)
 
         then:
-        repo.file("/angularjs/angularjs/1.4.8/angularjs-1.4.8.nupkg").info()
+        repo.file("/angularjs/angularjs/angularjs.1.4.8.nupkg").info()
 
         cleanup:
         artifactory.repository("nuget-local").delete()
