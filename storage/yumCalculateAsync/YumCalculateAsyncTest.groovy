@@ -1,6 +1,5 @@
 import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.model.PackageType
-import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 import spock.lang.Specification
 
