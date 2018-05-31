@@ -3,6 +3,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.NugetReposito
 import groovy.util.XmlParser
 import groovy.xml.XmlUtil
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder
+import org.apache.http.client.HttpResponseException
 
 class RestrictNugetDeployTest extends Specification {
     def 'restrict nuget deploy test'() {
@@ -51,7 +52,7 @@ class RestrictNugetDeployTest extends Specification {
         def resp = artifactory.repository('nuget-local').upload('jQuery%20Foundation,%20Inc./jQuery/jQuery.3.1.1.nupkg', jquery).doUpload()
 
         then:
-        resp.size == 0
+        thrown(HttpResponseException)
 
         when:
         resp = artifactory.repository('nuget-local').upload('jQuery%20Foundation,%20Inc./new/new.3.1.1.nupkg', jquery).doUpload()
