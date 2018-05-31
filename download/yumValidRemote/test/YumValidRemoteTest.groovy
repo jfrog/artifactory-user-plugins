@@ -1,4 +1,3 @@
-import org.jfrog.artifactory.client.model.builder.impl.RepositoryBuildersImpl
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 
