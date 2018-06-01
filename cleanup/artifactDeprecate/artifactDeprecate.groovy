@@ -6,9 +6,9 @@ import groovy.time.TimeDuration
 import groovy.transform.Field
 import org.artifactory.security.UserInfo
 
-// ToDO:
-// 1. property file with scheduler config
-// 2. fix numberArtifactsToKeep to keep provided number of artifacts, not deleting as much artifacts instead
+// Usage example:
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/deprecate?params=months=0;repos=docker-local;directory=android;dryRun=true;numberArtifactsToKeep=3"
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/deprecate?params=months=3;repos=docker-local;directory=ansible;numberArtifactsToKeep=3"
 
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
 def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
@@ -16,16 +16,17 @@ def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDi
 config.policies.each{ policySettings ->
     def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
     def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
-    def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
-    def dryRun = policySettings[ 3 ] ? policySettings[ 3 ] as Boolean : false
-    def numberArtifactsToKeep = policySettings[ 4 ] ? policySettings[ 4 ] as int : 3
+    def directory = policySettings[ 2 ] ? policySettings[ 2 ] as String : ["__none__"]
+    def months = policySettings[ 3 ] ? policySettings[ 3 ] as int : 6
+    def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
+    def numberArtifactsToKeep = policySettings[ 5 ] ? policySettings[ 5 ] as int : 3
 
     log.info "Schedule job policy list: $config.policies"
 
     jobs {
         "scheduledCleanup_$cron"(cron: cron) {
-            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), dryrun($dryRun), numberArtifactsToKeep($numberArtifactsToKeep)"
-            artifactDeprecate( months, repos, log, dryRun, numberArtifactsToKeep )
+            log.info "Policy settings for scheduled run at($cron): repo list($repos), directory($directory), months($months), dryrun($dryRun), numberArtifactsToKeep($numberArtifactsToKeep)"
+            artifactDeprecate( months, repos, directory, log, dryRun, numberArtifactsToKeep )
         }
     }
 }
@@ -36,24 +37,26 @@ executions {
     deprecate(groups: [pluginGroup]) { params ->
         def months = params['months'] ? params['months'][0] as int : 6
         def repos = params['repos'] as String[]
+        def directory = params['directory'][0] as String
         def dryRun = params['dryRun'] ? params['dryRun'][0].toBoolean() : false      
         def numberArtifactsToKeep = params['numberArtifactsToKeep'] ? params['numberArtifactsToKeep'][0] as int : 3
-        artifactDeprecate(months, repos, log, dryRun, numberArtifactsToKeep)
+        artifactDeprecate(months, repos, directory, log, dryRun, numberArtifactsToKeep)
     }
 }
 
 
-private def artifactDeprecate(int months, String[] repos, log, dryRun = false, numberArtifactsToKeep = 3) {
+private def artifactDeprecate(int months, String[] repos, String directory, log, dryRun = false, numberArtifactsToKeep = 3) {
 
 	log.info "-----------[ Starting Deprecating Artifacts... ]-----------"
-	log.info "---> Variables: \n months: $months \n repos: $repos \n log: $log \n dryRun: $dryRun \n numberArtifactsToKeep: $numberArtifactsToKeep \n"
+	log.info "---> Variables: \n months: $months \n repos: $repos \n directory: ${directory} \n log: $log \n dryRun: $dryRun \n numberArtifactsToKeep: $numberArtifactsToKeep \n"
 
 	def monthsUntil = Calendar.getInstance()
     monthsUntil.add(Calendar.MONTH, -months)
 
     int cntFoundArtifacts = 0
     int cntNoDeletePermissions = 0
-    def artifactsCleanedUp = searches.artifactsCreatedOrModifiedInRange(null, monthsUntil, repos)
+    def artifactsList = searches.artifactsCreatedOrModifiedInRange(null, monthsUntil, repos)
+    def artifactsCleanedUp = artifactsList.findAll { it =~ directory }
     def sortedArtifactsCleanedUp = artifactsCleanedUp.sort { repositories.getItemInfo(it)?.lastUpdated }
     int numberArtifactsToDelete = sortedArtifactsCleanedUp.size - numberArtifactsToKeep 
     def artifactsToDelete = sortedArtifactsCleanedUp.take(numberArtifactsToDelete)
@@ -87,5 +90,3 @@ private def artifactDeprecate(int months, String[] repos, log, dryRun = false, n
         return false
     }
 }
-
-
