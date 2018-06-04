@@ -29,7 +29,7 @@ class Global {
     static int paceTimeMS = 0
 }
 
-// curl command example for running this plugin (Prior Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
+// curl command example for running this plugin (Prior to Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"
 //
 // For a HA cluster, the following commands have to be directed at the instance running the script. Therefore it is best to invoke
