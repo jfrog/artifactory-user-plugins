@@ -30,6 +30,35 @@ class AddPypiNormalizedNameTest extends Specification {
         artifactory.repository("pypi-local").delete()
     }
 
+    def 'pypi normalized name remote cache test'() {
+        setup:
+        def baseurl = 'http://localhost:8088/artifactory'
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
+        def stream = new File('./src/test/groovy/AddPypiNormalizedNameTest/binparse-1.2.tar.gz')
+        def builder = artifactory.repositories().builders()
+        def local = builder.localRepositoryBuilder().key('pypi-local')
+            .repositorySettings(new PypiRepositorySettingsImpl()).build()
+        def remote = builder.remoteRepositoryBuilder().key('pypi-remote')
+            .url('http://localhost:8081/artifactory/api/pypi/pypi-local/')
+            .repositorySettings(new PypiRepositorySettingsImpl()).build()
+        artifactory.repositories().create(0, local)
+        artifactory.repositories().create(0, remote)
+        artifactory.repository('pypi-local').upload('pypi-bug/binparse-test-1.2.tar.gz', stream).doUpload()
+        artifactory.repository('pypi-remote').download('pypi-bug/binparse-test-1.2.tar.gz').doDownload()
+
+        when:
+        artifactory.repository('pypi-remote-cache').file('pypi-bug/binparse-test-1.2.tar.gz').properties().addProperty('pypi.name', 'TEST_NAME').doSet()
+        sleep(5000)
+
+        then:
+        artifactory.repository('pypi-remote-cache').file('pypi-bug/binparse-test-1.2.tar.gz').getPropertyValues('pypi.normalized.name')[0] == 'test-name'
+
+        cleanup:
+        artifactory.repository("pypi-remote").delete()
+        artifactory.repository("pypi-local").delete()
+    }
+
     def 'non pypi dir test'(){
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
