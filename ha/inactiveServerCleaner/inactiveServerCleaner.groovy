@@ -39,7 +39,7 @@ public class ArtifactoryInactiveServersCleaner {
         for (member in allMembers) {
             def heartbeat = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - member.getLastHeartbeat())
             def noHeartbeat = heartbeat > ConstantValues.haHeartbeatStaleIntervalSecs.getInt()
-            if (member.getServerState() == ArtifactoryServerState.UNAVAILABLE || noHeartbeat) {
+            if (member.getServerState() == ArtifactoryServerState.UNAVAILABLE || ( noHeartbeat && member.getServerState() != ArtifactoryServerState.CONVERTING && member.getServerState() != ArtifactoryServerState.STARTING )) {
                 try {
                     log.info "Inactive artifactory servers cleaning task found server ${member.serverId} to remove"
                     artifactoryServersCommonService.removeServer(member.serverId)
