@@ -75,6 +75,7 @@ class CleanExternalUsersTest extends Specification {
                         def responseBytes = responseBody.toString().bytes
 
                         exchange.getResponseHeaders().set('Content-Type', 'application/json')
+                        exchange.getResponseHeaders().set('Link', '<foobar>; rel=self')
                         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBytes.size())
                         exchange.getResponseBody().write(responseBytes)
 

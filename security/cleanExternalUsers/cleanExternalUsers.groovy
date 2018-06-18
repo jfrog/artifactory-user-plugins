@@ -14,9 +14,40 @@
  * limitations under the License.
  */
 
-import groovy.json.JsonSlurper
+
 import groovy.json.JsonException
+import groovy.json.JsonSlurper
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+/**
+ * Returns the url for a rel="next" link out of a Link HTTP header
+ * @param linkHeader Value of the Link HTTP header
+ * @return url for next page of results
+ */
+def getNextLink(String linkHeader) {
+    Matcher linkMatcher = Pattern.compile("<.+?>;(\\s+[\\w-]+=\".+?\")*").matcher(linkHeader)
+    Pattern uriPattern = Pattern.compile("<(.+?)>;")
+    Pattern relPattern = Pattern.compile("rel=\"(\\w+)\"")
+    while (linkMatcher.find()) {
+        String link = linkMatcher.group()
+        Matcher uriMatcher = uriPattern.matcher(link)
+        String uri = null
+        if (uriMatcher.find() && uriMatcher.groupCount() > 0) {
+            uri = uriMatcher.group(1)
+        }
+        Matcher relMatcher = relPattern.matcher(link)
+        if (relMatcher.find() && relMatcher.groupCount() > 0) {
+            String rel = relMatcher.group(1)
+            if (rel == "next") {
+                return uri
+            }
+        }
+    }
+    return null
+}
 
 // This function needs to return a collection of usernames that should be
 // cleaned (deleted) from Artifactory. Users in this array that already don't
@@ -30,21 +61,32 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 def usersToClean(config) {
     def url = "$config.host/api/v1/apps/$config.appid/users"
     def conn = null, resp = null
-    try {
-        conn = new URL(url).openConnection()
-        conn.setRequestProperty('Accept', 'application/json')
-        conn.setRequestProperty('Authorization', "SSWS $config.apitoken")
-        def stat = conn.responseCode
-        if (stat < 200 || stat >= 300) {
-            def msg = "Problem connecting to Okta: $stat $conn.responseMessage"
-            throw new RuntimeException(msg)
+    def names = []
+    def next = url
+    while (next != null) {
+        try {
+            conn = new URL(next).openConnection()
+            conn.setRequestProperty('Accept', 'application/json')
+            conn.setRequestProperty('Authorization', "SSWS $config.apitoken")
+            def stat = conn.responseCode
+            if (stat < 200 || stat >= 300) {
+                def msg = "Problem connecting to Okta: $stat $conn.responseMessage"
+                throw new RuntimeException(msg)
+            }
+            resp = new JsonSlurper().parse(conn.inputStream)
+            names = names + resp.collect { it.credentials.userName.toLowerCase() }
+            next = getNextLink(conn.getHeaderField("Link"))
+        } finally {
+            conn?.disconnect()
         }
-        resp = new JsonSlurper().parse(conn.inputStream)
-    } finally {
-        conn?.disconnect()
     }
-    def names = resp.collect { it.credentials.userName.toLowerCase() }
+    for (name in names) {
+        log.warn("Okta User: $name")
+    }
     def allusrs = ctx.securityService.getAllUsers(false).collect { it.username }
+    for (allusr in allusrs) {
+        log.warn("Artifactory User: $allusrs")
+    }
     return allusrs - config.keepUsers - ['anonymous', 'access-admin'] - names
 }
 
