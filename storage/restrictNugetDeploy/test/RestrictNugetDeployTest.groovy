@@ -30,13 +30,19 @@ class RestrictNugetDeployTest extends Specification {
         def xml = new XmlParser().parse(conn.inputStream)
         assert conn.responseCode == 200
         conn.disconnect()
-        def nuget = xml.remoteRepositories[0].remoteRepository.find { it.key.text() == 'nuget-remote' }
-        def instxt = '<nuget xmlns="' + (xml.name() =~ '^\\{(.*)\\}config$')[0][1]
-        instxt += '" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
-        instxt += '<feedContextPath>api/v2</feedContextPath>'
-        instxt += '<downloadContextPath>api/v2/package</downloadContextPath></nuget>'
-        def ins = new XmlParser().parseText(instxt)
-        nuget.children().add(1 + nuget.findIndexOf { it.name().toString().contains('rejectInvalidJars') }, ins)
+        def nugetremote = xml.remoteRepositories[0].remoteRepository.find { it.key.text() == 'nuget-remote' }
+        def nuget = nugetremote.nuget
+        if (nuget) {
+            nuget[0].feedContextPath[0].value = 'api/v2'
+            nuget[0].downloadContextPath[0].value = 'api/v2/package'
+        } else {
+            def instxt = '<nuget xmlns="' + (xml.name() =~ '^\\{(.*)\\}config$')[0][1]
+            instxt += '" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+            instxt += '<feedContextPath>api/v2</feedContextPath>'
+            instxt += '<downloadContextPath>api/v2/package</downloadContextPath></nuget>'
+            def ins = new XmlParser().parseText(instxt)
+            nugetremote.children().add(1 + nugetremote.findIndexOf { it.name().toString().contains('rejectInvalidJars') }, ins)
+        }
         conn = new URL("$baseurl/api/system/configuration").openConnection()
         conn.requestMethod = 'POST'
         conn.doOutput = true
