@@ -1,4 +1,4 @@
-Artifactory Download Directory Content User Plugin
+DEPRECATED - Artifactory Download Directory Content User Plugin
 ==================================================
 
 This plugin allows you to download a directory tree from Artifactory, in the
