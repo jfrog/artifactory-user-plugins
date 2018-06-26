@@ -11,3 +11,8 @@ Installation
 ---------------------
 
 This plugin needs to be added to the `$ARTIFACTORY_HOME/etc/plugins` directory.
+
+==================================================
+
+This plugin is now deprecated and will not be maintaned as there is the ability to download a complete folder via UI and REST API (since Artifactory version 4.1.0): 
+https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-RetrieveFolderorRepositoryArchive
