@@ -39,7 +39,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.10.4"
+pluginVersion = "6.0.3"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">

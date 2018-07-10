@@ -5,6 +5,10 @@ Artifactory Security Replication User Plugin
 *With the release of the [Access Federation](https://www.jfrog.com/confluence/display/RTF/Access+Federation) feature of the Enterprise Plus Package of JFrog Artifactory, the Security Replication plugin has been deprecated.  Accordingly, support for Security Replication is not being carried forward for versions of JFrog Artifactory 6.x and beyond.  Please contact your account manager or JFrog Support if you are using this plugin or if you need its capability.*
 -------
 
+*This branch is customized for a specific subset of users, and is not meant for
+general use. While this branch appears to work in Artifactory 5.11, this is not
+officially supported, and there may be performance issues.*
+
 **&ast;&ast;&ast; IMPORTANT &ast;&ast;&ast;**  
 *If you are upgrading to Artifactory 5.6 or higher, please read the upgrade
 instructions [below](#upgrading). Failure to do so may result in destruction of
