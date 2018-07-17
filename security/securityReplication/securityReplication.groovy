@@ -32,6 +32,7 @@ import org.artifactory.factory.InfoFactoryHolder
 import org.artifactory.request.RequestThreadLocal
 import org.artifactory.resource.ResourceStreamHandle
 import org.artifactory.security.SaltedPassword
+import org.artifactory.security.UserInfo
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService
 import org.artifactory.storage.fs.service.ConfigsService
 import org.artifactory.util.HttpUtils
@@ -39,7 +40,7 @@ import org.artifactory.util.HttpUtils
 // This version number must be greater than or equal to the Artifactory version.
 // Otherwise, security replication will not run. Always update this plugin when
 // Artifactory is upgraded.
-pluginVersion = "5.10.4"
+pluginVersion = "6.1.0"
 
 /* to enable logging append this to the end of artifactorys logback.xml
     <logger name="securityReplication">
@@ -1129,7 +1130,51 @@ writesort = { left, right ->
     return diffsort(left, right)
 }
 
+def allAccessUsers() {
+    def userbasename = "org.jfrog.access.rest.user.UserBase"
+    def usermapname = "org.artifactory.storage.db.security.service.access.UserMapper"
+    def searchhelpname = "org.artifactory.storage.db.security.service.access.UserPropertiesSearchHelper"
+    def findusersname = "org.jfrog.access.client.user.FindUsersRequest"
+    def expandname = 'org.jfrog.access.rest.user.UserRequest$Expand'
+    def accservname = "org.artifactory.security.access.AccessService"
+    def usermapper = Class.forName(usermapname)
+    def userbase = Class.forName(userbasename)
+    def searchhelp = Class.forName(searchhelpname)
+    def toartuser = usermapper.getMethod("toArtifactoryUser", userbase)
+    def decryptprops = searchhelp.getDeclaredMethod("decryptUserProperties", UserInfo)
+    decryptprops.accessible = true
+    def accserv = ctx.beanForType(Class.forName(accservname))
+    def req = Class.forName(findusersname).newInstance()
+    req = req.expand(Enum.valueOf(Class.forName(expandname), 'passwords'))
+    return accserv.getAccessClient().users().findUsers(req).getUsers().collect {
+        def usr = toartuser.invoke(null, it)
+        return decryptprops.invoke(null, usr)
+    }
+}
+
 def encryptDecrypt(json, encrypt) {
+    // first, try the Access approach
+    try {
+        def users = allAccessUsers()?.collectEntries { [it.username, it] }
+        // encryption is done automatically when data is written
+        if (encrypt) return
+        json.users.each { username, user ->
+            if (!(username in users)) return
+            def userinfo = users[username]
+            def props = userinfo.userProperties?.collectEntries { [it.propKey, it.propValue] }
+            user.privatekey = userinfo.privateKey
+            user.publickey = userinfo.publicKey
+            user.bintray = userinfo.bintrayAuth
+            if (props == null) return
+            user.properties.each { k, v ->
+                if (!(k in props)) return
+                user.properties[k] = props[k]
+            }
+        }
+        return
+    } catch (ClassNotFoundException ex) {}
+    catch (NoSuchMethodException ex) {}
+    // if the Access approach fails, fall back to the original approach
     def encodedKeyPair = null, encodedKeyPairFromDecoded = null
     def decodedKeyPair = null
     def decryptionStatusHolder = null
