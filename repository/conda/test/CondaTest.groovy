@@ -40,7 +40,7 @@ class CondaTest extends Specification {
         json.packages['pymc-2.3.6-np110py35_p0.tar.bz2'].license == "Academic Free License"
 
         when:
-        // upload a conda package
+        // upload a conda package that does not have subdir metadata info
         pack = new File('./src/test/groovy/CondaTest/pymc-2.3.7-np110py35_p0.tar.bz2')
         localrepo.upload('pymc-2.3.7-np110py35_p0.tar.bz2', pack).doUpload()
         // wait for calculation to occur (the job runs every ten seconds, so wait eleven)
