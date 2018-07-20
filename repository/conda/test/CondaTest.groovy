@@ -27,6 +27,7 @@ class CondaTest extends Specification {
         // upload a conda package
         def pack = new File('./src/test/groovy/CondaTest/pymc-2.3.6-np110py35_p0.tar.bz2')
         localrepo.upload('pymc-2.3.6-np110py35_p0.tar.bz2', pack).doUpload()
+
         // wait for calculation to occur (the job runs every ten seconds, so wait eleven)
         sleep(11000)
         // download the conda package's metadata
@@ -37,6 +38,21 @@ class CondaTest extends Specification {
         then:
         // check that the metadata is correct
         json.packages['pymc-2.3.6-np110py35_p0.tar.bz2'].license == "Academic Free License"
+
+        when:
+        // upload a conda package
+        pack = new File('./src/test/groovy/CondaTest/pymc-2.3.7-np110py35_p0.tar.bz2')
+        localrepo.upload('pymc-2.3.7-np110py35_p0.tar.bz2', pack).doUpload()
+        // wait for calculation to occur (the job runs every ten seconds, so wait eleven)
+        sleep(11000)
+        // download the conda package's metadata
+        localrepo.file('pymc-2.3.7-np110py35_p0.tar.bz2').info()
+        repodata = localrepo.download('repodata.json').doDownload()
+        json = new JsonSlurper().parse(repodata)
+
+        then:
+        // check that the metadata is correct
+        json.packages['pymc-2.3.7-np110py35_p0.tar.bz2'].license == "Academic Free License"
 
         cleanup:
         // delete the testing repo
