@@ -54,6 +54,11 @@ artHome = ctx.artifactoryHome.haAwareEtcDir
 cronExpression = null
 ignoredUsers = ['anonymous', '_internal', 'xray', 'access-admin']
 
+// The maximum number of database write exceptions that is deemed "acceptable".
+// This ensures that a small number of corrupted users (for instance) cannot
+// prevent replication entirely.
+acceptableFailures = 10
+
 //general artifactory plugin execution hook
 executions {
     //Usage: curl -X GET http://localhost:8081/artifactory/api/plugins/execute/getUserDB
@@ -1174,6 +1179,12 @@ def encryptDecrypt(json, encrypt) {
         return
     } catch (ClassNotFoundException ex) {}
     catch (NoSuchMethodException ex) {}
+    catch (Exception ex) {
+        def writer = new StringWriter()
+        writer.withPrintWriter { ex.printStackTrace(it) }
+        log.error(writer.toString())
+        return
+    }
     // if the Access approach fails, fall back to the original approach
     def encodedKeyPair = null, encodedKeyPairFromDecoded = null
     def decodedKeyPair = null
@@ -1436,206 +1447,219 @@ def modifyProp(secserv, op, user, key, val) {
 def update(ptch) {
     def secserv = ctx.securityService
     def infact = InfoFactoryHolder.get()
+    def failures = 0
     for (line in ptch) {
-        def (path, oper, key, val) = line
-        def pathsize = path.size()
-        if (pathsize == 3 && oper in [':+', ':-'] &&
-            path[0] == 'permissions' &&
-            path[2] in ['includes', 'excludes', 'repos']) {
-            // permission targets
-            def acl = infact.copyAcl(secserv.getAcl(path[1]))
-            def perm = infact.copyPermissionTarget(acl.permissionTarget)
-            def op = null
-            if (oper == ':+') op = { coll, elem -> coll + elem }
-            else if (oper == ':-') op = { coll, elem -> coll - elem }
-            if (path[2] == 'includes') {
-                perm.includes = op(perm.includes, key)
-            } else if (path[2] == 'excludes') {
-                perm.excludes = op(perm.excludes, key)
-            } else if (path[2] == 'repos') {
-                perm.repoKeys = op(perm.repoKeys, key)
-            }
-            acl.permissionTarget = perm
-            secserv.updateAcl(acl)
-        } else if ((pathsize == 3 && oper in [';+', ';-'] ||
-                    pathsize == 4 && oper == ':~') &&
-                   path[0] in ['users', 'groups'] && path[2] == 'permissions') {
-            // aces
-            def isgroup = path[0] == 'groups'
-            if (!isgroup && path[1] in ignoredUsers) continue
-            def principal = oper == ':~' ? path[3] : key
-            def acl = secserv.getAcl(principal)
-            if (acl == null) continue
-            acl = infact.copyAcl(acl)
-            def aces = acl.aces
-            if (oper == ';+') {
-                def ace = infact.createAce()
-                ace.principal = path[1]
-                ace.group = isgroup
-                ace.mask = makeMask(val)
-                acl.aces = aces + ace
-            } else {
-                def ace = aces.find {
-                    it.principal == path[1] && it.isGroup() == isgroup
+        try {
+            def (path, oper, key, val) = line
+            def pathsize = path.size()
+            if (pathsize == 3 && oper in [':+', ':-'] &&
+                path[0] == 'permissions' &&
+                path[2] in ['includes', 'excludes', 'repos']) {
+                // permission targets
+                def acl = infact.copyAcl(secserv.getAcl(path[1]))
+                def perm = infact.copyPermissionTarget(acl.permissionTarget)
+                def op = null
+                if (oper == ':+') op = { coll, elem -> coll + elem }
+                else if (oper == ':-') op = { coll, elem -> coll - elem }
+                if (path[2] == 'includes') {
+                    perm.includes = op(perm.includes, key)
+                } else if (path[2] == 'excludes') {
+                    perm.excludes = op(perm.excludes, key)
+                } else if (path[2] == 'repos') {
+                    perm.repoKeys = op(perm.repoKeys, key)
                 }
-                if (oper == ';-') {
-                    acl.aces = aces - ace
-                } else {
-                    def newace = infact.copyAce(ace)
-                    newace.mask = makeMask(key)
-                    acl.aces = aces - ace + newace
-                }
-            }
-            secserv.updateAcl(acl)
-        } else if (pathsize == 1 && oper in [';+', ';-'] &&
-                   path[0] in ['users', 'groups', 'permissions']) {
-            // users, groups, and permissions
-            if (oper == ';+' && path[0] == 'users') {
-                if (key in ignoredUsers) continue
-                def user = infact.createUser()
-                user.username = key
-                user.password = new SaltedPassword(val.password, val.salt)
-                user.email = val.email
-                user.genPasswordKey = val.passkey
-                user.admin = val.admin
-                user.enabled = val.enabled
-                user.updatableProfile = val.updatable
-                user.privateKey = val.privatekey
-                user.publicKey = val.publickey
-                user.bintrayAuth = val.bintray
-                user.locked = val.locked
-                user.credentialsExpired = val.expired
-                for (group in val.groups) user.addGroup(group)
-                secserv.createUser(user)
-                for (prop in val.properties.entrySet()) {
-                    modifyProp(secserv, 'create', key, prop.key, prop.value)
-                }
-                for (perm in val.permissions?.entrySet()) {
-                    def ace = infact.createAce()
-                    ace.principal = key
-                    ace.group = false
-                    ace.mask = makeMask(perm.value)
-                    def acl = secserv.getAcl(perm.key)
-                    if (acl == null) continue
-                    acl = infact.copyAcl(acl)
-                    acl.aces = acl.aces + ace
-                    secserv.updateAcl(acl)
-                }
-            } else if (oper == ';-' && path[0] == 'users') {
-                if (key in ignoredUsers) continue
-                secserv.deleteUser(key)
-            } else if (oper == ';+' && path[0] == 'groups') {
-                def group = infact.createGroup()
-                group.groupName = key
-                group.description = val.description
-                group.newUserDefault = val.isdefault
-                group.realm = val.realm
-                group.realmAttributes = val.realmattrs
-                try {
-                    group.adminPrivileges = val.admin ?: false
-                } catch (MissingPropertyException ex) {}
-                secserv.createGroup(group)
-                for (perm in val.permissions?.entrySet()) {
-                    def ace = infact.createAce()
-                    ace.principal = key
-                    ace.group = true
-                    ace.mask = makeMask(perm.value)
-                    def acl = secserv.getAcl(perm.key)
-                    if (acl == null) continue
-                    acl = infact.copyAcl(acl)
-                    acl.aces = acl.aces + ace
-                    secserv.updateAcl(acl)
-                }
-            } else if (oper == ';-' && path[0] == 'groups') {
-                secserv.deleteGroup(key)
-            } else if (oper == ';+' && path[0] == 'permissions') {
-                def perm = infact.createPermissionTarget()
-                perm.name = key
-                perm.repoKeys = val.repos
-                perm.includes = val.includes
-                perm.excludes = val.excludes
-                def acl = infact.createAcl()
                 acl.permissionTarget = perm
-                secserv.createAcl(acl)
-            } else if (oper == ';-' && path[0] == 'permissions') {
-                secserv.deleteAcl(secserv.getAcl(key).permissionTarget)
-            }
-        } else if ((pathsize == 3 && oper in [';+', ';-'] ||
-                    pathsize == 4 && oper == ':~') &&
-                   path[0] == 'users' && path[2] == 'properties') {
-            if (path[1] in ignoredUsers) continue
-            // user properties, including API keys
-            if (oper == ';+') {
-                modifyProp(secserv, 'create', path[1], key, val)
-            } else if (oper == ';-') {
-                modifyProp(secserv, 'delete', path[1], key, null)
-            } else if (oper == ':~') {
-                modifyProp(secserv, 'update', path[1], path[3], key)
-            }
-        } else if (pathsize == 3 && oper in [':+', ':-'] &&
-                   path[0] == 'users' && path[2] == 'groups') {
-            if (path[1] in ignoredUsers) continue
-            // user/group memberships
-            try {
-                if (oper == ':+') {
-                    secserv.addUsersToGroup(key, [path[1]])
+                secserv.updateAcl(acl)
+            } else if ((pathsize == 3 && oper in [';+', ';-'] ||
+                        pathsize == 4 && oper == ':~') &&
+                       path[0] in ['users', 'groups'] && path[2] == 'permissions') {
+                // aces
+                def isgroup = path[0] == 'groups'
+                if (!isgroup && path[1] in ignoredUsers) continue
+                def principal = oper == ':~' ? path[3] : key
+                def acl = secserv.getAcl(principal)
+                if (acl == null) continue
+                acl = infact.copyAcl(acl)
+                def aces = acl.aces
+                if (oper == ';+') {
+                    def ace = infact.createAce()
+                    ace.principal = path[1]
+                    ace.group = isgroup
+                    ace.mask = makeMask(val)
+                    acl.aces = aces + ace
                 } else {
-                    secserv.removeUsersFromGroup(key, [path[1]])
+                    def ace = aces.find {
+                        it.principal == path[1] && it.isGroup() == isgroup
+                    }
+                    if (oper == ';-') {
+                        acl.aces = aces - ace
+                    } else {
+                        def newace = infact.copyAce(ace)
+                        newace.mask = makeMask(key)
+                        acl.aces = aces - ace + newace
+                    }
                 }
-            } catch (RuntimeException ex) {
-                log.debug("Exception changing group membership: $ex")
-            }
-        } else if (pathsize == 3 && oper == ':~' && path[0] == 'users') {
-            if (path[1] in ignoredUsers) continue
-            // simple user attributes (email, is admin, etc)
-            def user = infact.copyUser(secserv.findUser(path[1]))
-            if (path[2] == 'password') {
-                user.password = new SaltedPassword(key, user.salt)
-            } else if (path[2] == 'salt') {
-                user.password = new SaltedPassword(user.password, key)
-            } else if (path[2] == 'email') {
-                user.email = key
-            } else if (path[2] == 'passkey') {
-                user.genPasswordKey = key
-            } else if (path[2] == 'admin') {
-                user.admin = key
-            } else if (path[2] == 'enabled') {
-                user.enabled = key
-            } else if (path[2] == 'updatable') {
-                user.updatableProfile = key
-            } else if (path[2] == 'privatekey') {
-                user.privateKey = key
-            } else if (path[2] == 'publickey') {
-                user.publicKey = key
-            } else if (path[2] == 'bintray') {
-                user.bintrayAuth = key
-            } else if (path[2] == 'locked') {
-                user.locked = key
-            } else if (path[2] == 'expired') {
-                user.credentialsExpired = key
-            }
-            secserv.updateUser(user, true)
-            if (path[2] == 'locked') {
-                if (key) secserv.lockUser(path[1])
-                else secserv.unlockUser(path[1])
-            }
-        } else if (pathsize == 3 && oper == ':~' && path[0] == 'groups') {
-            // simple group attributes (description, is default, etc)
-            def group = infact.copyGroup(secserv.findGroup(path[1]))
-            if (path[2] == 'description') {
-                group.description = key
-            } else if (path[2] == 'isdefault') {
-                group.newUserDefault = key
-            } else if (path[2] == 'realm') {
-                group.realm = key
-            } else if (path[2] == 'realmattrs') {
-                group.realmAttributes = key
-            } else if (path[2] == 'admin') {
+                secserv.updateAcl(acl)
+            } else if (pathsize == 1 && oper in [';+', ';-'] &&
+                       path[0] in ['users', 'groups', 'permissions']) {
+                // users, groups, and permissions
+                if (oper == ';+' && path[0] == 'users') {
+                    if (key in ignoredUsers) continue
+                    def user = infact.createUser()
+                    user.username = key
+                    user.password = new SaltedPassword(val.password, val.salt)
+                    user.email = val.email
+                    user.genPasswordKey = val.passkey
+                    user.admin = val.admin
+                    user.enabled = val.enabled
+                    user.updatableProfile = val.updatable
+                    user.privateKey = val.privatekey
+                    user.publicKey = val.publickey
+                    user.bintrayAuth = val.bintray
+                    user.locked = val.locked
+                    user.credentialsExpired = val.expired
+                    for (group in val.groups) user.addGroup(group)
+                    secserv.createUser(user)
+                    for (prop in val.properties.entrySet()) {
+                        modifyProp(secserv, 'create', key, prop.key, prop.value)
+                    }
+                    for (perm in val.permissions?.entrySet()) {
+                        def ace = infact.createAce()
+                        ace.principal = key
+                        ace.group = false
+                        ace.mask = makeMask(perm.value)
+                        def acl = secserv.getAcl(perm.key)
+                        if (acl == null) continue
+                        acl = infact.copyAcl(acl)
+                        acl.aces = acl.aces + ace
+                        secserv.updateAcl(acl)
+                    }
+                } else if (oper == ';-' && path[0] == 'users') {
+                    if (key in ignoredUsers) continue
+                    secserv.deleteUser(key)
+                } else if (oper == ';+' && path[0] == 'groups') {
+                    def group = infact.createGroup()
+                    group.groupName = key
+                    group.description = val.description
+                    group.newUserDefault = val.isdefault
+                    group.realm = val.realm
+                    group.realmAttributes = val.realmattrs
+                    try {
+                        group.adminPrivileges = val.admin ?: false
+                    } catch (MissingPropertyException ex) {}
+                    secserv.createGroup(group)
+                    for (perm in val.permissions?.entrySet()) {
+                        def ace = infact.createAce()
+                        ace.principal = key
+                        ace.group = true
+                        ace.mask = makeMask(perm.value)
+                        def acl = secserv.getAcl(perm.key)
+                        if (acl == null) continue
+                        acl = infact.copyAcl(acl)
+                        acl.aces = acl.aces + ace
+                        secserv.updateAcl(acl)
+                    }
+                } else if (oper == ';-' && path[0] == 'groups') {
+                    secserv.deleteGroup(key)
+                } else if (oper == ';+' && path[0] == 'permissions') {
+                    def perm = infact.createPermissionTarget()
+                    perm.name = key
+                    perm.repoKeys = val.repos
+                    perm.includes = val.includes
+                    perm.excludes = val.excludes
+                    def acl = infact.createAcl()
+                    acl.permissionTarget = perm
+                    secserv.createAcl(acl)
+                } else if (oper == ';-' && path[0] == 'permissions') {
+                    secserv.deleteAcl(secserv.getAcl(key).permissionTarget)
+                }
+            } else if ((pathsize == 3 && oper in [';+', ';-'] ||
+                        pathsize == 4 && oper == ':~') &&
+                       path[0] == 'users' && path[2] == 'properties') {
+                if (path[1] in ignoredUsers) continue
+                // user properties, including API keys
+                if (oper == ';+') {
+                    modifyProp(secserv, 'create', path[1], key, val)
+                } else if (oper == ';-') {
+                    modifyProp(secserv, 'delete', path[1], key, null)
+                } else if (oper == ':~') {
+                    modifyProp(secserv, 'update', path[1], path[3], key)
+                }
+            } else if (pathsize == 3 && oper in [':+', ':-'] &&
+                       path[0] == 'users' && path[2] == 'groups') {
+                if (path[1] in ignoredUsers) continue
+                // user/group memberships
                 try {
-                    group.adminPrivileges = key
-                } catch (MissingPropertyException ex) {}
+                    if (oper == ':+') {
+                        secserv.addUsersToGroup(key, [path[1]])
+                    } else {
+                        secserv.removeUsersFromGroup(key, [path[1]])
+                    }
+                } catch (RuntimeException ex) {
+                    log.debug("Exception changing group membership: $ex")
+                }
+            } else if (pathsize == 3 && oper == ':~' && path[0] == 'users') {
+                if (path[1] in ignoredUsers) continue
+                // simple user attributes (email, is admin, etc)
+                def user = infact.copyUser(secserv.findUser(path[1]))
+                if (path[2] == 'password') {
+                    user.password = new SaltedPassword(key, user.salt)
+                } else if (path[2] == 'salt') {
+                    user.password = new SaltedPassword(user.password, key)
+                } else if (path[2] == 'email') {
+                    user.email = key
+                } else if (path[2] == 'passkey') {
+                    user.genPasswordKey = key
+                } else if (path[2] == 'admin') {
+                    user.admin = key
+                } else if (path[2] == 'enabled') {
+                    user.enabled = key
+                } else if (path[2] == 'updatable') {
+                    user.updatableProfile = key
+                } else if (path[2] == 'privatekey') {
+                    user.privateKey = key
+                } else if (path[2] == 'publickey') {
+                    user.publicKey = key
+                } else if (path[2] == 'bintray') {
+                    user.bintrayAuth = key
+                } else if (path[2] == 'locked') {
+                    user.locked = key
+                } else if (path[2] == 'expired') {
+                    user.credentialsExpired = key
+                }
+                secserv.updateUser(user, true)
+                if (path[2] == 'locked') {
+                    if (key) secserv.lockUser(path[1])
+                    else secserv.unlockUser(path[1])
+                }
+            } else if (pathsize == 3 && oper == ':~' && path[0] == 'groups') {
+                // simple group attributes (description, is default, etc)
+                def group = infact.copyGroup(secserv.findGroup(path[1]))
+                if (path[2] == 'description') {
+                    group.description = key
+                } else if (path[2] == 'isdefault') {
+                    group.newUserDefault = key
+                } else if (path[2] == 'realm') {
+                    group.realm = key
+                } else if (path[2] == 'realmattrs') {
+                    group.realmAttributes = key
+                } else if (path[2] == 'admin') {
+                    try {
+                        group.adminPrivileges = key
+                    } catch (MissingPropertyException ex) {}
+                }
+                secserv.updateGroup(group)
             }
-            secserv.updateGroup(group)
+        } catch (Exception ex) {
+            log.error("Failure applying patch line $line")
+            failures += 1
+            if (failures > acceptableFailures) {
+                log.error("Too many failures have occurred, aborting")
+                throw ex
+            }
+            def writer = new StringWriter()
+            writer.withPrintWriter { ex.printStackTrace(it) }
+            log.error(writer.toString())
         }
     }
 }
