@@ -1165,6 +1165,7 @@ def encryptDecrypt(json, encrypt) {
             user.privatekey = userinfo.privateKey
             user.publickey = userinfo.publicKey
             user.bintray = userinfo.bintrayAuth
+            user.passkey = userinfo.genPasswordKey
             if (props == null) return
             user.properties.each { k, v ->
                 if (!(k in props)) return
