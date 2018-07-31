@@ -16,6 +16,7 @@
 
 import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
+import org.artifactory.exception.CancelException
 
 import groovy.json.JsonSlurper
 import groovy.time.TimeCategory
@@ -61,7 +62,7 @@ executions {
             log.info('Deprecated month parameter is still in use, please use the new timeInterval parameter instead!', properties)
             timeInterval = params['months'][0] as int
         } else if ( params['months'] ) {
-            log.info('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
+            log.warning('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
 
         artifactCleanup(timeUnit, timeInterval, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
@@ -144,7 +145,7 @@ if ( configFile.exists() ) {
 }
 
 if ( deprecatedConfigFile.exists() && configFile.exists() ) {
-    log.info "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
+    log.warning "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
 }
 
 private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
@@ -161,7 +162,7 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
     calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
 
     def calendarUntilFormatted = new SimpleDateFormat("yyyy/MM/dd HH:mm").format(calendarUntil.getTime());
-    log.info "Removing all artifacts older than $calendarUntilFormatted"
+    log.info "Removing all artifacts not downloaded since $calendarUntilFormatted"
 
     Global.stopCleaning = false
     int cntFoundArtifacts = 0
@@ -286,7 +287,8 @@ private def mapTimeUnitToCalendar (String timeUnit) {
         case "year":
             return Calendar.YEAR
         default:
-            log.info "$timeUnit is no valid time unit. Falling back to 'month'"
-            return Calendar.MONTH
+            def errorMessage = "$timeUnit is no valid time unit. Please check your request or scheduled policy."
+            log.error errorMessage
+            throw new CancelException(errorMessage, 400)
     }
 }
