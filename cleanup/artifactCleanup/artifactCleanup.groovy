@@ -16,12 +16,19 @@
 
 import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
+import org.artifactory.exception.CancelException
 
+import groovy.json.JsonSlurper
 import groovy.time.TimeCategory
 import groovy.time.TimeDuration
 import groovy.transform.Field
 
+import java.text.SimpleDateFormat
+
+@Field final String CONFIG_FILE_PATH = "plugins/${this.class.name}.json"
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
+@Field final String DEFAULT_TIME_UNIT = "month"
+@Field final int DEFAULT_TIME_INTERVAL = 1
 
 class Global {
     static Boolean stopCleaning = false
@@ -30,7 +37,7 @@ class Global {
 }
 
 // curl command example for running this plugin (Prior to Artifactory 5.x, use pipe '|' and not semi-colons ';' for parameters separation).
-// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"
+// curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanup?params=timeUnit=day;timeInterval=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"
 //
 // For a HA cluster, the following commands have to be directed at the instance running the script. Therefore it is best to invoke
 // the script directly on an instance so the below commands can operate on same instance
@@ -43,12 +50,22 @@ def pluginGroup = 'cleaners'
 
 executions {
     cleanup(groups: [pluginGroup]) { params ->
-        def months = params['months'] ? params['months'][0] as int : 6
+        def timeUnit = params['timeUnit'] ? params['timeUnit'][0] as String : DEFAULT_TIME_UNIT
+        def timeInterval = params['timeInterval'] ? params['timeInterval'][0] as int : DEFAULT_TIME_INTERVAL
         def repos = params['repos'] as String[]
-        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
-        def disablePropertiesSupport = params['disablePropertiesSupport'] ? params['disablePropertiesSupport'][0] as boolean : false
+        def dryRun = params['dryRun'] ? new Boolean(params['dryRun'][0]) : false
+        def disablePropertiesSupport = params['disablePropertiesSupport'] ? new Boolean(params['disablePropertiesSupport'][0]) : false
         Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
-        artifactCleanup(months, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
+
+        // Enable fallback support for deprecated month parameter
+        if ( params['months'] && !params['timeInterval'] ) {
+            log.info('Deprecated month parameter is still in use, please use the new timeInterval parameter instead!', properties)
+            timeInterval = params['months'][0] as int
+        } else if ( params['months'] ) {
+            log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
+        }
+
+        artifactCleanup(timeUnit, timeInterval, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
@@ -78,27 +95,64 @@ executions {
     }
 }
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
-log.info "Schedule job policy list: $config.policies"
+def deprecatedConfigFile = new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH)
+def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
 
-config.policies.each{ policySettings ->
-    def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
-    def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
-    def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
-    def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
-    def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
-    def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+if ( deprecatedConfigFile.exists() ) {
 
-    jobs {
-        "scheduledCleanup_$cron"(cron: cron) {
-            log.info "Policy settings for scheduled run at($cron): repo list($repos), months($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
-            artifactCleanup( months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+    if ( !configFile.exists() ) {
+        def config = new ConfigSlurper().parse(deprecatedConfigFile.toURL())
+        log.info "Schedule job policy list: $config.policies"
+
+        config.policies.each{ policySettings ->
+            def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
+            def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+            def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
+            def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
+            def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
+            def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+
+            jobs {
+                "scheduledCleanup_$cron"(cron: cron) {
+                    log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
+                    artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+                }
+            }
         }
+    } else  {
+        log.warn "Deprecated 'artifactCleanup.properties' file is still present, but ignored. You should remove the file."
     }
 }
 
-private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
-    log.info "Starting artifact cleanup for repositories $repos, until $months months ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
+if ( configFile.exists() ) {
+  
+    def config = new JsonSlurper().parse(configFile.toURL())
+    log.info "Schedule job policy list: $config.policies"
+
+    config.policies.each{ policySettings ->
+        def cron = policySettings.containsKey("cron") ? policySettings.cron as String : ["0 0 5 ? * 1"]
+        def repos = policySettings.containsKey("repos") ? policySettings.repos as String[] : ["__none__"]
+        def timeUnit = policySettings.containsKey("timeUnit") ? policySettings.timeUnit as String : DEFAULT_TIME_UNIT
+        def timeInterval = policySettings.containsKey("timeInterval") ? policySettings.timeInterval as int : DEFAULT_TIME_INTERVAL
+        def paceTimeMS = policySettings.containsKey("paceTimeMS") ? policySettings.paceTimeMS as int : 0
+        def dryRun = policySettings.containsKey("dryRun") ? new Boolean(policySettings.dryRun) : false
+        def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
+
+        jobs {
+            "scheduledCleanup_$cron"(cron: cron) {
+                log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit($timeUnit), timeInterval($timeInterval), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
+                artifactCleanup( timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+            }
+        }
+    }  
+}
+
+if ( deprecatedConfigFile.exists() && configFile.exists() ) {
+    log.warn "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
+}
+
+private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
+    log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
 
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
     def skip = [:]
@@ -106,15 +160,19 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
         skip = getSkippedPaths(repos)
     }
 
-    def monthsUntil = Calendar.getInstance()
-    monthsUntil.add(Calendar.MONTH, -months)
+    def calendarUntil = Calendar.getInstance()
+
+    calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
+
+    def calendarUntilFormatted = new SimpleDateFormat("yyyy/MM/dd HH:mm").format(calendarUntil.getTime());
+    log.info "Removing all artifacts not downloaded since $calendarUntilFormatted"
 
     Global.stopCleaning = false
     int cntFoundArtifacts = 0
     int cntNoDeletePermissions = 0
     long bytesFound = 0
     long bytesFoundWithNoDeletePermission = 0
-    def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
+    def artifactsCleanedUp = searches.artifactsNotDownloadedSince(calendarUntil, calendarUntil, repos)
     artifactsCleanedUp.find {
         try {
             while ( Global.pauseCleaning ) {
@@ -217,4 +275,23 @@ private def getSkippedPaths(String[] repos) {
     TimeDuration duration = TimeCategory.minus(timeStop, timeStart)
     log.info "Elapsed time to retrieve paths to skip: " + duration
     return skip
+}
+
+private def mapTimeUnitToCalendar (String timeUnit) {
+    switch ( timeUnit ) {
+        case "minute":
+            return Calendar.MINUTE
+        case "hour":
+            return Calendar.HOUR
+        case "day":
+            return Calendar.DAY_OF_YEAR
+        case "month":
+            return Calendar.MONTH
+        case "year":
+            return Calendar.YEAR
+        default:
+            def errorMessage = "$timeUnit is no valid time unit. Please check your request or scheduled policy."
+            log.error errorMessage
+            throw new CancelException(errorMessage, 400)
+    }
 }
