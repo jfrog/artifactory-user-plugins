@@ -72,8 +72,7 @@ An example file could contain the following json:
 }
 ```
 
-**Note**: If a deprecated `artifactCleanup.properties` is defined it will be applied first and these policies may be overridden by policies defined in the `artifactCleanup.json`.
-
+**Note**: If a deprecated `artifactCleanup.properties` is defined it will only be applied if no `artifactCleanup.json` is present.
 
 Executing
 ---------

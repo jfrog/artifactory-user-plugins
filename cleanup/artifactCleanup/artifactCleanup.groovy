@@ -62,7 +62,7 @@ executions {
             log.info('Deprecated month parameter is still in use, please use the new timeInterval parameter instead!', properties)
             timeInterval = params['months'][0] as int
         } else if ( params['months'] ) {
-            log.warning('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
+            log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
 
         artifactCleanup(timeUnit, timeInterval, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
@@ -100,25 +100,28 @@ def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
 
 if ( deprecatedConfigFile.exists() ) {
 
-    def config = new ConfigSlurper().parse(deprecatedConfigFile.toURL())
-    log.info "Schedule job policy list: $config.policies"
+    if ( !configFile.exists() ) {
+        def config = new ConfigSlurper().parse(deprecatedConfigFile.toURL())
+        log.info "Schedule job policy list: $config.policies"
 
-    config.policies.each{ policySettings ->
-        def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
-        def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
-        def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
-        def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
-        def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
-        def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+        config.policies.each{ policySettings ->
+            def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
+            def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+            def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
+            def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
+            def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
+            def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
 
-        jobs {
-            "scheduledCleanup_$cron"(cron: cron) {
-                log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
-                artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+            jobs {
+                "scheduledCleanup_$cron"(cron: cron) {
+                    log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
+                    artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+                }
             }
         }
+    } else  {
+        log.warn "Deprecated 'artifactCleanup.properties' file is still present, but ignored. You should remove the file."
     }
-
 }
 
 if ( configFile.exists() ) {
@@ -145,7 +148,7 @@ if ( configFile.exists() ) {
 }
 
 if ( deprecatedConfigFile.exists() && configFile.exists() ) {
-    log.warning "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
+    log.warn "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
 }
 
 private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
