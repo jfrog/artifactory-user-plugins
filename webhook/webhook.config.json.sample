@@ -1,0 +1,7 @@
+{
+  "webhooks": {
+
+  },
+  "debug": true,
+  "timeout": 15000
+}
