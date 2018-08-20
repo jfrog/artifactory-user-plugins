@@ -2,7 +2,6 @@ Artifactory Security Replication User Plugin
 ============================================
 
 **&ast;&ast;&ast; *Deprecation NOTICE* &ast;&ast;&ast;**
-============================================
 *With the release of the [Access Federation](https://www.jfrog.com/confluence/display/RTF/Access+Federation) feature of the Enterprise Plus Package of JFrog Artifactory, the Security Replication plugin has been deprecated.  Accordingly, support for Security Replication is not being carried forward for versions of JFrog Artifactory 6.x and beyond.  Please contact your account manager or JFrog Support if you are using this plugin or if you need its capability.*
 
 **&ast;&ast;&ast; IMPORTANT &ast;&ast;&ast;**  
