@@ -5,7 +5,7 @@ This plugin provides a webhook post to a remote service.  The plugin consists of
 1. webhook.groovy - the actual artifactory plugin
 2. webhook.config.json - configuration file for setting url and events for activation
 
-All Artifactory supported events should already be intercepted by webhook.groovy script.  If an event is activated in webhook.properties, then the event will invoke the desigated webhook url.
+If an event is activated in webhook.properties, then the event will invoke the desigated webhook url.
 
 Installation
 -----------------
@@ -35,7 +35,8 @@ A particular webhook only requires a URL and the events it should listen to. Thi
 | ------------- |-------------| ---------| -------|
 | url     | The URL to POST to | true      | -       |
 | events      | The events to listen to      | true      | -       |
-| repositories | The list of repositories to limit the event listening to. Only applies to storage and replication events | False     | * (all repositories)   |
+| repositories | The list of repositories to limit the event listening to. Only applies to storage and docker events. | False     | * (all repositories)   |
+| path | A path that must match for the event to be triggered. Accepts wildcard '*'. Do not include repository name in path. Only applies to storage and docker events.| False     | * (all paths)   |
 | async | Whether the POST call should be asynchronous      | false     | true       |
 | enabled | Whether this webhook should be enabled     | false     | true       |
 | format | The formatting of the message     | false     | default       |
@@ -89,7 +90,8 @@ Here is an example of configuration file using all the bells and whistles:
       "async": true,
       "repositories": [
         "generic-local"
-      ]
+      ],
+      "path: "archive/contrib/*"
     },
     "allStorageAndReplication": {
       "url": "http://example4.com",
