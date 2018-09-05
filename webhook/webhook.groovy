@@ -16,7 +16,7 @@
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-
+import java.util.regex.Pattern
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 /**
@@ -499,8 +499,7 @@ class WebHook {
                 for (WebhookEndpointDetails webhook : webhookListeners) {
                     try {
                         if (webhook.isAsync()) {
-                            if (eventPassedRepositoryFilter(event, json, webhook) &&
-                                    eventPassedDirectoryFilter(event, json))
+                            if (eventPassedFilters(event, json, webhook))
                                 excutorService.execute(
                                         new PostTask(webhook.url, getFormattedJSONString(json, event, webhook)))
                         }
@@ -513,8 +512,7 @@ class WebHook {
                 for (def webhookListener : webhookListeners) {
                     try {
                         if (!webhookListener.isAsync())
-                            if (eventPassedRepositoryFilter(event, json, webhookListener) &&
-                                    eventPassedDirectoryFilter(event, json))
+                            if (eventPassedFilters(event, json, webhook))
                                 callPost(webhookListener.url, getFormattedJSONString(json, webhook))
                     } catch (Exception e) {
                         if (debug)
@@ -525,18 +523,26 @@ class WebHook {
         }
     }
 
+    private boolean eventPassedFilters(String event, Object json, WebhookEndpointDetails webhook) {
+        return eventPassedDirectoryFilter(event, json) && eventPassedRepositoryAndPathFilter(event, json, webhook)
+    }
+
     /**
-     * Determines if the particular event passes any repository filter on the webhook
+     * Determines if the particular event passes any repository/path filter on the webhook
      * @param event The event that triggered this call
      * @param json The JSON formatted information of the event
      * @param webhook The specific webhook
-     * @return False only if the event is of type storage/docker and the webhook has a repo filter which does not
-     * include the particular repository(s) involved in this event
+     * @return False only if the event is of type storage/docker and the webhook has a repo/path filter which does not
+     * include the particular repository(s)/path(s) involved in this event
      */
-    private boolean eventPassedRepositoryFilter(String event, Object json, WebhookEndpointDetails webhook) {
-        if (!webhook.allRepos()) {
-            if (event.startsWith("storage") || event.startsWith("docker")) {
-                def reposInEvent = findDeep(new JsonSlurper().parseText(json.toString()), REPO_KEY_NAME)
+    private boolean eventPassedRepositoryAndPathFilter(String event, Object json, WebhookEndpointDetails webhook) {
+        boolean passesFilter = true
+        def jsonData = null // Don't slurp unless necessary to avoid overhead
+        if (event.startsWith("storage") || event.startsWith("docker")) {
+            // Check repo if needed
+            if (!webhook.allRepos()) {
+                jsonData = new JsonSlurper().parseText(json.toString())
+                def reposInEvent = findDeep(jsonData, REPO_KEY_NAME)
                 boolean found = false
                 if (reposInEvent != null && reposInEvent.size() > 0) {
                     reposInEvent.each {
@@ -544,10 +550,30 @@ class WebHook {
                             found = true
                     }
                 }
-                return found
+                passesFilter = found
+            }
+            if (passesFilter && webhook.hasPathFilter()) { // Check path if needed
+                if (jsonData == null)
+                    jsonData = new JsonSlurper().parseText(json.toString())
+                def matches = false
+                if (event.startsWith("docker")) {
+                    matches = webhook.matchesPathFilter(jsonData.docker.image)
+                } else if (event.startsWith("storage")) {
+                    if (Globals.SUPPORT_MATRIX.storage.afterMove.name == event ||
+                            Globals.SUPPORT_MATRIX.storage.afterCopy.name == event) {
+                        matches = webhook.matchesPathFilter(jsonData.item.relPath) ||
+                                webhook.matchesPathFilter(jsonData.targetRepoPath.relPath)
+                    } else if (Globals.SUPPORT_MATRIX.storage.afterPropertyCreate.name == event ||
+                            Globals.SUPPORT_MATRIX.storage.afterPropertyDelete.name == event) {
+                        matches =  webhook.matchesPathFilter(jsonData.item.relPath)
+                    } else {
+                        matches =  webhook.matchesPathFilter(jsonData.relPath)
+                    }
+                }
+                passesFilter = matches
             }
         }
-        return true
+        return passesFilter
     }
 
     /**
@@ -665,6 +691,9 @@ class WebHook {
                     // Repositories
                     if (cfg.containsKey('format'))
                         webhookDetails.format = cfg.format
+                    // Path filter
+                    if (cfg.containsKey('path'))
+                        webhookDetails.setPathFilter(cfg.path)
                     // Events
                     cfg.events.each {
                         webhookDetails.url = cfg.url
@@ -728,6 +757,7 @@ class WebHook {
         def format = null // Default format
         def repositories = [ALL_REPOS] // All
         def async = true
+        Pattern path = null
 
         boolean allRepos() {
             return repositories.contains(ALL_REPOS)
@@ -743,6 +773,49 @@ class WebHook {
 
         boolean isDefaultFormat() {
             return format == null || format == 'default'
+        }
+
+        /**
+         * Whether or not this webhook has a path filter
+         * @return true if and only if there is a path filter
+         */
+        boolean hasPathFilter() {
+            return path != null
+        }
+
+        /**
+         * Returns true if there is not a path filter or if there is and it matches the actual path
+         * @param actualPath The path in the event
+         */
+        boolean matchesPathFilter(String actualPath) {
+            if (path == null)
+                return true
+            return path.matcher(actualPath).matches()
+        }
+
+        /**
+         * Set a path filter for the webhook to apply
+         * @param searchString The user provided search string
+         */
+        void setPathFilter(String searchString) {
+            // Remove leading '/'
+            if (searchString.startsWith('/'))
+                searchString = searchString.substring(1)
+            path = Pattern.compile(regexFilter(searchString))
+        }
+
+        /**
+         * Filters a user provided search text for a minimal regex search with the only supported character being '*'
+         * NOTE: Not efficient but is only ran once when loading the config. Don't use where O(n).
+         * @param search_string The unfiltered search string
+         * @return The filtered search string
+         */
+        private String regexFilter(String searchString) {
+            (['\\','.','[',']','{','}','(',')','<','>','+','-','=','?','^','$', '|']).each {
+                searchString = searchString.replace(it, '\\' + it)
+            }
+            searchString = searchString.replace('*', '.*')
+            return searchString
         }
     }
 

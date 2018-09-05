@@ -482,6 +482,285 @@ executions {
         Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
+    def 'test path and repo combo filter'() {
+        setup:
+        clearLoopbackBuffer()
+
+        // 1. Fail to pass both filters
+        when:
+        def reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "repositories": [
+                      "maven-local2"
+                  ],
+                  "path": "combo/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/combo/path/file1.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        def json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 0
+
+        // 2. Fail to pass repo filters
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "repositories": [
+                      "maven-local2"
+                  ],
+                  "path": "test/combo/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/combo/path/file2.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 0
+
+
+        // 3. Fail to pass path filters
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "repositories": [
+                      "maven-local"
+                  ],
+                  "path": "combo/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/combo/path/file3.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 0
+
+        // 4. Pass both filters
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "repositories": [
+                      "maven-local"
+                  ],
+                  "path": "test/combo/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/combo/path/file4.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+        json[0].artifactory.webhook.data.createdBy == "admin"
+        json[0].artifactory.webhook.data.name == "file4.txt"
+        json[0].artifactory.webhook.event == "storage.afterCreate"
+        json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
+
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+    }
+
+    def 'test path filter'() {
+        setup:
+        clearLoopbackBuffer()
+
+        // 1. Test without the filter
+        when:
+        def reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ]
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path/file1.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        def json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+        json[0].artifactory.webhook.data.createdBy == "admin"
+        json[0].artifactory.webhook.data.name == "file1.txt"
+        json[0].artifactory.webhook.event == "storage.afterCreate"
+        json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
+
+
+        // 2. Test with the filter (expect a result)
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "path": "test/path/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path/file2.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+        json[0].artifactory.webhook.data.createdBy == "admin"
+        json[0].artifactory.webhook.data.name == "file2.txt"
+        json[0].artifactory.webhook.event == "storage.afterCreate"
+        json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
+
+        // 3. Test with the filter (expect no result)
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "path": "test/path/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path2/file2.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 0
+
+        // 4. Test with a more complex filter and expect a result
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "path": "test/path/*/foo/*/*.txt"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path/paco/foo/bar/file3.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+
+        // 5. Test with a leading '/'
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "path": "/test/path/*/foo/*/*.txt"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path/paco/foo/bar/file4.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+
+        // 6. Test with regex type chars (which should be escaped by the webhook)
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "storage.afterCreate"
+                  ],
+                  "path": "test/path/with--dash/with$/*"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(MAVEN_REPO1_NAME).upload("test/path/with--dash/with\$/file5.txt",
+                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+    }
+
     def 'test repo filter'() {
         setup:
         clearLoopbackBuffer()
