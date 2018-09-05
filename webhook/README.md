@@ -5,7 +5,6 @@ This plugin provides a webhook post to a remote service.  The plugin consists of
 1. webhook.groovy - the actual artifactory plugin
 2. webhook.config.json - configuration file for setting url and events for activation
 
-If an event is activated in webhook.properties, then the event will invoke the desigated webhook url.
 
 Installation
 -----------------

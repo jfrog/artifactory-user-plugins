@@ -17,12 +17,19 @@ class DBSyncNotificationTest extends Specification {
             def oldlines = new JsonSlurper().parse(conn.inputStream).logContent.readLines()
             conn.disconnect()
             lastline = oldlines.findAll { it ==~ /.*\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d.*/ }[-1]
-            if (lastlinum > startlinum) break
             lastlinum = oldlines.findIndexOf { it == lastline }
             startlinum = oldlines.findIndexOf { it.contains('Artifactory successfully started') }
+            if (lastlinum > startlinum) break
+            if (System.currentTimeMillis() > starttime + 120000) {
+                if (startlinum > -1) {
+                    break
+                } else {
+                    throw new Exception("Failed to get last log line after Artifactory startup")
+                }
+            }
             System.sleep(5000)
-            assert System.currentTimeMillis() <= starttime + 120000
         }
+
         conn = new URL(sync).openConnection()
         conn.requestMethod = 'POST'
         conn.setRequestProperty('Authorization', auth)
