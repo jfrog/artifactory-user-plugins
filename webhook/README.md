@@ -16,7 +16,7 @@ Confiiguration
 The webhook.config.json allows the configuration of multiple webhooks and has various webhook specific and global options.
 A particular webhook only requires a URL and the events it should listen to. This is the simplest possible configuration file:
 
-```
+```json
 {
   "webhooks": {
       "mywebhookname": {
@@ -57,7 +57,7 @@ You can make changes to the configuration without having to reload the plugin by
 #### Detailed Sample Configuration
 Here is an example of configuration file using all the bells and whistles:
 
-```
+```json
 {
   "webhooks": {
       "slack": {
@@ -90,7 +90,7 @@ Here is an example of configuration file using all the bells and whistles:
       "repositories": [
         "generic-local"
       ],
-      "path: "archive/contrib/*"
+      "path": "archive/contrib/*"
     },
     "allStorageAndReplication": {
       "url": "http://example4.com",
