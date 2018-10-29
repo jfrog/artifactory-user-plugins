@@ -292,11 +292,12 @@ temporarily.
 
 Issues and Limitations
 ----------------------
-- Ensure the user with admin privileges have valid password on all Artifactory clusters that have security replication plugin installed 
-  as configured in the securityReplication.json file
-- If, replicating more than 11K combined total users, groups and permissions, you may encounter "Packet for query to large" error in 
-  the artifactory logs. Refer to  
-[Increasing MySQL Default Packet Size]: https://www.jfrog.com/confluence/display/RTF/MySQL#MySQL-IncreasingMySQLDefaultPacketSize
+- Ensure the user with admin privileges have valid password on all Artifactory
+  clusters that have security replication plugin installed as configured in the
+  securityReplication.json file. 
+- If, replicating more than 11K combined total users, groups and permissions,
+  you may encounter "Packet for query to large" error in the artifactory logs.
+  Refer to [mysql][] to increase the MySQL maximum packet size. 
 - There are currently no locks on whether an instance is in the middle of
   replication. This means that the instance might be updated by two different
   jobs at once. This will never happen unless something else has gone wrong (the
@@ -325,3 +326,5 @@ Issues and Limitations
 - When upgrading the plugin itself, do not refresh the plugin lists while the
   plugin's sync job is running. Doing this can cause the plugin to stop working
   entirely. If this happens, Artifactory must be restarted.
+
+[mysql]: https://www.jfrog.com/confluence/display/RTF/MySQL#MySQL-IncreasingMySQLDefaultPacketSize
