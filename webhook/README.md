@@ -11,7 +11,7 @@ Installation
 1. Copy webhook.config.json.sample to webhook.config.json, configure and copy to ARTIFACTORY_HOME/etc/plugins
 2. Copy webhook.groovy to ARTIFACTORY_HOME/etc/plugins
 
-Confiiguration
+Configuration
 -----------------
 The webhook.config.json allows the configuration of multiple webhooks and has various webhook specific and global options.
 A particular webhook only requires a URL and the events it should listen to. This is the simplest possible configuration file:
