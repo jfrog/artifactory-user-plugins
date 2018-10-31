@@ -301,8 +301,8 @@ Issues and Limitations
 - There are currently no locks on whether an instance is in the middle of
   replication. This means that the instance might be updated by two different
   jobs at once. This will never happen unless something else has gone wrong (the
-  instance is part of two meshes at once, etc), but the plugin still needs to be
-  resistant to this problem. This will be fixed in the future.
+  instance is part of two meshes at once, etc), but it would be a data risk if it
+  occurred
 - The plugin assumes a full-mesh topology, and other topologies are not
   supported. Note that the topology used by this plugin need not necessarily
   match that used for artifact replication; you can use, say, a multi-star
@@ -310,8 +310,7 @@ Issues and Limitations
 - The plugin uses a single admin user to access all instances in the mesh, and
   does not yet support different users for different instances. This shouldn't
   be too much of a problem, considering the plugin ensures that all users exist
-  with the same properties on all instances, but it still might be preferred to
-  have this option available.
+  with the same properties on all instances.
 - If, for example, a permission target refers to a repository "test-repo", and
   this repository exists on site A but not on site B, the permission will still
   be replicated, and will simply refer to the nonexistant repository. If a
