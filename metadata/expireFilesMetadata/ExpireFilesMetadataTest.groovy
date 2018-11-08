@@ -2,7 +2,7 @@ import org.jfrog.artifactory.client.Artifactory
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.impl.RepositoryHandleImpl
 import org.jfrog.artifactory.client.model.Item
-import org.jfrog.artifactory.client.model.repository.settings.impl.DebianRepositorySettingsImpl
+import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
 
 import spock.lang.Specification
 
@@ -25,20 +25,20 @@ import spock.lang.Specification
 class ExpireFilesMetadataTest extends Specification {
 
     static final baseUrl = 'http://localhost:8088/artifactory'
-    static final remoteRepoKey = 'debian-remote'
-    static final virtualRepoKey = 'debian-virtual'
-    static final remoteRepoUrl = 'http://jfrog.bintray.com/artifactory-pro-debs/'
-    static final packagesPath = 'dists/xenial/main/binary-i386/Packages.gz'
+    static final remoteRepoKey = 'msys2-remote'
+    static final virtualRepoKey = 'msys2-virtual'
+    static final remoteRepoUrl = 'http://repo.msys2.org'
+    static final packagesPath = 'msys/x86_64/msys.db'
 
     def 'Files not expired download test'() {
         setup:
         def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
                 .setUsername('admin').setPassword('password').build()
-        def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
+        def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
         artifactory.plugins().execute('expireFilesMetadataConfig').
-                withParameter('action', 'reset').withParameter('repositories', '["debian-remote":[1800, ["**/*Packages.gz"]]]').sync()
+                withParameter('action', 'reset').withParameter('repositories', '["msys2-remote":[1800, ["**/*.db"]]]').sync()
 
         when:
         // Perform first download request
@@ -62,11 +62,11 @@ class ExpireFilesMetadataTest extends Specification {
         setup:
         def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
                 .setUsername('admin').setPassword('password').build()
-        def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
+        def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
         artifactory.plugins().execute('expireFilesMetadataConfig').
-                withParameter('action', 'reset').withParameter('repositories', '["debian-remote":[1, ["**/*Packages.gz"]]]').sync()
+                withParameter('action', 'reset').withParameter('repositories', '["msys2-remote":[1, ["**/*.db"]]]').sync()
 
         when:
         // Perform first download request
@@ -89,10 +89,10 @@ class ExpireFilesMetadataTest extends Specification {
         virtual?.delete()
     }
 
-    private RepositoryHandleImpl createRemoteDebianRepo(Artifactory artifactory, String key) {
+    private RepositoryHandleImpl createRemoteGenericRepo(Artifactory artifactory, String key) {
         def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder()
                 .key(key)
-                .repositorySettings(new DebianRepositorySettingsImpl())
+                .repositorySettings(new GenericRepositorySettingsImpl())
                 .url(remoteRepoUrl)
         artifactory.repositories().create(0, remoteBuilder.build())
         return artifactory.repository(key)

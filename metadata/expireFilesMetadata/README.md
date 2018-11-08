@@ -40,7 +40,21 @@ This plugin runs every time a download request is received. It will force a chec
 - Artifact name statisfying the pattern given in the properties file
 
 The expiry mechanism may force the artifact to be downloaded again from the remote repository.
-This can fix issues with CRAN metadata sync and with Debian metadata and for MSYS2 db metadata files. 
+This can fix issues with MSYS2 db metadata files. Thus you need :
+* create a remote repo (ex : msys2-remote)
+* point the MSYS2 official repo : http://repo.msys2.org
+* use a proxy if needed
+* pattern files to refresh msys2 metadata are : _*.db_, _*.sig_ : Properties file should be 
+
+```
+repositories = [
+    "msys2-remote":
+        [1800,
+            ["**/*.db", "**/*.sig"]
+        ]
+    ]
+```
+
 
 Execution
 ---------

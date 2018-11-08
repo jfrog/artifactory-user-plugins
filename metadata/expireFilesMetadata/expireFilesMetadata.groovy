@@ -76,17 +76,21 @@ download {
 
                 PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
 
-                if (isRemote(repoPath.repoKey) && shouldExpire(repoPath, expire)) {
+                if (isRemote(repoPath.repoKey) && isGeneric(repoPath.repoKey) && shouldExpire(repoPath, expire)) {
                     if (matcher.matches(Paths.get(repoPath.path))){
-                        log.info "DEBUG: Expiring " + pattern
+                        log.debug "Expiring " + pattern
                         expired = true
                     } else {
-                        log.info "DEBUG: Not expiring " + pattern
+                        log.debug "Not expiring " + pattern
                     }
                 }
             }
         }
     }
+}
+
+def isGeneric(String repoKey) {
+    return repositories.getRepositoryConfiguration(repoKey).getPackageType() == 'generic'
 }
 
 def isRemote(String repoKey) {
