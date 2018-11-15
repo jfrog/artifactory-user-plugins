@@ -39,11 +39,7 @@ executions {
 
         def repositoriesString = "[]"
         if (params['repositories']) {
-            if (params['repositories'].size == 1) {
-                repositoriesString = params['repositories'][0]
-            } else {
-                repositoriesString = params['repositories'].join(',')
-            }
+            repositoriesString = params['repositories'].join(',')
         }
         def configRepositories = new ConfigSlurper().parse('repositories=' + repositoriesString)
 
