@@ -1,25 +1,30 @@
 Artifactory Expires Files Metadata User Plugin
 ==============================================
 
-This plugin expires files when they are requested according to file pattern and expire delay stored in properties file.
+This plugin expires files when they are requested according to file pattern and expire delay stored in properties file so that the files are redownloaded.
 
 This plugin is inspired from [Expires Packages Metadata User Plugin](https://github.com/jfrog/artifactory-user-plugins/tree/master/metadata/expirePackagesMetadata).
 
-* Properties file format is Map where :
-    * the key is the repository key of the remote reposity
-    * the value is array where :
-        * the first value is the expire delay (in seconds)
-        * the following values are file patterns to apply the expire delay for the remote repository 
+`expireFilesMetadata.json`
+----------
+The json contains the properties for expiring delay for different repositories.
 
-* Properties File Sample
+JSon file format is Map where:
+- the key is the repository key of the remote repository where the following conf is applied
+  - delay : (in seconds) expire delay to force the download of the Files
+  - patterns : file patterns to apply thexpireFilesMetadata.jsonire delay for the remote repository
+
+Here is JSon File Sample:
 
 ```
-repositories = [
-    "generic-remote-msys2":
-        [1800,
-            ["**/*.db", "**/*.xz*", "**/*.sig"]
-        ]
-    ]
+{
+    "repositories": {
+        "msys2-remote": {
+            "delay": 1800,
+            "patterns": ["**/*.db", "**/*.sig"]
+        }
+    }
+}
 ```
 
 Installation
@@ -44,19 +49,26 @@ This can fix issues with MSYS2 db metadata files. Thus you need :
 * create a remote repo (ex : msys2-remote)
 * point the MSYS2 official repo : http://repo.msys2.org
 * use a proxy if needed
-* pattern files to refresh msys2 metadata are : _*.db_, _*.sig_ : Properties file should be 
+* pattern files to refresh msys2 metadata are : _*.db_, _*.sig_ : JSon file should be
 
 ```
-repositories = [
-    "msys2-remote":
-        [1800,
-            ["**/*.db", "**/*.sig"]
-        ]
-    ]
+{
+    "repositories": {
+        "msys2-remote": {
+            "delay": 1800,
+            "patterns": ["**/*.db", "**/*.sig"]
+        }
+    }
+}
 ```
-
 
 Execution
 ---------
 
 This plugin is automatically executed every time a download request is received by the Artifactory instance.
+
+
+expireFilesMetadataConfig
+-------------------------
+
+`expireFilesMetadataConfig` updates the current Expire Files Metadata configuration using the provided map object. See introduction for details.
