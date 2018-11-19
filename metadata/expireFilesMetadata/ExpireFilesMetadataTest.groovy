@@ -37,8 +37,22 @@ class ExpireFilesMetadataTest extends Specification {
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
-        artifactory.plugins().execute('expireFilesMetadataConfig').
-                withParameter('action', 'reset').withParameter('repositories', '["msys2-remote":[1800, ["**/*.db"]]]').sync()
+        artifactory.plugins().execute('expireFilesMetadataConfig')
+                .withParameter('action', 'reset')
+                .withParameter('repos',
+                '{' +
+                '   "repositories": {' +
+                '       "test": {' +
+                '           "delay": 1,' +
+                '           "patterns": ["**/*.jar"]' +
+                '       },' +
+                '       "msys2-remote": {' +
+                '           "delay": 1800,' +
+                '           "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]' +
+                '       }' +
+                '   }' +
+                '}')
+                .sync()
 
         when:
         // Perform first download request
@@ -65,8 +79,18 @@ class ExpireFilesMetadataTest extends Specification {
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
-        artifactory.plugins().execute('expireFilesMetadataConfig').
-                withParameter('action', 'reset').withParameter('repositories', '["msys2-remote":[1, ["**/*.db"]]]').sync()
+        artifactory.plugins().execute('expireFilesMetadataConfig')
+                .withParameter('action', 'reset')
+                .withParameter('repos',
+                '{' +
+                '   "repositories": {' +
+                '       "msys2-remote": {' +
+                '           "delay": 1,' +
+                '           "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]' +
+                '       }' +
+                '   }' +
+                '}')
+                .sync()
 
         when:
         // Perform first download request

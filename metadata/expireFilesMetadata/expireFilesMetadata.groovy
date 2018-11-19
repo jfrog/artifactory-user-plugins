@@ -22,67 +22,53 @@ import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 
+import groovy.json.JsonSlurper
 import groovy.transform.Field
 
-@Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
-
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURI().toURL())
-
-log.info "Check 'Expire Files Metadata' plugin repositories list: $config.repositories"
-
-def repos = config.repositories.clone()
+@Field final String CONFIG_FILE_PATH = "plugins/${this.class.name}.json"
+@Field config
 
 executions {
     expireFilesMetadataConfig() { params ->
+
         log.info "Update configuration with parameters: " + params
         def action = params['action'] ? params['action'][0] as String : "add"
 
-        def repositoriesString = "[]"
-        if (params['repositories']) {
-            repositoriesString = params['repositories'].join(',')
-        }
-        def configRepositories = new ConfigSlurper().parse('repositories=' + repositoriesString)
-
-        log.info "configRepositories: "+ configRepositories
-
         if (action == 'reset'){
             log.info "Reseting configuration before adds"
-            repos.clear()
+            config.repositories.clear()
         }
 
-        repos = configRepositories.repositories.clone()
+        def repos = new JsonSlurper().parseText(params['repos'])
+        config.repositories << repos.repositories
     }
 }
 
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
-        log.info "repoPath: " + repoPath
-
-        repos.each { repo, params ->
-            log.info "repo: " + repo
-            log.info "params: " + params
-
-            long expire = params[0] * 1000L
-            def patterns = params[1]
-
-            log.info "expire = " + expire
-            patterns.each { pattern ->
-                log.debug repo + ".pattern: " + pattern
-                log.debug "repoPath: " + repoPath.path
-
-                PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
-
-                if (isRemote(repoPath.repoKey) && isGeneric(repoPath.repoKey) && shouldExpire(repoPath, expire)) {
-                    if (matcher.matches(Paths.get(repoPath.path))){
-                        log.debug "Expiring " + pattern
-                        expired = true
-                    } else {
-                        log.debug "Not expiring " + pattern
+        config.repositories.each{ repoName, repoConfig ->
+            if (repoName == repoPath.repoKey) {
+                repoConfig.patterns.each { pattern ->
+                    PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
+                    if (isRemote(repoPath.repoKey) && isGeneric(repoPath.repoKey) && shouldExpire(repoPath, repoConfig.delay)) {
+                        if (matcher.matches(Paths.get(repoPath.path))){
+                            log.debug "Expiring " + pattern
+                            expired = true
+                        } else {
+                            log.debug "Not expiring " + pattern
+                        }
                     }
                 }
             }
         }
     }
+}
+
+def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
+
+if (configFile.exists()) {
+    config = new JsonSlurper().parse(configFile.toURL())
+    log.info "Check 'Expire Files Metadata' plugin repositories list: $config.repositories"
 }
 
 def isGeneric(String repoKey) {
