@@ -1,0 +1,12 @@
+{
+    "repositories": {
+        "generic-remote-msys2": {
+            "delay": 1800,
+            "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]
+        },
+        "test": {
+            "delay": 1,
+            "patterns": ["**/*.jar"]
+        }
+    }
+}
