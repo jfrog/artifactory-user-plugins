@@ -7,12 +7,12 @@ This plugin is inspired from [Expires Packages Metadata User Plugin](https://git
 
 `expireFilesMetadata.json`
 ----------
-The json contains the properties for expiring delay for different repositories.
+The Json contains the properties for expiring delay for different repositories.
 
 JSon file format is Map where:
 - the key is the repository key of the remote repository where the following conf is applied
   - delay : (in seconds) expire delay to force the download of the Files
-  - patterns : file patterns to apply thexpireFilesMetadata.jsonire delay for the remote repository
+  - patterns : file patterns to apply the delay for the remote repository
 
 Here is JSon File Sample:
 
@@ -71,4 +71,22 @@ This plugin is automatically executed every time a download request is received 
 expireFilesMetadataConfig
 -------------------------
 
-`expireFilesMetadataConfig` updates the current Expire Files Metadata configuration using the provided map object. See introduction for details.
+`expireFilesMetadataConfig` updates the current Expire Files Metadata configuration using the provided map object.
+
+Possible parameters are :
+- action : reset (if parameter not present or different from 'reset' value, action will 'add' ie configuration passed via json content will added)
+- json content : expire configuration coded in JSon format. See 'expireFilesMetadata.json' section for details
+
+Example
+
+```
+$ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
+>     "repositories": {
+>         "generic-remote-msys2": {
+>             "delay": 1800,
+>             "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]
+>         }
+>     }
+> }' 'http://localhost:8088/artifactory/api/plugins/execute/expireFilesMetadataConfig?params=action=reset'
+
+```

@@ -21,6 +21,7 @@ import java.nio.file.Paths
 import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
+import org.artifactory.resource.ResourceStreamHandle
 
 import groovy.json.JsonSlurper
 import groovy.transform.Field
@@ -29,18 +30,33 @@ import groovy.transform.Field
 @Field config
 
 executions {
-    expireFilesMetadataConfig() { params ->
+    expireFilesMetadataConfig() { params, ResourceStreamHandle body ->
+
+        def reader = new InputStreamReader(body.inputStream, 'UTF-8')
+        def json = null
+        try {
+            json = new JsonSlurper().parse(reader)
+        } catch (groovy.json.JsonException ex) {
+            message = "Problem parsing JSON: $ex.message"
+            status = 400
+            return
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
 
         log.info "Update configuration with parameters: " + params
         def action = params['action'] ? params['action'][0] as String : "add"
+
+        log.info "Json content: " + json
 
         if (action == 'reset'){
             log.info "Reseting configuration before adds"
             config.repositories.clear()
         }
 
-        def repos = new JsonSlurper().parseText(params['repos'])
-        config.repositories << repos.repositories
+        config.repositories << json.repositories
     }
 }
 

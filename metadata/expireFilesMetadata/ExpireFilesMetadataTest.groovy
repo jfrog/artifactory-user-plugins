@@ -25,6 +25,10 @@ import spock.lang.Specification
 class ExpireFilesMetadataTest extends Specification {
 
     static final baseUrl = 'http://localhost:8088/artifactory'
+    static final execBaseUrl = baseUrl + '/api/plugins/execute'
+    static final params = "?params=action=reset"
+    static final auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
+
     static final remoteRepoKey = 'msys2-remote'
     static final virtualRepoKey = 'msys2-virtual'
     static final remoteRepoUrl = 'http://repo.msys2.org'
@@ -37,10 +41,7 @@ class ExpireFilesMetadataTest extends Specification {
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
-        artifactory.plugins().execute('expireFilesMetadataConfig')
-                .withParameter('action', 'reset')
-                .withParameter('repos',
-                '{' +
+        def repos = '{' +
                 '   "repositories": {' +
                 '       "test": {' +
                 '           "delay": 1,' +
@@ -51,8 +52,16 @@ class ExpireFilesMetadataTest extends Specification {
                 '           "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]' +
                 '       }' +
                 '   }' +
-                '}')
-                .sync()
+                '}'
+
+        def conn = null
+        conn = new URL("$execBaseUrl/expireFilesMetadataConfig").openConnection()
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        conn.outputStream.write(repos.bytes)
+        assert conn.responseCode == 200
+        conn.disconnect()
 
         when:
         // Perform first download request
@@ -79,18 +88,24 @@ class ExpireFilesMetadataTest extends Specification {
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
-        artifactory.plugins().execute('expireFilesMetadataConfig')
-                .withParameter('action', 'reset')
-                .withParameter('repos',
-                '{' +
+
+        def repos = '{' +
                 '   "repositories": {' +
                 '       "msys2-remote": {' +
                 '           "delay": 1,' +
                 '           "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]' +
                 '       }' +
                 '   }' +
-                '}')
-                .sync()
+                '}'
+
+        def conn = null
+        conn = new URL("$execBaseUrl/expireFilesMetadataConfig").openConnection()
+        conn.doOutput = true
+        conn.setRequestProperty('Authorization', auth)
+        conn.setRequestProperty('Content-Type', 'application/json')
+        conn.outputStream.write(repos.bytes)
+        assert conn.responseCode == 200
+        conn.disconnect()
 
         when:
         // Perform first download request
