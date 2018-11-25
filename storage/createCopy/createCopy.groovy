@@ -31,9 +31,10 @@ storage {
 				toRepoPath = RepoPathFactory.create(repocopy, item.repoPath.path)
 				try {
 					repositories.copy(item.repoPath, toRepoPath)
+					log.debug("Copied artifact '" + item.repoPath.path + "' to repository '" + repocopy + "'.")
 				}
 				catch (Exception e) {
-					log.warn("Unable to copy artifact to " + repocopy + ": " + e)
+					log.warn("Unable to copy artifact '" + item.repoPath.path + "' to repository '" + repocopy + "' : " + e)
 				}
 			}
 		}
