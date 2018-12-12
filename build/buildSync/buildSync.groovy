@@ -30,6 +30,8 @@ import org.artifactory.build.BuildRun
 import org.artifactory.build.Builds
 import org.artifactory.build.DetailedBuildRun
 import org.artifactory.build.DetailedBuildRunImpl
+import org.artifactory.build.InternalBuildService
+import org.artifactory.concurrent.ArtifactoryRunnable
 import org.artifactory.exception.CancelException
 import org.artifactory.storage.build.service.BuildStoreService
 import org.artifactory.storage.db.DbService
@@ -54,6 +56,8 @@ import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.params.HttpParams
 import org.artifactory.request.RequestThreadLocal
+
+import org.springframework.security.core.context.SecurityContextHolder
 
 /**
  * Build Synchronization plugin replicates some build info json from one
@@ -298,7 +302,7 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
     NavigableSet<BuildRun> buildNamesToSync = src.filterBuildNames(buildNames)
     def buildThreadPool = Executors.newFixedThreadPool(maxThreads)
     def set = max == 0 ? buildNamesToSync : buildNamesToSync.descendingSet()
-
+    def authctx = SecurityContextHolder.context.authentication
     try {
         set.each { BuildRun srcBuild ->
             if (!force && !syncPromotions && srcBuild.started && srcBuild.started == dest.getLastStarted(srcBuild.name)) {
@@ -320,12 +324,13 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                 def futures = srcBuilds.collect { sb ->
                     if (max == 0 || submitted < max) {
                         submitted++
-                        buildThreadPool.submit( {
+                        def task = [run:{
                             Build buildInfo = src.getBuildInfo(sb)
                             if (buildInfo) {
                                 dest.addBuild(buildInfo)
                             }
-                        } as Callable)
+                        }] as Runnable
+                        buildThreadPool.submit(new ArtifactoryRunnable(task, ctx, authctx))
                     }
                 }
 
@@ -338,13 +343,14 @@ def doSync(BuildListBase src, BuildListBase dest, List<String> buildNames, boole
                             log.info "Found promotions change for build $sb"
                             if (max == 0 || submitted < max) {
                                 submitted++
-                                futures << buildThreadPool.submit({
+                                def task = [run:{
                                     Build buildInfo = src.getBuildInfo(sb)
                                     if (buildInfo) {
                                         dest.deleteBuild(db)
                                         dest.addBuild(buildInfo)
                                     }
-                                } as Callable)
+                                }] as Runnable
+                                futures << buildThreadPool.submit(new ArtifactoryRunnable(task, ctx, authctx))
                             }
                         }
                     }
@@ -627,6 +633,7 @@ class RemoteBuildService extends BuildListBase {
 class LocalBuildService extends BuildListBase {
     DbService dbService
     BuildStoreService buildStoreService
+    InternalBuildService buildService
     AddonsManager addonsManager
     PluginsAddon pluginsAddon
     Builds builds
@@ -640,6 +647,7 @@ class LocalBuildService extends BuildListBase {
         addonsManager = ctx.beanForType(AddonsManager.class)
         pluginsAddon = addonsManager.addonByType(PluginsAddon.class)
         buildStoreService = ctx.beanForType(BuildStoreService.class)
+        buildService = ctx.beanForType(InternalBuildService.class)
         builds = ctx.beanForType(Builds.class)
         searches = ctx.beanForType(Searches.class)
         this.reinsert = reinsert
@@ -696,7 +704,7 @@ class LocalBuildService extends BuildListBase {
                         if (activatePlugins) {
                             pluginsAddon.execPluginActions(BeforeBuildSaveAction.class, builds, detailedBuildRun)
                         }
-                        buildStoreService.addBuild(buildInfo)
+                        buildService.addBuild(buildInfo)
                         if (activatePlugins) {
                             pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun)
                         }
@@ -729,10 +737,18 @@ class LocalBuildService extends BuildListBase {
     @Override
     Build getBuildInfo(BuildRun b) {
         if (!ignoreStartDate) {
-            return buildStoreService.getBuildJson(b)
+            try {
+                return buildService.getBuild(b)
+            } catch (MissingMethodException ex) {
+                return buildStoreService.getBuildJson(b)
+            }
         } else {
             def buildRuns = builds.getBuilds(b.name, b.number, null)
-            return buildStoreService.getBuildJson(buildRuns[0])
+            try {
+                return buildService.getBuild(buildRuns[0])
+            } catch (MissingMethodException ex) {
+                return buildStoreService.getBuildJson(buildRuns[0])
+            }
         }
     }
 }
