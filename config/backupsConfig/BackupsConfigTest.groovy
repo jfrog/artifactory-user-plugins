@@ -42,7 +42,7 @@ class BackupsConfigTest extends Specification {
             createArchive: false,
             excludedRepositories: null,
             sendMailOnError: true,
-            excludeBuilds: true,
+            excludeBuilds: false,
             excludeNewRepositories: false]
         conn = new URL("$baseurl/addBackup").openConnection()
         conn.doOutput = true

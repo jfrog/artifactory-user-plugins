@@ -47,7 +47,11 @@ def propList = ['key': [
         { c, v -> c.sendMailOnError = v ?: false }
     ], 'excludeBuilds': [
         Boolean.class, 'boolean',
-        { c, v -> c.excludeBuilds = v ?: false }
+        { c, v ->
+            try {
+                c.excludeBuilds = v ?: false
+            } catch (MissingPropertyException ex) {}
+        }
     ], 'excludeNewRepositories': [
         Boolean.class, 'boolean',
         { c, v -> c.excludeNewRepositories = v ?: false }]]
@@ -94,7 +98,13 @@ executions {
             createArchive: backup.isCreateArchive() ?: false,
             excludedRepositories: exrepos ?: null,
             sendMailOnError: backup.isSendMailOnError() ?: false,
-            excludeBuilds: backup.isExcludeBuilds() ?: false,
+            excludeBuilds: {
+                try {
+                    return backup.isExcludeBuilds() ?: false
+                } catch (MissingMethodException ex) {
+                    return false
+                }
+            }(),
             excludeNewRepositories: backup.isExcludeNewRepositories() ?: false]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
