@@ -26,6 +26,10 @@ import org.artifactory.security.groups.LdapGroupsSettings
 realms {
     myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.ADDITIVE]) {
         authenticate { username, credentials ->
+            // Common special or internal users can be skipped
+            if (username in ['anonymous', '_internal', 'xray', 'access-admin']) {
+                return true
+            }
             def settings = new LdapGroupsSettings()
             // 'il-users' is an existing Ldap Group Setting Name in Artifactory
             // All the permissions given to the group will be inherited by the user
