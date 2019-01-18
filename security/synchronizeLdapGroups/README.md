@@ -1,5 +1,7 @@
 # Artifactory Synchronize LDAP Group Plugin
 
+**Notice:** *There have been reports of this plugin causing intermittent `401 Unauthorized` errors during login. This appears to be uncommon, but is more common when pulling from Docker repositories. Affected versions are Artifactory 6.5.13 and newer. We are in the process of investigating this issue.*
+
 ## Features
 
 This plugin can be used to attach LDAP groups permission to any user. The permissions will be attached per session and the user will not become a constant member of the group.
