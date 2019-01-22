@@ -53,6 +53,6 @@ class Ivy2pomTest extends Specification {
         Control.setFileContent(8088, dst + jar2, new File(src + jar2))
         Control.stop(8088)
         Control.resume(8088)
-        System.sleep(5000)
+        System.sleep(8000)
     }
 }

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.sun.jersey.core.util.MultivaluedMapImpl
 import org.artifactory.addon.nuget.rest.NuGetRequestContext
 import org.artifactory.addon.nuget.search.delegate.id.FindPackagesByIdFeedRequestDelegate
 import org.artifactory.exception.CancelException
@@ -78,7 +77,7 @@ storage {
         else id = (item.name =~ '^(?:\\D[^.]*\\.)+')[0] - ~'\\.$'
         def repoService = ctx.beanForType(InternalRepositoryService.class)
         def ps3 = new LinkedMultiValueMap()
-        def ps4 = new MultivaluedMapImpl()
+        def ps4 = new MultivaluedHashMap()
         ps3.add('id', "'$id'" as String)
         ps4.add('id', "'$id'" as String)
         def context = new NuGetRequestContext()

@@ -20,14 +20,13 @@ import org.artifactory.fs.ItemInfo
 import org.artifactory.repo.RepoPath
 import org.codehaus.mojo.versions.ordering.VersionComparator
 import org.codehaus.mojo.versions.ordering.VersionComparators
-import org.semver.Comparer
-import org.semver.Delta
-import org.osjava.jardiff.SimpleDiffCriteria
+import japicmp.cmp.JApiCmpArchive
+import japicmp.cmp.JarArchiveComparator
+import japicmp.cmp.JarArchiveComparatorOptions
 
 import java.nio.file.Path
 
 import static java.nio.file.Files.*
-import static org.semver.Delta.CompatibilityType.NON_BACKWARD_COMPATIBLE
 
 @Field final String COMPATIBLE_PROPERTY_NAME = 'approve.binaryCompatibleWith'
 @Field final String INCOMPATIBLE_PROPERTY_NAME = 'approve.binaryIncompatibleWith'
@@ -57,10 +56,10 @@ storage {
                         try {
                             newOutputStream(currentTempFile) << repositories.getContent(item.repoPath).inputStream
                             newOutputStream(previousTempFile) << repositories.getContent(previousVersion).inputStream
-                            def criteria = new SimpleDiffCriteria()
-                            Delta delta = new Comparer(criteria, previousTempFile.toFile(), currentTempFile.toFile(), [] as Set,
-                                [] as Set).diff()
-                            boolean compatible = delta.computeCompatibilityType().compareTo(NON_BACKWARD_COMPATIBLE) != 0
+                            def newf = new JApiCmpArchive(currentTempFile.toFile(), currentLayout.baseRevision)
+                            def oldf = new JApiCmpArchive(previousTempFile.toFile(), previousLayout.baseRevision)
+                            def delta = new JarArchiveComparator(new JarArchiveComparatorOptions()).compare(oldf, newf)
+                            def compatible = delta.every { it.isBinaryCompatible() }
                             repositories.setProperty(item.repoPath,
                                 compatible ? COMPATIBLE_PROPERTY_NAME : INCOMPATIBLE_PROPERTY_NAME,
                                 previousLayout.baseRevision)
