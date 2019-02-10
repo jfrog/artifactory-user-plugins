@@ -1,4 +1,4 @@
-*** Deprecation NOTICE ***
+## __*** Deprecation NOTICE ***__
 
 With the release of the Build Info Repository feature in JFrog Artifactory, the Build Sync has been deprecated. 
 Accordingly, support for Build Sync is not being carried forward for versions of JFrog Artifactory 6.6.0 and beyond.
