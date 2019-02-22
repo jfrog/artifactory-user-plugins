@@ -5,7 +5,7 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <!-- See https://github.com/JFrogDev/artifactory-user-plugins-devenv/blob/master/README-EclipseMaven.md for explanations -->
-  <description>Just to simply the users plugins development, not managing the project life cycle</description>
+  <description>Just to simplify the users plugins development, not managing the project life cycle</description>
   <properties>
     <!-- Properties to update depending your current development (ex: 'cleanup/artifactCleanup') and the local Artifactory endpoint -->
     <user.plugin.dev>dummyPlugin</user.plugin.dev>
