@@ -8,7 +8,7 @@ jobs {
         indexFiles = searches.artifactsByName('APKINDEX.tar.gz', *alpineCaches)
         log.info("Found apk index files that will be deleted: {}", indexFiles)
         indexFiles.each {
-            log.warn("deleting apk index files: {}", it)
+            log.info("Deleting apk index files: {}", it)
             repositories.delete(it)
         }
     }
