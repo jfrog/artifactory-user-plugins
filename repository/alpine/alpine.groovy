@@ -9,7 +9,7 @@ import org.artifactory.repo.RepoPathFactory
  * A smaller value will of course produce more server load.
  */
 jobs {
-	deleteApkIndexFiles(delay: 0, interval: 60000) {
+    deleteApkIndexFiles(delay: 0, interval: 60000) {
         alpineRepos = getAlpineRepos()
         alpineCaches = alpineRepos.collect { it.getRepoKey() + '-cache' }
         indexFiles = searches.artifactsByName('APKINDEX.tar.gz', *alpineCaches)
@@ -25,7 +25,7 @@ jobs {
  * Returns a list of local alpine repositories, determined by the existence of the 'alpine' property.
  */
 List<RepoPath> getAlpineRepos() {
-	repositories.getRemoteRepositories()
-		.collect { RepoPathFactory.create(it) }
-		.findAll { repositories.hasProperty(it, 'alpine') }
+    repositories.getRemoteRepositories()
+        .collect { RepoPathFactory.create(it) }
+        .findAll { repositories.hasProperty(it, 'alpine') }
 }
