@@ -28,7 +28,7 @@ class OldPasswordRealmTest extends Specification {
                 .email("test4@jfrog.com")
                 .admin(true)
                 .profileUpdatable(true)
-                .password("test")
+                .password("password")
                 .build()
         artifactory.security().createOrUpdate(user)
 

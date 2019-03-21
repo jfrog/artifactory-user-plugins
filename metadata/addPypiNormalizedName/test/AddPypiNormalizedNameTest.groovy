@@ -40,7 +40,7 @@ class AddPypiNormalizedNameTest extends Specification {
         def local = builder.localRepositoryBuilder().key('pypi-local')
             .repositorySettings(new PypiRepositorySettingsImpl()).build()
         def remote = builder.remoteRepositoryBuilder().key('pypi-remote')
-            .url('http://localhost:8081/artifactory/api/pypi/pypi-local/')
+            .url('http://localhost:8088/artifactory/api/pypi/pypi-local/')
             .repositorySettings(new PypiRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
         artifactory.repositories().create(0, remote)
