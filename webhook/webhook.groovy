@@ -496,12 +496,12 @@ class WebHook {
             def webhookListeners = triggers.get(event)
             if (webhookListeners) {
                 // We need to do this twice to do all async first
-                for (WebhookEndpointDetails webhook : webhookListeners) {
+                for (WebhookEndpointDetails webhookListener : webhookListeners) {
                     try {
-                        if (webhook.isAsync()) {
+                        if (webhookListener.isAsync()) {
                             if (eventPassedFilters(event, json, webhook))
                                 excutorService.execute(
-                                        new PostTask(webhook.url, getFormattedJSONString(json, event, webhook)))
+                                        new PostTask(webhookListener.url, getFormattedJSONString(json, event, webhookListener)))
                         }
                     } catch (Exception e) {
                         // We don't capture async results
@@ -512,7 +512,7 @@ class WebHook {
                 for (def webhookListener : webhookListeners) {
                     try {
                         if (!webhookListener.isAsync())
-                            if (eventPassedFilters(event, json, webhook))
+                            if (eventPassedFilters(event, json, webhookListener))
                                 callPost(webhookListener.url, getFormattedJSONString(json, webhook))
                     } catch (Exception e) {
                         if (debug)
