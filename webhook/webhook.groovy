@@ -499,7 +499,7 @@ class WebHook {
                 for (WebhookEndpointDetails webhookListener : webhookListeners) {
                     try {
                         if (webhookListener.isAsync()) {
-                            if (eventPassedFilters(event, json, webhook))
+                            if (eventPassedFilters(event, json, webhookListener))
                                 excutorService.execute(
                                         new PostTask(webhookListener.url, getFormattedJSONString(json, event, webhookListener)))
                         }
@@ -513,7 +513,7 @@ class WebHook {
                     try {
                         if (!webhookListener.isAsync())
                             if (eventPassedFilters(event, json, webhookListener))
-                                callPost(webhookListener.url, getFormattedJSONString(json, webhook))
+                                callPost(webhookListener.url, getFormattedJSONString(json, event, webhookListener))
                     } catch (Exception e) {
                         if (debug)
                             e.printStackTrace()
