@@ -40,12 +40,14 @@ A particular webhook only requires a URL and the events it should listen to. Thi
 | enabled | Whether this webhook should be enabled     | false     | true       |
 | format | The formatting of the message     | false     | default       |
 
+
 ### Global properties
 | Property      | Description   | Required  | Default |
 | ------------- | ------------- | --------- | ------- |
 | debug     | Additional logging | false      | false       |
 | timeout      | Timeout for POST call      | false      | 15000 (ms)  |
-
+| baseUrl      | Base URL of Artifactory instance. Only applies to Spinnaker format      | false      | -  |
+| enablespinnakersupport      | Whether spinnaker format should be enabled      | false      | false  |
 
 #### Making changes to the configuration
 
@@ -136,12 +138,38 @@ Webhook Formatters
 
 * default - The default formatter
 * slack - A POST formatted specifically for Slack
+* spinnaker - A POST formatted specifically for Spinnaker
 
 #### Using the slack format
 
 In order to work with Slack POST hooks, you need to add the [incoming-webhook app](https://api.slack.com/incoming-webhooks).
 This will generate a look with the format 'https://hooks.slack.com/services/######/######/#######' which you will use as
 the **url** in the configuration file. See the detailed sample configuration above.
+
+#### Using the spinnaker format
+
+In order to work with Spinnaker POST hooks, you need to enable spinnaker support and set the base url.
+This will generate a look with the format 'https://www.spinnaker.io/reference/artifacts/#format' which you will use as
+the **url** in the configuration file. See the detailed sample configuration below.
+
+```jason
+{
+  "webhooks": {
+    "mywebhookname": {
+      "url": "https://hookb.in/ggdlX2mxoQCB0B1y8DQ0",
+      "events": [
+        "storage.afterCreate"
+      ],
+      "format": "spinnaker"
+    }
+  },
+  "debug": false,
+  "timeout": 15000,
+  "baseurl": "http://localhost:8081/artifactory",
+  "enablespinnakersupport": true
+}
+```
+
 
 
 Copyright &copy; 2011-, JFrog Ltd.

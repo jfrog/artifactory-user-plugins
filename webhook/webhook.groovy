@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+
+import com.google.common.collect.BiMap
+import com.google.common.collect.ImmutableBiMap
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import java.util.regex.Pattern
@@ -77,6 +80,9 @@ class Globals {
         ],
         slack: [
             description: "A POST formatted specifically for Slack", formatter: new SlackFormatter ( )
+        ],
+        spinnaker: [
+                description: "A POST formatted specifically for Spinnaker", formatter: new SpinnakerFormatter ()
         ]
     ]
 
@@ -99,6 +105,26 @@ class Globals {
         def idx = event.indexOf('.')
         return SUPPORT_MATRIX[event.substring(0, idx)][event.substring(idx + 1)]
     }
+
+    enum PackageTypeEnum {
+        HELM("helm/chart"),
+
+        private String value
+
+        PackageTypeEnum(String value) {
+            this.value = value
+        }
+
+        String toString() {
+            return value;
+        }
+    }
+
+    static final BiMap<String, PackageTypeEnum> PACKAGE_TYPE_MAP = new ImmutableBiMap.Builder<String, PackageTypeEnum>()
+            .put("helm", PackageTypeEnum.HELM)
+            .build()
+
+
 }
 
 /**
@@ -161,7 +187,28 @@ storage {
      * item (org.artifactory.fs.ItemInfo) - the original item being created.
      */
     afterCreate { item ->
-        hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
+        def json = new JsonBuilder()
+        def repoKey = item.repoKey
+        def repoInfo = repositories.getRepositoryConfiguration(repoKey)
+        def packageType = repoInfo.getPackageType()
+        def idx = item.name.indexOf('-')
+        def name = item.name.substring(0, idx)
+        def version = item.name.substring(idx +1 , item.name.lastIndexOf('.'))
+
+        json (
+                item: item,
+                type: Globals.PACKAGE_TYPE_MAP.get(packageType).toString(),
+                name: name,
+                version: version,
+                reference: "${WebHook.baseUrl()}/${item.repoKey}/${item.relPath}"
+        )
+
+        if (WebHook.isEnableSpinnakerSupport() && item.name != 'index.yaml'){
+            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
+        } else {
+            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
+        }
+
     }
 
     /**
@@ -273,6 +320,35 @@ class ResponseFormatter {
                     event: event,
                     data: data.content
             )
+        }
+        return builder
+    }
+}
+
+/**
+ * Spinnaker formatter
+ */
+class SpinnakerFormatter {
+    def format(String event, JsonBuilder data) {
+        def eventTypeMetadta = Globals.eventToSupported(event)
+        def builder = new JsonBuilder()
+        def json = data.content
+
+        if (Globals.SUPPORT_MATRIX.storage.afterCreate.name == eventTypeMetadta.name) {
+            builder {
+                artifacts(
+                    [
+                        type: json.type,
+                        name: json.name,
+                        version: json.version,
+                        reference: json.reference
+                    ]
+                )
+            }
+        } else{
+            builder {
+                text "Artifactory: ${eventTypeMetadta['humanName']} event is not supported by Spinnaker formatter"
+            }
         }
         return builder
     }
@@ -434,6 +510,9 @@ class WebHook {
     def triggers = new HashMap()
     def debug = false
     def connectionTimeout = 15000
+    def baseUrl
+    def enableSpinnakerSupport
+
     // Used for async POSTS
     ExecutorService excutorService = Executors.newFixedThreadPool(10)
 
@@ -471,6 +550,17 @@ class WebHook {
     static boolean debug() {
         return me != null && me.debug == true
     }
+
+
+    static String baseUrl() {
+        return me.baseUrl
+    }
+
+    static boolean isEnableSpinnakerSupport() {
+        return me.enableSpinnakerSupport
+    }
+
+
 
     /**
      * Determine which formatter to use for the body
@@ -668,6 +758,12 @@ class WebHook {
             // Timeout
             if (config.containsKey("timeout") && config.timeout > 0 && config.timeout <= MAX_TIMEOUT)
                 me.connectionTimeout = config.timeout
+            // BaseUrl
+            if (config.containsKey("baseurl"))
+                me.baseUrl = config.baseurl
+            // SpinnakerSupport
+            if (config.containsKey("enablespinnakersupport"))
+                me.enableSpinnakerSupport = config.enablespinnakersupport
         }
     }
 

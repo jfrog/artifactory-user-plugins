@@ -9,8 +9,8 @@
   <properties>
     <!-- Properties to update depending your current development (ex: 'cleanup/artifactCleanup') and the local Artifactory endpoint -->
     <user.plugin.dev>dummyPlugin</user.plugin.dev>
-    <artifactory.home.location>${env.ARTIFACTORY_HOME}</artifactory.home.location>
-    <version.artifactory>5.4.4</version.artifactory>
+    <artifactory.home.location>/Users/weeratha/Servers/artifactory-pro-6.9.0</artifactory.home.location>
+    <version.artifactory>6.9.0</version.artifactory>
 
     <!-- Common properties -->
     <sonar.exclusions>**/*.java,**/*Test.groovy,**/*test.groovy</sonar.exclusions>
@@ -20,6 +20,18 @@
   <build>
     <testSourceDirectory>${user.plugin.dev}</testSourceDirectory>
     <plugins>
+
+      <!--<plugin>-->
+        <!--<groupId>org.codehaus.gmaven</groupId>-->
+        <!--<artifactId>groovy-maven-plugin</artifactId>-->
+        <!--<dependencies>-->
+          <!--<dependency>-->
+            <!--<groupId>org.codehaus.groovy</groupId>-->
+            <!--<artifactId>groovy-all</artifactId>-->
+            <!--<version>2.4.10</version>-->
+          <!--</dependency>-->
+        <!--</dependencies>-->
+      <!--</plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -67,7 +79,7 @@
     <dependency>
       <groupId>org.spockframework</groupId>
       <artifactId>spock-core</artifactId>
-      <version>1.1-groovy-2.4</version>
+      <version>1.1-groovy-2.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
@@ -78,7 +90,7 @@
     <dependency>
       <groupId>org.jfrog.artifactory.client</groupId>
       <artifactId>artifactory-java-client-services</artifactId>
-      <version>2.5.1</version>
+      <version>2.8.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.groovy</groupId>
