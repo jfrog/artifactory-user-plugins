@@ -187,24 +187,29 @@ storage {
      * item (org.artifactory.fs.ItemInfo) - the original item being created.
      */
     afterCreate { item ->
-        def json = new JsonBuilder()
-        def repoKey = item.repoKey
-        def repoInfo = repositories.getRepositoryConfiguration(repoKey)
-        def packageType = repoInfo.getPackageType()
-        def idx = item.name.indexOf('-')
-        def name = item.name.substring(0, idx)
-        def version = item.name.substring(idx +1 , item.name.lastIndexOf('.'))
+        if (WebHook.isEnableSpinnakerSupport()){
 
-        json (
-                item: item,
-                type: Globals.PACKAGE_TYPE_MAP.get(packageType).toString(),
-                name: name,
-                version: version,
-                reference: "${WebHook.baseUrl()}/${item.repoKey}/${item.relPath}"
-        )
+            def json = new JsonBuilder()
+            def repoKey = item.repoKey
+            def repoInfo = repositories.getRepositoryConfiguration(repoKey)
+            def packageType = repoInfo.getPackageType()
+            def idx = item.name.indexOf('-')
+            def name = idx != -1 ? item.name.substring(0, idx) : null
+            def version = idx != -1 ? item.name.substring(idx +1 , item.name.lastIndexOf('.')) : null
 
-        if (WebHook.isEnableSpinnakerSupport() && item.name != 'index.yaml'){
-            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
+            json (
+                    item: item,
+                    type: Globals.PACKAGE_TYPE_MAP.get(packageType).toString(),
+                    name: name,
+                    version: version,
+                    reference: "${WebHook.baseUrl()}/${item.repoKey}/${item.relPath}",
+                    repoKey: repoKey
+            )
+
+            if (item.name != 'index.yaml'){
+                hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
+            }
+
         } else {
             hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
         }

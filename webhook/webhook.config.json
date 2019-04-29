@@ -1,0 +1,15 @@
+{
+  "webhooks": {
+    "spinnaker": {
+      "url": "https://hookb.in/ggdlX2mxoQCB0B1y8DQ0",
+      "events": [
+        "storage.afterCreate"
+      ],
+      "format": "spinnaker"
+    }
+  },
+  "debug": true,
+  "timeout": 15000,
+  "baseurl": "http://localhost:8081/artifactory",
+  "enablespinnakersupport": true
+}
