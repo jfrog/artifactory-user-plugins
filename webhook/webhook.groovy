@@ -108,6 +108,7 @@ class Globals {
 
     enum PackageTypeEnum {
         HELM("helm/chart"),
+        DOCKER ("docker/image")
 
         private String value
 
@@ -122,6 +123,7 @@ class Globals {
 
     static final BiMap<String, PackageTypeEnum> PACKAGE_TYPE_MAP = new ImmutableBiMap.Builder<String, PackageTypeEnum>()
             .put("helm", PackageTypeEnum.HELM)
+            .put("docker", PackageTypeEnum.DOCKER)
             .build()
 
 
