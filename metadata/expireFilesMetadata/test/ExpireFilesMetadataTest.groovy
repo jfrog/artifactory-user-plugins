@@ -31,13 +31,19 @@ class ExpireFilesMetadataTest extends Specification {
 
     static final remoteRepoKey = 'msys2-remote'
     static final virtualRepoKey = 'msys2-virtual'
-    static final remoteRepoUrl = 'http://repo.msys2.org'
     static final packagesPath = 'msys/x86_64/msys.db'
 
     def 'Files not expired download test'() {
         setup:
         def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
                 .setUsername('admin').setPassword('password').build()
+        def builder = artifactory.repositories().builders()
+        def source = builder.localRepositoryBuilder().key('source-local')
+        source.repositorySettings(new GenericRepositorySettingsImpl())
+        artifactory.repositories().create(0, source.build())
+        def sourcerepo = artifactory.repository('source-local')
+        def msysdb = new File('./src/test/groovy/ExpireFilesMetadataTest/msys.db')
+        sourcerepo.upload(packagesPath, msysdb).doUpload();
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
@@ -77,6 +83,7 @@ class ExpireFilesMetadataTest extends Specification {
         infoSecondDownloadRequest.lastUpdated == infoFirstDownloadRequest.lastUpdated
 
         cleanup:
+        sourcerepo?.delete()
         remote?.delete()
         virtual?.delete()
     }
@@ -85,6 +92,13 @@ class ExpireFilesMetadataTest extends Specification {
         setup:
         def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
                 .setUsername('admin').setPassword('password').build()
+        def builder = artifactory.repositories().builders()
+        def source = builder.localRepositoryBuilder().key('source-local')
+        source.repositorySettings(new GenericRepositorySettingsImpl())
+        artifactory.repositories().create(0, source.build())
+        def sourcerepo = artifactory.repository('source-local')
+        def msysdb = new File('./src/test/groovy/ExpireFilesMetadataTest/msys.db')
+        sourcerepo.upload(packagesPath, msysdb).doUpload();
         def remote = createRemoteGenericRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
@@ -124,15 +138,16 @@ class ExpireFilesMetadataTest extends Specification {
         infoSecondDownloadRequest.lastUpdated > infoFirstDownloadRequest.lastUpdated
 
         cleanup:
+        sourcerepo?.delete()
         remote?.delete()
         virtual?.delete()
     }
 
     private RepositoryHandleImpl createRemoteGenericRepo(Artifactory artifactory, String key) {
         def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder()
-                .key(key)
-                .repositorySettings(new GenericRepositorySettingsImpl())
-                .url(remoteRepoUrl)
+        remoteBuilder.key(key)
+        remoteBuilder.repositorySettings(new GenericRepositorySettingsImpl())
+        remoteBuilder.url('http://localhost:8088/artifactory/source-local')
         artifactory.repositories().create(0, remoteBuilder.build())
         return artifactory.repository(key)
     }
