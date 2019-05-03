@@ -11,6 +11,12 @@ class RemoteDownloadTest extends Specification {
             .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
+        def source = builder.localRepositoryBuilder().key('source-local')
+        source.repositorySettings(new MavenRepositorySettingsImpl())
+        artifactory.repositories().create(0, source.build())
+        def sourcerepo = artifactory.repository('source-local')
+        def png = new File('./src/test/groovy/RemoteDownloadTest/googlelogo_color_272x92dp.png')
+        sourcerepo.upload('images/branding/googlelogo/1x/googlelogo_color_272x92dp.png', png).doUpload();
         def local = builder.localRepositoryBuilder().key('maven-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
@@ -22,6 +28,7 @@ class RemoteDownloadTest extends Specification {
         artifactory.repository('maven-local').file('my/new/path/image.png').info()
 
         cleanup:
+        artifactory.repository('source-local').delete()
         artifactory.repository('maven-local').delete()
     }
 }
