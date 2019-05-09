@@ -152,20 +152,28 @@ In order to work with Spinnaker POST hooks, you need to enable spinnaker support
 This will generate a look with the format 'https://www.spinnaker.io/reference/artifacts/#format' which you will use as
 the **url** in the configuration file. See the detailed sample configuration below.
 
-```jason
+```json
 {
   "webhooks": {
-    "mywebhookname": {
-      "url": "https://hookb.in/ggdlX2mxoQCB0B1y8DQ0",
+    "helm": {
+      "url": "SPINNAKER WEBHOOK URL for HELM",
       "events": [
         "storage.afterCreate"
+      ],
+      "path": "*.tgz",
+      "format": "spinnaker"
+    },
+    "docker": {
+      "url": "SPINNAKER WEBHOOK URL for Docker",
+      "events": [
+        "docker.tagCreated"
       ],
       "format": "spinnaker"
     }
   },
   "debug": false,
   "timeout": 15000,
-  "baseurl": "http://localhost:8081/artifactory",
+  "baseurl": "Artifactory base URL -- http://localhost:8081/artifactory",
   "enablespinnakersupport": true
 }
 ```

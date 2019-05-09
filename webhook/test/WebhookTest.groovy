@@ -3,7 +3,7 @@ import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.repository.settings.impl.DockerRepositorySettingsImpl
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder
-//import org.jfrog.lilypad.Control
+import org.jfrog.lilypad.Control
 
 /**
  * Tests for Webhook
@@ -23,8 +23,8 @@ import org.jfrog.artifactory.client.ArtifactoryClientBuilder
  */
 class WebhookTest extends Specification {
     // Artifactory
-    static def BASE_URL = 'http://localhost:8081/artifactory'
-    static def BASE_PORT = 8081
+    static def BASE_URL = 'http://localhost:8088/artifactory'
+    static def BASE_PORT = 8088
     static def RELOAD_PLUGINS_URL = 'api/plugins/reload'
     static def BUILD_UPLOAD_URL = 'api/build'
     static def MAVEN_REPO1_NAME = "maven-local"
@@ -32,13 +32,13 @@ class WebhookTest extends Specification {
     static def DOCKER_REPO_NAME = "docker-local"
 
     // Webhook
-    static def WEBHOOK_PATH = '/Users/weeratha/Servers/artifactory-pro-6.9.0/etc/plugins/webhook.groovy'
-    static def WEBHOOK_CONFIG_PATH = '/Users/weeratha/Servers/artifactory-pro-6.9.0/etc/plugins/webhook.config.json'
+    static def WEBHOOK_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhook.groovy'
+    static def WEBHOOK_CONFIG_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhook.config.json'
     static def WEBHOOK_INFO_URL = 'api/plugins/execute/webhookInfo'
     static def WEBHOOK_PING_URL = 'api/plugins/execute/pingWebhook'
     static def WEBHOOK_RELOAD_URL = 'api/plugins/execute/webhookReload'
     // Loopback
-    static def WEBHOOK_LOOPBACK_PATH = '/Users/weeratha/Servers/artifactory-pro-6.9.0/etc/plugins/webhookLoopback.groovy'
+    static def WEBHOOK_LOOPBACK_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhookLoopback.groovy'
     static def WEBHOOK_LOOPBACK_CLEAR_URL = 'api/plugins/execute/webhookLoopbackClear'
     static def WEBHOOK_LOOPBACK_POST_URL = 'api/plugins/execute/webhookLoopback'
     static def WEBHOOK_LOOPBACK_GET_URL = 'api/plugins/execute/webhookLoopbackDetails'
@@ -50,13 +50,13 @@ class Globals {
 }
 
 executions {
-    webhookLoopback (httpMethod: 'POST', users:['anonymous', 'admin', 'test']) { params, ResourceStreamHandle body ->
+    webhookLoopback (httpMethod: 'POST', users:['anonymous', 'admin']) { params, ResourceStreamHandle body ->
         Globals.replies << body.inputStream.text
     }
-    webhookLoopbackClear (httpMethod: 'POST', users:['anonymous', 'admin', 'test']) {
+    webhookLoopbackClear (httpMethod: 'POST', users:['anonymous', 'admin']) {
         Globals.replies = []
     }
-    webhookLoopbackDetails (httpMethod: 'GET', users:['anonymous', 'admin', 'test']) {
+    webhookLoopbackDetails (httpMethod: 'GET', users:['anonymous', 'admin']) {
         message = Globals.replies
     }
 }
@@ -73,7 +73,7 @@ executions {
     def setupSpec() {
         // Create some repositories
         artifactory = ArtifactoryClientBuilder.create().setUrl(BASE_URL)
-                .setUsername('test').setPassword('Test1234').build()
+                .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key(MAVEN_REPO1_NAME)
                 .repositorySettings(new MavenRepositorySettingsImpl()).build()
@@ -87,7 +87,7 @@ executions {
 
 
         // Load the loopback plugin used for testing
-        //Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, WEBHOOK_LOOPBACK_CODE)
+        Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, WEBHOOK_LOOPBACK_CODE)
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
     }
 
@@ -98,9 +98,9 @@ executions {
         artifactory.repository(DOCKER_REPO_NAME).delete()
 
         // Delete loopback plugin
-        //Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, "")
+        Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, "")
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_LOOPBACK_PATH)
+        Control.deleteFolder(BASE_PORT, WEBHOOK_LOOPBACK_PATH)
     }
 
     /**
@@ -108,9 +108,9 @@ executions {
      * @param config The contents of what should go in webhook.config.json
      */
     def reloadAndVerifyConfig(config) {
-        //Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, config)
+        Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, config)
         // Force plugin reload to avoid double hook issue
-        //Control.setFileContent(BASE_PORT, WEBHOOK_PATH, Control.getFileContent(BASE_PORT, WEBHOOK_PATH))
+        Control.setFileContent(BASE_PORT, WEBHOOK_PATH, Control.getFileContent(BASE_PORT, WEBHOOK_PATH))
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
         return callPost("${BASE_URL}/${WEBHOOK_RELOAD_URL}", "")
     }
@@ -118,7 +118,7 @@ executions {
 
     def 'test basic'() {
         setup:
-        //Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, "{}")
+        Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, "{}")
 
         // webhookInfo execution point
         when:
@@ -132,41 +132,8 @@ executions {
         then:
         results.code == SUCCESS_CODE && results.response.contains("Reloaded")
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
-    }
-
-    def 'test storageAfterCreate'() {
-        setup:
-        clearLoopbackBuffer()
-
-        // 1. Test without the filter
-        when:
-        def reload = reloadAndVerifyConfig('''{
-          "webhooks": {
-              "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
-                  "events": [
-                    "storage.afterCreate"
-                  ]
-              }
-          }
-        }
-        ''')
-        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
-        artifactory.repository(MAVEN_REPO1_NAME).upload("test/storage/file1.txt",
-                new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
-        sleep(DEFAULT_SLEEP)
-        def json = getLoopbackBuffer()
-        then:
-        assert json instanceof java.util.List
-        json.size() == 1
-        json[0].artifactory.webhook.data.createdBy == "admin"
-        json[0].artifactory.webhook.data.name == "file1.txt"
-        json[0].artifactory.webhook.event == "storage.afterCreate"
-        json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
-
-
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test storage'() {
@@ -334,8 +301,8 @@ executions {
         json.size() == 1
         json[0].artifactory.webhook.event == "storage.afterPropertyDelete"
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test build'() {
@@ -368,8 +335,8 @@ executions {
         json[0].artifactory.webhook.data.number == "1.0"
 
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test execute'() {
@@ -399,8 +366,8 @@ executions {
         json[0].artifactory.webhook.data.message == "It works!"
 
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test docker'() {
@@ -456,8 +423,8 @@ executions {
         json[0].artifactory.webhook.data.docker.image == "busybox"
         json[0].artifactory.webhook.data.docker.tag == "latest"
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test formatters'() {
@@ -511,8 +478,8 @@ executions {
         json.size() == 1
         assert json[0].text.contains("Artifactory:")
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test path and repo combo filter'() {
@@ -631,8 +598,8 @@ executions {
         json[0].artifactory.webhook.event == "storage.afterCreate"
         json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test path filter'() {
@@ -790,8 +757,8 @@ executions {
         assert json instanceof java.util.List
         json.size() == 1
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test repo filter'() {
@@ -911,8 +878,8 @@ executions {
         json[0].artifactory.webhook.data.name == "file4.txt"
         json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
     def 'test enabled'() {
@@ -990,8 +957,8 @@ executions {
         json[0].artifactory.webhook.data.message == "It works!"
 
 
-        //cleanup:
-        //Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
 
     }
 
