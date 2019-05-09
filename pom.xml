@@ -9,7 +9,7 @@
   <properties>
     <!-- Properties to update depending your current development (ex: 'cleanup/artifactCleanup') and the local Artifactory endpoint -->
     <user.plugin.dev>dummyPlugin</user.plugin.dev>
-    <artifactory.home.location>/Users/weeratha/Servers/artifactory-pro-6.9.0</artifactory.home.location>
+    <artifactory.home.location>${env.ARTIFACTORY_HOME}</artifactory.home.location>
     <version.artifactory>6.9.0</version.artifactory>
 
     <!-- Common properties -->
@@ -20,18 +20,6 @@
   <build>
     <testSourceDirectory>${user.plugin.dev}</testSourceDirectory>
     <plugins>
-
-      <!--<plugin>-->
-        <!--<groupId>org.codehaus.gmaven</groupId>-->
-        <!--<artifactId>groovy-maven-plugin</artifactId>-->
-        <!--<dependencies>-->
-          <!--<dependency>-->
-            <!--<groupId>org.codehaus.groovy</groupId>-->
-            <!--<artifactId>groovy-all</artifactId>-->
-            <!--<version>2.4.10</version>-->
-          <!--</dependency>-->
-        <!--</dependencies>-->
-      <!--</plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>

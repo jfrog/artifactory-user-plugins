@@ -1,9 +1,17 @@
 {
   "webhooks": {
-    "spinnaker": {
-      "url": "https://hookb.in/ggdlX2mxoQCB0B1y8DQ0",
+    "helm": {
+      "url": "https://hookb.in/Z23anJ0klrt7q7eYQmmL",
       "events": [
         "storage.afterCreate"
+      ],
+      "path": "*.tgz",
+      "format": "spinnaker"
+    },
+    "docker": {
+      "url": "https://hookb.in/oXDlRWlPqVUWlWL0XZZB",
+      "events": [
+        "docker.tagCreated"
       ],
       "format": "spinnaker"
     }

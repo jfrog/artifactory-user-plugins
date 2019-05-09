@@ -190,32 +190,21 @@ storage {
      */
     afterCreate { item ->
         if (WebHook.isEnableSpinnakerSupport()){
-
             def json = new JsonBuilder()
             def repoKey = item.repoKey
             def repoInfo = repositories.getRepositoryConfiguration(repoKey)
             def packageType = repoInfo.getPackageType()
-            def idx = item.name.indexOf('-')
-            def name = idx != -1 ? item.name.substring(0, idx) : null
-            def version = idx != -1 ? item.name.substring(idx +1 , item.name.lastIndexOf('.')) : null
-
             json (
                     item: item,
                     type: Globals.PACKAGE_TYPE_MAP.get(packageType).toString(),
-                    name: name,
-                    version: version,
-                    reference: "${WebHook.baseUrl()}/${item.repoKey}/${item.relPath}",
-                    repoKey: repoKey
+                    name: item.name,
+                    repoKey: repoKey,
+                    relPath: item.relPath
             )
-
-            if (item.name != 'index.yaml'){
-                hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
-            }
-
+            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
         } else {
             hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
         }
-
     }
 
     /**
@@ -342,14 +331,32 @@ class SpinnakerFormatter {
         def json = data.content
 
         if (Globals.SUPPORT_MATRIX.storage.afterCreate.name == eventTypeMetadta.name) {
+            if(Globals.PackageTypeEnum.HELM.toString() == json.type) {
+                def nameVersionDetails = getHelmPackageNameAndVersion(json)
+                builder {
+                    artifacts(
+                            [
+                                    type     : json.type,
+                                    name     : nameVersionDetails.name,
+                                    version  : nameVersionDetails.version,
+                                    reference: "${WebHook.baseUrl()}/${json.item.repoKey}/${json.item.relPath}"
+                            ]
+                    )
+                }
+            }else{
+                builder {
+                    text "Artifactory: ${eventTypeMetadta['humanName']} event is only support for HELM repository by Spinnaker formatter"
+                }
+            }
+        }else if (Globals.SUPPORT_MATRIX.docker.tagCreated.name == eventTypeMetadta.name) {
             builder {
                 artifacts(
-                    [
-                        type: json.type,
-                        name: json.name,
-                        version: json.version,
-                        reference: json.reference
-                    ]
+                     [
+                         type: json.event.type,
+                         name: json.docker.image,
+                         version: json.docker.tag,
+                         reference: "${WebHook.baseUrl()}/${json.event.item.repoKey}/${json.docker.image}:${json.docker.tag}"
+                     ]
                 )
             }
         } else{
@@ -358,6 +365,23 @@ class SpinnakerFormatter {
             }
         }
         return builder
+    }
+
+
+    def getHelmPackageNameAndVersion(json) {
+        def map
+        String name = null
+        String version = null
+        if (json.item && json.item.name) {
+            def m = (json.item.name.split(/[-][0-9]+[.]/))
+
+            if (m && m.size() > 1) {
+                name = m[0]
+                version = json.item.name.substring(name.length() + 1, json.item.name.lastIndexOf('.'))
+            }
+        }
+        map = [name: name, version: version]
+        return map
     }
 }
 
@@ -558,11 +582,18 @@ class WebHook {
         return me != null && me.debug == true
     }
 
-
+    /**
+     * Get the baseUrl value
+     * @return value if the baseUrl value is set
+     */
     static String baseUrl() {
         return me.baseUrl
     }
 
+    /**
+     * Determines if we are in enable spinnaker support
+     * @return True if the enableSpinnakerSupport flag is set
+     */
     static boolean isEnableSpinnakerSupport() {
         return me.enableSpinnakerSupport
     }
