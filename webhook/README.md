@@ -40,7 +40,6 @@ A particular webhook only requires a URL and the events it should listen to. Thi
 | enabled | Whether this webhook should be enabled     | false     | true       |
 | format | The formatting of the message     | false     | default       |
 
-
 ### Global properties
 | Property      | Description   | Required  | Default |
 | ------------- | ------------- | --------- | ------- |

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 import com.google.common.collect.BiMap
 import com.google.common.collect.ImmutableBiMap
 import groovy.json.JsonBuilder
@@ -105,7 +104,6 @@ class Globals {
         def idx = event.indexOf('.')
         return SUPPORT_MATRIX[event.substring(0, idx)][event.substring(idx + 1)]
     }
-
     enum PackageTypeEnum {
         HELM("helm/chart"),
         DOCKER ("docker/image")
@@ -120,13 +118,10 @@ class Globals {
             return value;
         }
     }
-
     static final BiMap<String, PackageTypeEnum> PACKAGE_TYPE_MAP = new ImmutableBiMap.Builder<String, PackageTypeEnum>()
             .put("helm", PackageTypeEnum.HELM)
             .put("docker", PackageTypeEnum.DOCKER)
             .build()
-
-
 }
 
 /**
@@ -367,13 +362,12 @@ class SpinnakerFormatter {
         return builder
     }
 
-
     def getHelmPackageNameAndVersion(json) {
         def map
         String name = null
         String version = null
         if (json.item && json.item.name) {
-            def m = (json.item.name.split(/[-][0-9]+[.]/))
+            def m = (json.item.name.split(/\-\d+\./))
 
             if (m && m.size() > 1) {
                 name = m[0]
@@ -543,7 +537,6 @@ class WebHook {
     def connectionTimeout = 15000
     def baseUrl
     def enableSpinnakerSupport
-
     // Used for async POSTS
     ExecutorService excutorService = Executors.newFixedThreadPool(10)
 
@@ -597,8 +590,6 @@ class WebHook {
     static boolean isEnableSpinnakerSupport() {
         return me.enableSpinnakerSupport
     }
-
-
 
     /**
      * Determine which formatter to use for the body
