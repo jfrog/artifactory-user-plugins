@@ -1,8 +1,14 @@
-Artifactory WhiteSource User Plugin
+DEPRECATED - Artifactory WhiteSource User Plugin
 ===================================
 
 This plugin integrates Artifactory artifacts with WhiteSource. This Artifactory
 plugin adds additional information to your artifacts.
+
+**&ast;&ast;&ast; DEPRECATION NOTICE &ast;&ast;&ast;**
+
+*This plugin is deprecated from this repository as of Artifactory 6.6. To get up to date versions of this plugin please go to: <https://github.com/whitesource/artifactory-user-plugins>*
+
+*Documentation and plugin is preserved here purely for users of older versions (which can also be found on white source site).*
 
 The Artifactory plugin works in two modes:
 ==========================================

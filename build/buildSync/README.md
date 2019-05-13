@@ -1,7 +1,8 @@
 ## __*** Deprecation NOTICE ***__
 
-With the release of the Build Info Repository feature in JFrog Artifactory version 6.6.0, the Build Sync has been deprecated. 
-Accordingly, support for Build Sync is not being carried forward for versions of JFrog Artifactory 6.6.0 and beyond.
+*Artifactory 6.6 introduced [Build Info Repositories](https://www.jfrog.com/confluence/display/RTF/Release+Notes#ReleaseNotes-Artifactory6.6).  With this introduction, Replication of build info can be introduced via [push replication](https://www.jfrog.com/confluence/display/RTF/Repository+Replication#RepositoryReplication-PushReplication) configured via the [REST API](https://www.jfrog.com/confluence/display/RTF/Repository+Replication#RepositoryReplication-ReplicatingwithRESTAPI). Note that replication cannot currently be configured via the UI for build info repositories but it does work.*
+
+*Documentation and plugin is preserved here for users of older versions.*
 
 
 
