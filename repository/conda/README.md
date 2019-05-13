@@ -2,7 +2,11 @@ Artifactory Conda User Plugin
 =============================
 
 This plugin adds basic support for [Conda](https://conda.io/docs/) repositories.
+## __*** Deprecation NOTICE ***__
 
+*[Artifactory 6.3](https://www.jfrog.com/confluence/display/RTF/Release+Notes#ReleaseNotes-Artifactory6.3) introduced [Conda Repositories](https://www.jfrog.com/confluence/display/RTF/Conda+Repositories).  This plugin is now deprecated and will no longer be tested*
+
+*Documentation and plugin is preserved here for users of older versions.*
 Usage
 -----
 
