@@ -62,6 +62,21 @@ This can fix issues with MSYS2 db metadata files. Thus you need :
 }
 ```
 
+It can also be used to support alpine remote repositories.  Use :
+* create a remote repository pointed at the alpine repository (e.g. apk-remote)
+* file patterns for alpine are APKINDEX.tar.gz : JSon file should be
+
+```
+{
+    "repositories": {
+        "apk-remote": {
+            "delay":600,
+            "patterns": ["**/APKINDEX.tar.gz"]
+        }
+    }
+}
+```
+
 Execution
 ---------
 
