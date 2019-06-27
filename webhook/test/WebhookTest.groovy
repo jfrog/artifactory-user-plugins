@@ -427,6 +427,63 @@ executions {
         Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
 
+    def 'test docker tag filter'() {
+        setup:
+        clearLoopbackBuffer()
+        def manifest = "busybox/latest/manifest.json"
+
+        // 1. Pass tag filter
+        when:
+        def reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "docker.tagCreated"
+                  ],
+                  "path": "busybox:latest"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(DOCKER_REPO_NAME).upload(manifest,
+                new ByteArrayInputStream('{}'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        def json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+        json[0].artifactory.webhook.data.docker.image == "busybox"
+        json[0].artifactory.webhook.data.docker.tag == "latest"
+
+        // 1. Fail to pass tag filter
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "docker.tagCreated"
+                  ],
+                  "path": "busybox:2.3.4"
+              }
+          }
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(DOCKER_REPO_NAME).delete(manifest)
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 0
+
+        cleanup:
+        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+    }
+
     def 'test formatters'() {
         setup:
         clearLoopbackBuffer()

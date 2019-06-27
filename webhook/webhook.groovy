@@ -557,7 +557,8 @@ class WebHook {
                     jsonData = new JsonSlurper().parseText(json.toString())
                 def matches = false
                 if (event.startsWith("docker")) {
-                    matches = webhook.matchesPathFilter(jsonData.docker.image)
+                    matches = webhook.matchesPathFilter(jsonData.docker.image) &&
+                        webhook.matchesTagFilter(jsonData.docker.tag)
                 } else if (event.startsWith("storage")) {
                     if (Globals.SUPPORT_MATRIX.storage.afterMove.name == event ||
                             Globals.SUPPORT_MATRIX.storage.afterCopy.name == event) {
@@ -758,6 +759,7 @@ class WebHook {
         def repositories = [ALL_REPOS] // All
         def async = true
         Pattern path = null
+        String tag = null
 
         boolean allRepos() {
             return repositories.contains(ALL_REPOS)
@@ -784,6 +786,16 @@ class WebHook {
         }
 
         /**
+         * Returns true if there is not a tag filter or if there is a matching tag
+         * @param actualTag The tag in the event
+         */
+        boolean matchesTagFilter(String actualTag) {
+            if(tag == null)
+                return true
+            return tag.equals(actualTag)
+        }
+
+        /**
          * Returns true if there is not a path filter or if there is and it matches the actual path
          * @param actualPath The path in the event
          */
@@ -801,6 +813,12 @@ class WebHook {
             // Remove leading '/'
             if (searchString.startsWith('/'))
                 searchString = searchString.substring(1)
+            //Set tag if one exists
+            def tagIndex = searchString.indexOf(':')
+            if (tagIndex >= 0 && tagIndex < searchString.length()-1) {
+                tag = searchString.substring(tagIndex+1)
+                searchString = searchString.substring(0, tagIndex)
+            }
             path = Pattern.compile(regexFilter(searchString))
         }
 

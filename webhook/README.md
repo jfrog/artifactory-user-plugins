@@ -77,7 +77,8 @@ Here is an example of configuration file using all the bells and whistles:
       ],
       "repositories": [
         "docker-local"
-      ]
+      ],
+      "path": "example:1.0.1"
     },
     "audit": {
       "url": "http://example3.com",
