@@ -46,7 +46,6 @@ A particular webhook only requires a URL and the events it should listen to. Thi
 | debug     | Additional logging | false      | false       |
 | timeout      | Timeout for POST call      | false      | 15000 (ms)  |
 | baseUrl      | Base URL of Artifactory instance. Only applies to Spinnaker format      | false      | -  |
-| enablespinnakersupport      | Whether spinnaker format should be enabled      | false      | false  |
 
 #### Making changes to the configuration
 
@@ -172,8 +171,7 @@ the **url** in the configuration file. See the detailed sample configuration bel
   },
   "debug": false,
   "timeout": 15000,
-  "baseurl": "Artifactory base URL -- http://localhost:8081/artifactory",
-  "enablespinnakersupport": true
+  "baseurl": "Artifactory base URL -- http://localhost:8081/artifactory"
 }
 ```
 

@@ -122,12 +122,15 @@ class Globals {
             .put("helm", PackageTypeEnum.HELM)
             .put("docker", PackageTypeEnum.DOCKER)
             .build()
+    static repositories
 }
 
 /**
  * REST APIs for the webhook
  */
 executions {
+
+    Globals.repositories = repositories
 
     /**
      * Simple PING event to test endpoint
@@ -184,22 +187,7 @@ storage {
      * item (org.artifactory.fs.ItemInfo) - the original item being created.
      */
     afterCreate { item ->
-        if (WebHook.isEnableSpinnakerSupport()){
-            def json = new JsonBuilder()
-            def repoKey = item.repoKey
-            def repoInfo = repositories.getRepositoryConfiguration(repoKey)
-            def packageType = repoInfo.getPackageType()
-            json (
-                    item: item,
-                    type: Globals.PACKAGE_TYPE_MAP.get(packageType).toString(),
-                    name: item.name,
-                    repoKey: repoKey,
-                    relPath: item.relPath
-            )
-            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, json)
-        } else {
-            hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
-        }
+        hook(Globals.SUPPORT_MATRIX.storage.afterCreate.name, item ? new JsonBuilder(item) : null)
     }
 
     /**
@@ -321,57 +309,69 @@ class ResponseFormatter {
  */
 class SpinnakerFormatter {
     def format(String event, JsonBuilder data) {
-        def eventTypeMetadta = Globals.eventToSupported(event)
+        def eventTypeMetadata = Globals.eventToSupported(event)
         def builder = new JsonBuilder()
         def json = data.content
 
-        if (Globals.SUPPORT_MATRIX.storage.afterCreate.name == eventTypeMetadta.name) {
-            if(Globals.PackageTypeEnum.HELM.toString() == json.type) {
+        if (Globals.SUPPORT_MATRIX.storage.afterCreate.name == eventTypeMetadata.name) {
+            def type = getPackageType(json.repoKey)
+
+            if(Globals.PackageTypeEnum.HELM.toString() == type) {
                 def nameVersionDetails = getHelmPackageNameAndVersion(json)
                 builder {
                     artifacts(
                             [
-                                    type     : json.type,
+                                [
+                                    type     : type,
                                     name     : nameVersionDetails.name,
                                     version  : nameVersionDetails.version,
-                                    reference: "${WebHook.baseUrl()}/${json.item.repoKey}/${json.item.relPath}"
+                                    reference: "${WebHook.baseUrl()}/${json.repoKey}/${json.relPath}"
+                                ]
                             ]
                     )
                 }
             }else{
                 builder {
-                    text "Artifactory: ${eventTypeMetadta['humanName']} event is only support for HELM repository by Spinnaker formatter"
+                    text "Artifactory: ${eventTypeMetadata['humanName']} event is only support for HELM repository by Spinnaker formatter"
                 }
             }
-        }else if (Globals.SUPPORT_MATRIX.docker.tagCreated.name == eventTypeMetadta.name) {
+        }else if (Globals.SUPPORT_MATRIX.docker.tagCreated.name == eventTypeMetadata.name) {
             builder {
                 artifacts(
                      [
-                         type: json.event.type,
-                         name: json.docker.image,
-                         version: json.docker.tag,
-                         reference: "${WebHook.baseUrl()}/${json.event.item.repoKey}/${json.docker.image}:${json.docker.tag}"
+                         [
+                                 type: getPackageType(json.event.repoKey),
+                                 name: json.docker.image,
+                                 version: json.docker.tag,
+                                 reference: "${WebHook.baseUrl()}/${json.event.repoKey}/${json.docker.image}:${json.docker.tag}"
+                         ]
                      ]
                 )
             }
         } else{
             builder {
-                text "Artifactory: ${eventTypeMetadta['humanName']} event is not supported by Spinnaker formatter"
+                text "Artifactory: ${eventTypeMetadata['humanName']} event is not supported by Spinnaker formatter"
             }
         }
         return builder
+    }
+
+    def getPackageType(repoKey) {
+        def repoInfo = Globals.repositories.getRepositoryConfiguration(repoKey)
+        def packageType = Globals.PACKAGE_TYPE_MAP.get(repoInfo.getPackageType()).toString()
+        return packageType
     }
 
     def getHelmPackageNameAndVersion(json) {
         def map
         String name = null
         String version = null
-        if (json.item && json.item.name) {
-            def m = (json.item.name.split(/\-\d+\./))
+        if (json.name) {
+            def m = (json.name.split(/\-\d+\./))
 
             if (m && m.size() > 1) {
                 name = m[0]
-                version = json.item.name.substring(name.length() + 1, json.item.name.lastIndexOf('.'))
+                version = json.name.substring(name.length() + 1, json.name.lastIndexOf('.'))
             }
         }
         map = [name: name, version: version]
@@ -536,7 +536,6 @@ class WebHook {
     def debug = false
     def connectionTimeout = 15000
     def baseUrl
-    def enableSpinnakerSupport
     // Used for async POSTS
     ExecutorService excutorService = Executors.newFixedThreadPool(10)
 
@@ -581,14 +580,6 @@ class WebHook {
      */
     static String baseUrl() {
         return me.baseUrl
-    }
-
-    /**
-     * Determines if we are in enable spinnaker support
-     * @return True if the enableSpinnakerSupport flag is set
-     */
-    static boolean isEnableSpinnakerSupport() {
-        return me.enableSpinnakerSupport
     }
 
     /**
@@ -790,9 +781,6 @@ class WebHook {
             // BaseUrl
             if (config.containsKey("baseurl"))
                 me.baseUrl = config.baseurl
-            // SpinnakerSupport
-            if (config.containsKey("enablespinnakersupport"))
-                me.enableSpinnakerSupport = config.enablespinnakersupport
         }
     }
 
