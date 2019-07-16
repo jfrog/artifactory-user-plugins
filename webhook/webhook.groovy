@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import com.google.common.collect.BiMap
+import com.google.common.collect.ImmutableBiMap
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import java.util.regex.Pattern
@@ -77,6 +79,9 @@ class Globals {
         ],
         slack: [
             description: "A POST formatted specifically for Slack", formatter: new SlackFormatter ( )
+        ],
+        spinnaker: [
+                description: "A POST formatted specifically for Spinnaker", formatter: new SpinnakerFormatter ()
         ]
     ]
 
@@ -99,12 +104,33 @@ class Globals {
         def idx = event.indexOf('.')
         return SUPPORT_MATRIX[event.substring(0, idx)][event.substring(idx + 1)]
     }
+    enum PackageTypeEnum {
+        HELM("helm/chart"),
+        DOCKER ("docker/image")
+
+        private String value
+
+        PackageTypeEnum(String value) {
+            this.value = value
+        }
+
+        String toString() {
+            return value;
+        }
+    }
+    static final BiMap<String, PackageTypeEnum> PACKAGE_TYPE_MAP = new ImmutableBiMap.Builder<String, PackageTypeEnum>()
+            .put("helm", PackageTypeEnum.HELM)
+            .put("docker", PackageTypeEnum.DOCKER)
+            .build()
+    static repositories
 }
 
 /**
  * REST APIs for the webhook
  */
 executions {
+
+    Globals.repositories = repositories
 
     /**
      * Simple PING event to test endpoint
@@ -279,6 +305,81 @@ class ResponseFormatter {
 }
 
 /**
+ * Spinnaker formatter
+ */
+class SpinnakerFormatter {
+    def format(String event, JsonBuilder data) {
+        def eventTypeMetadata = Globals.eventToSupported(event)
+        def builder = new JsonBuilder()
+        def json = data.content
+
+        if (Globals.SUPPORT_MATRIX.storage.afterCreate.name == eventTypeMetadata.name) {
+            def type = getPackageType(json.repoKey)
+
+            if(Globals.PackageTypeEnum.HELM.toString() == type) {
+                def nameVersionDetails = getHelmPackageNameAndVersion(json)
+                builder {
+                    artifacts(
+                            [
+                                [
+                                    type     : type,
+                                    name     : nameVersionDetails.name,
+                                    version  : nameVersionDetails.version,
+                                    reference: "${WebHook.baseUrl()}/${json.repoKey}/${json.relPath}"
+                                ]
+                            ]
+                    )
+                }
+            }else{
+                builder {
+                    text "Artifactory: ${eventTypeMetadata['humanName']} event is only support for HELM repository by Spinnaker formatter"
+                }
+            }
+        }else if (Globals.SUPPORT_MATRIX.docker.tagCreated.name == eventTypeMetadata.name) {
+            builder {
+                artifacts(
+                     [
+                         [
+                                 type: getPackageType(json.event.repoKey),
+                                 name: json.docker.image,
+                                 version: json.docker.tag,
+                                 reference: "${WebHook.baseUrl()}/${json.event.repoKey}/${json.docker.image}:${json.docker.tag}"
+                         ]
+                     ]
+                )
+            }
+        } else{
+            builder {
+                text "Artifactory: ${eventTypeMetadata['humanName']} event is not supported by Spinnaker formatter"
+            }
+        }
+        return builder
+    }
+
+    def getPackageType(repoKey) {
+        def repoInfo = Globals.repositories.getRepositoryConfiguration(repoKey)
+        def packageType = Globals.PACKAGE_TYPE_MAP.get(repoInfo.getPackageType()).toString()
+        return packageType
+    }
+
+    def getHelmPackageNameAndVersion(json) {
+        def map
+        String name = null
+        String version = null
+        if (json.name) {
+            def m = (json.name.split(/\-\d+\./))
+
+            if (m && m.size() > 1) {
+                name = m[0]
+                version = json.name.substring(name.length() + 1, json.name.lastIndexOf('.'))
+            }
+        }
+        map = [name: name, version: version]
+        return map
+    }
+}
+
+/**
  * Slack formatter
  */
 class SlackFormatter {
@@ -434,6 +535,7 @@ class WebHook {
     def triggers = new HashMap()
     def debug = false
     def connectionTimeout = 15000
+    def baseUrl
     // Used for async POSTS
     ExecutorService excutorService = Executors.newFixedThreadPool(10)
 
@@ -470,6 +572,14 @@ class WebHook {
      */
     static boolean debug() {
         return me != null && me.debug == true
+    }
+
+    /**
+     * Get the baseUrl value
+     * @return value if the baseUrl value is set
+     */
+    static String baseUrl() {
+        return me.baseUrl
     }
 
     /**
@@ -669,6 +779,9 @@ class WebHook {
             // Timeout
             if (config.containsKey("timeout") && config.timeout > 0 && config.timeout <= MAX_TIMEOUT)
                 me.connectionTimeout = config.timeout
+            // BaseUrl
+            if (config.containsKey("baseurl"))
+                me.baseUrl = config.baseurl
         }
     }
 

@@ -423,6 +423,36 @@ executions {
         json[0].artifactory.webhook.data.docker.image == "busybox"
         json[0].artifactory.webhook.data.docker.tag == "latest"
 
+        // 1. Test spinnaker
+        when:
+        clearLoopbackBuffer()
+        reload = reloadAndVerifyConfig('''{
+          "webhooks": {
+              "test_webhook": {
+                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "events": [
+                    "docker.tagCreated"
+                  ],
+                  "format": "spinnaker"
+              }
+          },
+          "baseurl": "http://localhost:8081/artifactory"
+        }
+        ''')
+        reload.code == SUCCESS_CODE && reload.response.contains("Reloaded")
+        artifactory.repository(DOCKER_REPO_NAME).upload(manifest,
+                new ByteArrayInputStream('{}'.getBytes('utf-8'))).doUpload()
+        sleep(DEFAULT_SLEEP)
+        json = getLoopbackBuffer()
+        then:
+        assert json instanceof java.util.List
+        json.size() == 1
+        json[0].artifacts.size() == 1
+        json[0].artifacts[0].type == "docker/image"
+        json[0].artifacts[0].name == "busybox"
+        json[0].artifacts[0].version == "latest"
+        json[0].artifacts[0].reference == "http://localhost:8081/artifactory/$DOCKER_REPO_NAME/busybox:latest"
+
         cleanup:
         Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
     }
