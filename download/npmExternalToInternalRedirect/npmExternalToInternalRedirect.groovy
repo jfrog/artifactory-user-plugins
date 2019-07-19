@@ -25,8 +25,9 @@ download {
         String localNpmRepo = "npm-local";
         RepoPath newPath = null;
         boolean foundInLocal = false;
-        //change it to match only the external npm name
-        if (repoKey.contains("npm") && externalNpmRepo_prop.contains(repoKey)) {
+        def repo = repositories.getRepositoryConfiguration(repoKey)
+        //change it to match only the external npm name if needed
+        if (repo.type == "remote" && repo.packageType == "npm" ) {
 
             //Check if its available in local repo
             newPath = RepoPathFactory.create(localNpmRepo, repoPath.path)
@@ -43,7 +44,7 @@ download {
                 stream = repositories.getContent(newPath)
                 localNpm = stream.inputStream.bytes
             } catch (Exception ex) {
-                log.info "EXCEPTION : ${ex.getMessage()}"
+                log.warn "EXCEPTION : ${ex.getMessage()}"
             }
             finally {
                 stream?.close()
