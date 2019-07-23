@@ -25,7 +25,7 @@ import java.util.concurrent.Executors
  * Webhook for Artifactory
  *
  * This webhook includes the following components
- * 1. webook.groovy - main script, modify only if needing to change functionality
+ * 1. webhook.groovy - main script, modify only if needing to change functionality
  * 2. webhook.config.json - specify the target url and event to trigger webhook
  *
  * Installation:
