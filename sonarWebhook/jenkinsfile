@@ -1,0 +1,30 @@
+node() {
+    stage 'Build staging release'
+        git url: 'https://github.com/jroquelaure/sonar-scanning-examples.git', branch: 'master'
+      
+    stage 'Artifactory configuration' 
+    // Create an Artifactory server instance, as described above in this article:
+        def server = Artifactory.server('artifactory_local')
+    // Create and set an Artifactory Gradle Build instance:
+        def rtGradle = Artifactory.newGradleBuild()
+        rtGradle.resolver server: server, repo: 'gradle-dev'
+        rtGradle.deployer server: server, repo: 'gradle-dev-local'
+    // Set a Gradle Tool defined in Jenkins "Manage":
+    rtGradle.tool = 'GRADLE_TOOL'
+    rtGradle.usesPlugin = false
+    
+    stage 'Run Gradle and publish to Artifactory'
+    // Run Gradle build with sonarqube and artifactory tasks
+    dir('sonarqube-scanner-gradle'){
+        def buildInfo = rtGradle.run rootDir: ".", buildFile: 'build.gradle', tasks: "clean sonarqube build artifactoryPublish --stacktrace".toString()
+        //get variable from sonar report file (file and path depends on tools and CI-server )
+        def ceTaskId = sh(returnStdout: true, script: "cat build/sonar/report-task.txt | grep ceTaskId | cut -f2 -d'='").trim()
+        def dashboardUrl= sh(returnStdout: true, script: "cat build/sonar/report-task.txt | grep dashboardUrl | cut -f2 -d'='").trim()
+        env.SONAR_DASHBOARDURL=dashboardUrl
+        env.SONAR_CETASKID=ceTaskId
+        //Publish the build-info to Artifactory:
+        buildInfo.env.capture = true
+        buildInfo.env.collect()
+        server.publishBuildInfo buildInfo
+    }
+}
