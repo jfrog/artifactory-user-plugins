@@ -30,7 +30,7 @@ class BeforeSymbolServerDownloadTest extends Specification {
         def file = new ByteArrayInputStream('test symbol'.bytes)
         artifactory2.repository('symbols').upload(filePath, file).doUpload()
 
-        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
+        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).username('admin').password('password').repositorySettings(new NugetRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, remoteRepo)
 
         when:

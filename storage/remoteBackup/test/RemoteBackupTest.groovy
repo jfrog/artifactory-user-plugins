@@ -23,7 +23,7 @@ class RemoteBackupTest extends Specification {
         when:
         def remote = builder.remoteRepositoryBuilder().key('backup-remote')
         remote.repositorySettings(new MavenRepositorySettingsImpl())
-        remote.url('http://localhost:8088/artifactory/source-local')
+        remote.url('http://localhost:8088/artifactory/source-local').username('admin').password('password')
         artifactory.repositories().create(0, remote.build())
         remoterepo = artifactory.repository('backup-remote')
         def remotepath1 = 'junit/junit/3.8.1/junit-3.8.1.pom'
