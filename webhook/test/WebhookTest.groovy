@@ -145,7 +145,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -173,7 +173,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterDelete"
                   ]
@@ -199,7 +199,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterMove"
                   ]
@@ -229,7 +229,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCopy"
                   ]
@@ -256,7 +256,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterPropertyCreate"
                   ]
@@ -282,7 +282,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterPropertyDelete"
                   ]
@@ -314,7 +314,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "build.afterSave"
                   ]
@@ -348,7 +348,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ]
@@ -380,7 +380,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ]
@@ -405,7 +405,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagDeleted"
                   ]
@@ -429,7 +429,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -467,7 +467,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -493,7 +493,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -523,7 +523,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -547,7 +547,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -578,7 +578,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -605,7 +605,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -633,7 +633,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -660,7 +660,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -698,7 +698,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -726,7 +726,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -754,7 +754,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -778,7 +778,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -802,7 +802,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -826,7 +826,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -857,7 +857,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -884,7 +884,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -911,7 +911,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -942,7 +942,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -978,7 +978,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ]
@@ -1002,7 +1002,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -1025,7 +1025,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],

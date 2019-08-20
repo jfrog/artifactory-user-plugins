@@ -709,12 +709,18 @@ class WebHook {
      * @return The response/error code from the remote site
      */
     private String callPost(String urlString, String content) {
-        def post = new URL(urlString).openConnection()
+        def url = new URL(urlString)
+        def post = url.openConnection()
         post.method = "POST"
         post.doOutput = true
         post.setConnectTimeout(connectionTimeout)
         post.setReadTimeout(connectionTimeout)
         post.setRequestProperty("Content-Type", "application/json")
+        def authidx = url.authority.indexOf('@')
+        if (authidx > 0) {
+            def auth = url.authority[0..<authidx].bytes.encodeBase64()
+            post.setRequestProperty("Authorization", "Basic $auth")
+        }
         def writer = null, reader = null
         try {
             writer = post.outputStream
