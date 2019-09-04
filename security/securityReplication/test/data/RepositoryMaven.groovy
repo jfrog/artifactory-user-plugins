@@ -49,7 +49,7 @@ class RepositoryMaven {
 	def jcenter = new RepositoryRemoteClass (
 		key: 'jcenter',
 		packageType: 'maven',
-		url: 'http://jcenter.bintray.com',
+		url: 'https://jcenter.bintray.com',
 		description: 'jcenter-remote-repository',
 		handleReleases: 'true',
 		handleSnapshots: 'true')
