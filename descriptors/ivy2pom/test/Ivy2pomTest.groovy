@@ -47,10 +47,16 @@ class Ivy2pomTest extends Specification {
 
     private moveAntJars() {
         def src = './src/test/groovy/Ivy2pomTest/'
-        def dst = '/opt/jfrog/artifactory/tomcat/webapps/artifactory/WEB-INF/lib/'
+        def dst = '/opt/jfrog/artifactory/app/artifactory/tomcat/webapps/artifactory/WEB-INF/lib/'
         def jar1 = 'ant-1.8.3.jar', jar2 = 'ant-launcher-1.8.3.jar'
-        Control.setFileContent(8088, dst + jar1, new File(src + jar1))
-        Control.setFileContent(8088, dst + jar2, new File(src + jar2))
+        try {
+            Control.setFileContent(8088, dst + jar1, new File(src + jar1))
+            Control.setFileContent(8088, dst + jar2, new File(src + jar2))
+        } catch (Exception ex) {
+            dst = '/opt/jfrog/artifactory/tomcat/webapps/artifactory/WEB-INF/lib/'
+            Control.setFileContent(8088, dst + jar1, new File(src + jar1))
+            Control.setFileContent(8088, dst + jar2, new File(src + jar2))
+        }
         Control.stop(8088)
         Control.resume(8088)
         System.sleep(8000)

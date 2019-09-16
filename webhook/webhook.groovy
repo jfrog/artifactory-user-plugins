@@ -772,8 +772,12 @@ class WebHook {
      * Loads and processes the configuration file
      */
     private void loadConfig() {
-        final String CONFIG_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/webhook.config.json"
+        final String CONFIG_FILE_PATH = "${System.properties.'artifactory.home'}/etc/artifactory/plugins/webhook.config.json"
         def inputFile = new File(CONFIG_FILE_PATH)
+        if (!inputFile.exists()) {
+            CONFIG_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/webhook.config.json"
+            inputFile = new File(CONFIG_FILE_PATH)
+        }
         def config = new JsonSlurper().parseText(inputFile.text)
         if (config && config.webhooks) {
             config.webhooks.each { name, webhook ->
