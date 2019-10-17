@@ -26,15 +26,15 @@ contributor(context(scope: scriptScope())) {
     // plugin types
     method name: 'download',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: 'A section for handling and manipulating download events'
     method name: 'storage',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: 'A section for handling and manipulating storage events'
     method name: 'jobs',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: '''A section for defining scheduled jobs.<p>
                 Add arbitrary named closures as scheduled jobs. Each closure will have the following Closure parameters:
                 <ul><li>name: delay, type: long - An initial delay in milliseconds before the job starts running (not applicable for a cron job).</li>
@@ -42,7 +42,7 @@ contributor(context(scope: scriptScope())) {
                 <li>name: cron, type: java.lang.String - A valid cron expression used to schedule job runs (see: http://www.quartz-scheduler.org/docs/tutorial/TutorialLesson06.html)</li></ul>'''
     method name: 'executions',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: '''A section for defining external executions.<p>
                     Add arbitrary named closures as executable code blocks. Each closure will have a following plugin info annotation parameters:
                     <ul><li>name: version, type: java.lang.String - Closure version. Optional</li>
@@ -55,18 +55,17 @@ contributor(context(scope: scriptScope())) {
                     Each entry in the map contains an array of values.</li></ul>'''
     method name: 'realms',
             type: 'void',
-            params: [autoCreateUsers: 'boolean',
-                     closure        : 'groovy.lang.Closure'],
+            params: [closure: 'groovy.lang.Closure'],
             doc: '''A section for management of security realms<p>
                     Add arbitrary named closures as realm definitions. Realms defined here are added before any built-in realms (Artifactory internal realm, LDAP, Crowd etc.).
                     User authentication will be attempted against these realms first, by the order they are defined.'''
     method name: 'build',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: 'A section for handling build info events'
     method name: 'promotions',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: '''A section for defining REST executable build promotion operations.<p>
                         Add arbitrary named closures as promotion strategies. Each closure will have the following plugin info annotation parameters:
                        <ul><li>name: version, type:java.lang.String - Closure version. Optional.</li>
@@ -80,7 +79,7 @@ contributor(context(scope: scriptScope())) {
                        <li>name: params, type:java.util.Map<java.lang.String, java.util.List<java.lang.String>> - The parameters specified in the REST request.</li></ul>'''
     method name: 'staging',
             type: 'void',
-            params: [closure: 'groovy.lang.Closure'],
+            params: [closure: {}],
             doc: '''A section for defining REST retrievable build staging strategy construction.<p>
                         Add arbitrary named closures as staging strategies. Each closure will have the following closure delegate:
                         <ul><li>org.artifactory.build.staging.BuildStagingStrategy - The strategy that's to be returned.</li></ul>
@@ -100,7 +99,7 @@ contributor(context(scope: closureScope()), {
     if (enclosingCall('download')) {
         method name: 'altResponse',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Provide an alternative response, by one of the following methods:
                 <ol><li>Setting a success/error status code value and an optional error message.</li>
                 <li>Provide an alternative download content, by setting new values for the inputStream and size context variables.</li></ol>
@@ -110,7 +109,7 @@ contributor(context(scope: closureScope()), {
 
         method name: 'altRemotePath',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Provides an alternative download path under the same remote repository, by setting a new value to the path variable.<p>
                   Closure parameters:
                   <ul><li>name: repoPath, type: org.artifactory.repo.RepoPath - A read-only parameter of the original request RepoPath.'
@@ -118,31 +117,31 @@ contributor(context(scope: closureScope()), {
 
         method name: 'altRemoteContent',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Provides an alternative download content, by setting new values for the inputStream and size context variables.
                     <p>Closure parameters:
                     <ul><li>name: repoPath, type: org.artifactory.repo.RepoPath - A read-only parameter of the original request RepoPath.</li></ul>'''
 
         method name: 'afterDownloadError',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''In case of resolution error provides an alternative response, by setting a success/error status code value and an optional error message.
                     <p>Closure parameters:
                     <ul><li>name: request, type: org.artifactory.request.Request - A read-only parameter of the request.</li></ul>'''
 
         method name: 'beforeRemoteDownload',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: 'Handle before remote download events.'
 
         method name: 'afterRemoteDownload',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: 'Handle after remote download events.'
 
         method name: 'beforeDownload',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: 'Handle before local download events.'
     }
     if (enclosingCall('altRemotePath')) {
@@ -190,52 +189,52 @@ contributor(context(scope: closureScope()), {
 
         method name: 'beforeCreate',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle before create events.
                     $closureParams
                     $itemParam</ul>""".toString()
         method name: 'afterCreate',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle after create events.
                     $closureParams
                     $itemParam</ul>""".toString()
         method name: 'beforeDelete',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle before delete events.
                     $closureParams
                     $itemParam</ul>""".toString()
         method name: 'afterDelete',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle after delete events.
                     $closureParams
                     $itemParam</ul>""".toString()
         method name: 'beforeMove',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle before move events.
                     $closureParams
                     $itemParam
                     $targetRepoPathAndProps</ul>""".toString()
         method name: 'afterMove',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle after move events
                     $closureParams
                     $itemParam
                     $targetRepoPathAndProps</ul>""".toString()
         method name: 'beforeCopy',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle before copy events.
                     $closureParams
                     $itemParam
                     $targetRepoPathAndProps</ul>""".toString()
         method name: 'afterCopy',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: """Handle after copy events.
                     $closureParams
                     $itemParam
@@ -252,30 +251,42 @@ contributor(context(scope: closureScope()), {
     }
 
     if (enclosingCall('realms')) {
+        method type: 'realms',
+                params: [autoCreateUsers: 'boolean', closure: {}],
+                optionalParams: [realmPolicy: 'org.artifactory.security.RealmPolicy'],
+                doc: 'User defined authentication realms'
         method name: 'authenticate',
                 type: 'boolean',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Implementation should return true/false as the result of the authentication.
              <p> Closure parameters:
              <ul><li>name: username, type: java.lang.String - The username</li>
              <li>name: credentials, type: java.lang.String - The password</li></ul>'''
         method name: 'userExists',
                 type: 'boolean',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Implementation should return true if the user is found in the realm.
              <p> Closure parameters:
              <ul><li>name: username, type: java.lang.String - The username</li></ul>'''
     }
+    if (enclosingCall('authenticate')) {
+        property name: 'groups',
+                type: 'java.lang.String[]',
+                doc: 'An array of groups that the authenticated user should be associated with (since 3.0.2)'
+        property name: 'user',
+                type: 'org.artifactory.security.User',
+                doc: 'The authenticated user'
+    }
     if (enclosingCall('build')) {
         method name: 'beforeSave',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Handle before build info save events.
            <p> Closure parameters:
            <ul><li>name: buildRun, type:org.artifactory.build.DetailedBuildRun - Build Info model to be saved. Partially mutable. '''
         method name: 'afterSave',
                 type: 'void',
-                params: [closure: 'groovy.lang.Closure'],
+                params: [closure: {}],
                 doc: '''Handle after build info save events.
            <p> Closure parameters:
            <ul><li>name: buildRun, type:org.artifactory.build.DetailedBuildRun - Build Info model that was saved. Partially mutable. '''
