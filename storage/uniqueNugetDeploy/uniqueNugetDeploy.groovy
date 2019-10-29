@@ -37,6 +37,11 @@ try {
     ngas = org.artifactory.addon.nuget.repomd.NuGetArtifactoryService.class
 } catch (MissingPropertyException ex) {}
 
+def cpath = "plugins/uniqueNugetDeploy.properties"
+def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
+def config = new ConfigSlurper().parse(cfile.toURL())
+
+
 class FakeUriInfo implements UriInfo {
     MultivaluedMap<String,String> ps;
     public FakeUriInfo(MultivaluedMap<String,String> ps) {this.ps = ps}
@@ -63,9 +68,6 @@ class FakeUriInfo implements UriInfo {
 
 storage {
     beforeCreate { item ->
-        def cpath = "plugins/uniqueNugetDeploy.properties"
-        def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
-        def config = new ConfigSlurper().parse(cfile.toURL())
         def repoKeys = config.checkedRepos as String[]
         def filtKeys = config.filteredRepos as String[]
         if (!item || !(item.repoKey in filtKeys)) return
@@ -98,7 +100,12 @@ storage {
         } catch (MissingPropertyException ex) {}
         if (ngsps4 != null) {
             def params = [ps4] as Object[]
-            context.nuGetSearchParameters = ngsps4.newInstance(params)
+            try {
+                context.nuGetSearchParameters = ngsps4.newInstance(params)
+            } catch (GroovyRuntimeException e) {
+                params = [ps4, true] as Object[]
+                context.nuGetSearchParameters = ngsps4.newInstance(params)
+            }
         } else {
             def params = [ps3, ''] as Object[]
             context.nuGetSearchParameters = ngsps3.newInstance(params)
