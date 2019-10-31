@@ -36,6 +36,11 @@ try {
     ngas = org.artifactory.addon.nuget.repomd.NuGetArtifactoryService.class
 } catch (MissingPropertyException ex) {}
 
+def cpath = "plugins/uniqueNugetDeploy.properties"
+def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
+def config = new ConfigSlurper().parse(cfile.toURL())
+
+
 class FakeUriInfo implements UriInfo {
     MultivaluedMap<String,String> ps;
     public FakeUriInfo(MultivaluedMap<String,String> ps) {this.ps = ps}
@@ -62,9 +67,6 @@ class FakeUriInfo implements UriInfo {
 
 storage {
     beforeCreate { item ->
-        def cpath = "plugins/uniqueNugetDeploy.properties"
-        def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
-        def config = new ConfigSlurper().parse(cfile.toURL())
         def repoKeys = config.checkedRepos as String[]
         def filtKeys = config.filteredRepos as String[]
         if (!item || !(item.repoKey in filtKeys)) return
