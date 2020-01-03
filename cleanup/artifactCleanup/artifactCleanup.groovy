@@ -95,8 +95,8 @@ executions {
     }
 }
 
-def deprecatedConfigFile = new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH)
-def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
+def deprecatedConfigFile = new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH)
+def configFile = new File(ctx.artifactoryHome.etcDir, CONFIG_FILE_PATH)
 
 if ( deprecatedConfigFile.exists() ) {
 

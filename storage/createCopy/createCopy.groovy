@@ -20,7 +20,7 @@ import org.artifactory.repo.RepoPathFactory
 @Field final String PROPERTIES_FILE_PATH = 'plugins/createCopy.properties'
 
 storage {
-	def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
+	def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURL())
 	repositoryList = config.repository
 	repocopyList   = config.repocopy	
 

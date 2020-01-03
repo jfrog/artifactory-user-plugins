@@ -30,7 +30,7 @@ executions {
 
 jobs {
     buildCleanup(cron: "0 0 12 1/1 * ? *") {
-        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURI().toURL())
+        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURI().toURL())
         buildCleanup(config.days, config.dryRun)
     }
 }

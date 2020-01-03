@@ -22,7 +22,7 @@ import groovy.transform.Field
 
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURI().toURL())
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURI().toURL())
 def repositoriesMSCWR = [:]
 
 log.info "Check 'Maven Snapshot Cleanup When Release' plugin repositories list: $config.repositories"

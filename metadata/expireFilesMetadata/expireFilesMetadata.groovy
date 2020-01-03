@@ -80,7 +80,7 @@ download {
     }
 }
 
-def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
+def configFile = new File(ctx.artifactoryHome.etcDir, CONFIG_FILE_PATH)
 
 if (configFile.exists()) {
     config = new JsonSlurper().parse(configFile.toURL())

@@ -64,7 +64,7 @@ private def buildCleanup(buildName, buildNumber, cleanArtifacts) {
 
     buildList.sort{it.number as Integer}
     log.info "Storing sorted build info in build.json file"
-    new File(ctx.artifactoryHome.haAwareEtcDir, BUILDS_FILE_PATH).write(new JsonBuilder(buildList).toPrettyString())
+    new File(ctx.artifactoryHome.etcDir, BUILDS_FILE_PATH).write(new JsonBuilder(buildList).toPrettyString())
 }
 
 private String getStringProperty(params, pName, mandatory) {

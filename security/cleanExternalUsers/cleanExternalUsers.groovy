@@ -103,7 +103,7 @@ cronEnabled = true
 def getCronJob() {
     def defaultcron = "0 0 0 1 1 ?"
     def config = null
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def cfgfile = new File(etcdir, "plugins/cleanExternalUsers.json")
     try {
         config = new JsonSlurper().parse(cfgfile)
@@ -130,7 +130,7 @@ jobs {
 }
 
 def cleanUsers(params) {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def cfgfile = new File(etcdir, "plugins/cleanExternalUsers.json")
     def config = [dryRun: false]
     try {

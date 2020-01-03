@@ -63,7 +63,7 @@ class FakeUriInfo implements UriInfo {
 storage {
     beforeCreate { item ->
         def cpath = "plugins/restrictNugetDeploy.properties"
-        def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
+        def cfile = new File(ctx.artifactoryHome.etcDir, cpath)
         def config = new ConfigSlurper().parse(cfile.toURL())
         def repoKeys = config.checkedRepos as String[]
         def filtKeys = config.filteredRepos as String[]
