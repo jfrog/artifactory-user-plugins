@@ -8,3 +8,8 @@
 /.gradle
 /.idea/
 *.iml
+/archive/archiveOldArtifacts/.data/
+/archive/archiveOldArtifacts/.archive/
+/archive/archiveOldArtifacts/build/
+/archive/archiveOldArtifacts/.gradle/
+/archive/archiveOldArtifacts/artifactory.lic

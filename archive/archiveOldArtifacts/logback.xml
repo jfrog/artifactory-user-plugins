@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Artifactory is a binaries repository manager.
+  ~ Copyright (C) 2018 JFrog Ltd.
+  ~
+  ~ Artifactory is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Artifactory is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General Public License
+  ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+<configuration debug="false">
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/artifactory.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/artifactory.%i.log</FileNamePattern>
+            <MinIndex>1</MinIndex>
+            <MaxIndex>9</MaxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date [%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+    <appender name="ACCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/access.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/access.%i.log</FileNamePattern>
+            <MinIndex>1</MinIndex>
+            <MaxIndex>9</MaxIndex>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d %m%n</pattern>
+        </encoder>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+    <appender name="IMPORT.EXPORT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/import.export.log</File>
+        <encoder>
+            <pattern>%date [%-5level] \(%logger{32}:%line\) %message%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/import.export.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+    <appender name="TRAFFIC" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/traffic</File>
+        <encoder>
+            <pattern>%message%n</pattern>
+        </encoder>
+        <rollingPolicy class="org.artifactory.traffic.policy.TrafficTimeBasedRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/traffic.%d{yyyyMMdd}</FileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="XRAY_TRAFFIC" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/xray_traffic</File>
+        <encoder>
+            <pattern>%message%n</pattern>
+        </encoder>
+        <rollingPolicy class="org.artifactory.traffic.policy.TrafficTimeBasedRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/xray_traffic.%d{yyyyMMdd}</FileNamePattern>
+        </rollingPolicy>
+    </appender>
+    <appender name="REQUEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/request.log</File>
+        <encoder>
+            <pattern>%message%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/request.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+    <appender name="REQUEST_TRACE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/request_trace.log</File>
+        <encoder>
+            <pattern>%date %message%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/request_trace.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+    <appender name="EVENT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/event.log</File>
+        <encoder>
+            <pattern>%message%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/event.%i.log</FileNamePattern>
+            <maxIndex>10</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--JFrog Access appenders -->
+    <appender name="JFROG_ACCESS_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [JFrog-Access] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+    </appender>
+    <appender name="JFROG_ACCESS_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/access/logs/audit.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date %message%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/access/logs/audit.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>25MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--SHA256 migration appender -->
+    <appender name="SHA256_MIGRATION" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/sha256_migration.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/sha256_migration.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--Path checksum migration appender -->
+    <appender name="PATH_CHECKSUM_MIGRATION" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/path_checksum_migration.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/path_checksum_migration.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--Binary store appender -->
+    <appender name="BINARY_STORE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/binarystore.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %message%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/binarystore.%i.log.zip</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--Build info migration appender -->
+    <appender name="BUILD_INFO_MIGRATION" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/build_info_migration.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/build_info_migration.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!--Conan V2 migration appender -->
+    <appender name="CONAN_V2_MIGRATION" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${artifactory.home}/logs/conan_v2_migration.log</File>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="org.jfrog.common.logging.logback.layout.BackTracePatternLayout">
+                <pattern>%date ${artifactory.contextId}[%thread] [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <FileNamePattern>${artifactory.home}/logs/conan_v2_migration.%i.log</FileNamePattern>
+            <maxIndex>13</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <root>
+        <level value="warn"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+    <logger name="org.artifactory">
+        <level value="info"/>
+    </logger>
+    <logger name="org.jfrog">
+        <level value="info"/>
+    </logger>
+    <logger name="org.artifactory.support">
+        <level value="info"/>
+    </logger>
+    <logger name="org.artifactory.security.AccessLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="ACCESS"/>
+    </logger>
+    <logger name="org.artifactory.api.common.ImportExportStatusHolder" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="IMPORT.EXPORT"/>
+    </logger>
+    <logger name="org.artifactory.traffic.TrafficLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TRAFFIC"/>
+    </logger>
+    <logger name="org.artifactory.traffic.XrayTrafficLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="XRAY_TRAFFIC"/>
+    </logger>
+    <logger name="org.artifactory.traffic.RequestLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="REQUEST"/>
+    </logger>
+    <logger name="org.artifactory.request.RequestTraceLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="REQUEST_TRACE"/>
+    </logger>
+    <logger name="events" additivity="false">
+        <level value="debug"/>
+        <appender-ref ref="EVENT"/>
+    </logger>
+
+    <!--Binary Store logger -->
+    <logger name="org.jfrog.storage.binstore.servlet.security.BinaryStoreAccessLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="BINARY_STORE"/>
+    </logger>
+
+    <!-- JFrog-Access loggers -->
+    <logger name="com.jfrog.access" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="JFROG_ACCESS_CONSOLE"/>
+    </logger>
+    <logger name="com.jfrog.access.server.audit.TokenAuditor" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="JFROG_ACCESS_AUDIT"/>
+        <appender-ref ref="JFROG_ACCESS_CONSOLE"/>
+    </logger>
+
+    <!-- SHA256 Migration logger-->
+    <logger name="org.artifactory.storage.jobs.migration.sha256.Sha256MigrationJob" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="SHA256_MIGRATION"/>
+    </logger>
+
+    <!-- Path Checksum Migration logger-->
+    <logger name="org.artifactory.storage.jobs.migration.pathchecksum.RepoPathChecksumMigrationJob" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="PATH_CHECKSUM_MIGRATION"/>
+    </logger>
+
+    <!-- Build Info Migration logger-->
+    <logger name="org.artifactory.storage.jobs.migration.buildinfo.BuildInfoMigrationJob" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="BUILD_INFO_MIGRATION"/>
+    </logger>
+
+    <!-- Build Info Migration logger-->
+    <logger name="org.artifactory.addon.conan.migration.ConanV2MigrationJob" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="CONAN_V2_MIGRATION"/>
+    </logger>
+
+    <!-- third party loggers -->
+    <logger name="com.sun.jersey">
+        <level value="warn"/>
+    </logger>
+    <logger name="org.springframework">
+        <level value="warn"/>
+    </logger>
+    <logger name="org.apache.cxf">
+        <level value="error"/>
+    </logger>
+    <logger name="com.jfrog.bintray">
+        <level value="info"/>
+    </logger>
+    <logger name="archiveOldArtifacts">
+        <level value="info"/>
+    </logger>
+</configuration>
