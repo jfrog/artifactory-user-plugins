@@ -34,7 +34,7 @@ storage {
     // when an artifact is created, make a pom file for it
     def exclusionList = readExclusionList()
     def ext = getExtension(item.repoPath)
-    if (checkRepo(item.repoKey) && !exclusionList.contains(ext)) {
+    if (checkRepo(item.repoKey) && !exclusionList.contains(ext) && greylistCheck(item)) {
       upload(item)
     }
   }
@@ -180,4 +180,54 @@ def upload(item) {
   def pomstring = MavenModelUtils.mavenModelToString(model)
   log.info("Deploying pom file to '{}'", pom)
   repositories.deploy(pom, new ByteArrayInputStream(pomstring.bytes))
+}
+
+def greylistCheck(item) {
+  def etcdir = ctx.artifactoryHome.etcDir
+  def extfile
+  def jsonResult
+
+  extfile = new File(etcdir, "plugins/pommer.json")
+  if (!extfile.canRead()) {
+    return true
+  }
+  jsonResult = new JsonSlurper().parse(extfile)
+
+  def blacklist = jsonResult.blacklist
+  def whitelist = jsonResult.whitelist
+
+  String pathUpload = item.repoPath.getPath()
+  String keyUpload  = item.repoPath.getRepoKey()
+
+  if (listcheck(blacklist, keyUpload, pathUpload)) {
+    return false
+  }
+  if (listcheck(whitelist, keyUpload, pathUpload)) {
+    return true
+  }
+  if (whitelist != null) {
+    return false
+  }
+  return true
+}
+
+def listcheck(list, String keyUpload, String pathUpload) {
+  String pathList = ""
+  String keyList  = ""
+  if (list != null) {
+    for (String i : list) {
+      if (i == keyUpload) {
+        return true
+      }
+      if (i.contains(":")) {
+        def expl = i.split(":")
+        keyList = expl[0] 
+        pathList = expl[1]
+        if (keyList == keyUpload && pathUpload.startsWith(pathList)) {
+          return true
+        }
+      }
+    }
+  }
+  return false
 }
