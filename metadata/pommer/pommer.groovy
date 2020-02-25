@@ -22,9 +22,8 @@ import org.artifactory.repo.RepoPathFactory
 import org.artifactory.repo.service.InternalRepositoryService
 import org.artifactory.storage.db.util.JdbcHelper
 import org.artifactory.util.RepoLayoutUtils
-
+import org.artifactory.resource.ResourceStreamHandle
 import com.google.common.collect.HashMultimap
-
 import groovy.json.JsonSlurper
 import groovy.json.JsonException
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
@@ -41,9 +40,15 @@ storage {
 }
 
 executions {
-  pommify() { params ->
+  pommify() { params, ResourceStreamHandle body ->
     // retrieve the provided list of repositories to pommify
     def repos = params?.getAt('repos')
+    def bodyJson
+    if (body.size > 0) {
+        bodyJson = new JsonSlurper().parse(body.inputStream)
+    }
+    String[] blacklist = bodyJson?.blacklist ?: []
+
     // if the list is empty or nonexistant, return a 400
     if (!repos) {
       status = 400
@@ -60,8 +65,9 @@ executions {
     }
     // otherwise, pommify each repository in turn, and return success
     def exclusionList = readExclusionList()
+
     for (repo in repos) {
-      pommifyRepo(repo, exclusionList)
+      pommifyRepo(repo, exclusionList, blacklist)
     }
     status = 200
     message = "Successfully added poms to all specified repositories"
@@ -76,6 +82,7 @@ def readExclusionList() {
     def jsonResult = new JsonSlurper().parse(extfile)
     // Add extensions from the file to the arraylist
     def extensions = jsonResult.fileExtensions
+    if (extensions == null) return ["pom"]
     extensions << "pom"
     log.debug("json found, returning exlusionlist")
     return extensions
@@ -98,7 +105,7 @@ def getExtension(item) {
 }
 
 // given a repository name, create pom files for all artifacts in the repository
-def pommifyRepo(repo, exclusionList) {
+def pommifyRepo(repo, exclusionList, blacklist) {
   // a multimap of module ids -> module infos
   def modules = HashMultimap.create()
   def reposerv = ctx.beanForType(InternalRepositoryService)
@@ -111,6 +118,8 @@ def pommifyRepo(repo, exclusionList) {
     if (exclusionList.contains(ext)) continue
     // if the file does not follow the layout, we don't care about it
     def repopath = RepoPathFactory.create(repo, node)
+    //check blacklist
+    if (listcheck(blacklist, repopath.getRepoKey(), repopath.getPath())) continue
     def modinf = reposerv.getItemModuleInfo(repopath)
     if (!modinf.isValid()) continue
     // otherwise, add the file to the multimap
@@ -223,7 +232,7 @@ def listcheck(list, String keyUpload, String pathUpload) {
         def expl = i.split(":")
         keyList = expl[0] 
         pathList = expl[1]
-        if (keyList == keyUpload && pathUpload.startsWith(pathList)) {
+        if ((keyList == keyUpload || keyList == "*") && pathUpload.startsWith(pathList)) {
           return true
         }
       }
