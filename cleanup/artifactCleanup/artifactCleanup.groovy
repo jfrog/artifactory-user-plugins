@@ -78,8 +78,9 @@ executions {
                 break
             case "adjustPaceTimeMS":
                 def adjustPaceTimeMS = params['value'] ? params['value'][0] as int : 0
-                Global.paceTimeMS += adjustPaceTimeMS
-                log.info "Pacing adjustment request detected, adjusting pace time by $adjustPaceTimeMS to new value of $Global.paceTimeMS"
+                def newPaceTimeMS = ((Global.paceTimeMS + adjustPaceTimeMS) > 0) ? (Global.paceTimeMS + adjustPaceTimeMS) : 0
+                log.info "Pacing adjustment request detected, adjusting old pace time ($Global.paceTimeMS) by $adjustPaceTimeMS to new value of $newPaceTimeMS"
+                Global.paceTimeMS = newPaceTimeMS
                 break
             case "pause":
                 Global.pauseCleaning = true
