@@ -119,13 +119,17 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
         return ["Server $serverId is unreachable: status is $status", 400]
     }
 
-    StringBuilder url = new StringBuilder(targetServer.contextUrl);
+    def targeturl = targetServer.contextUrl
+    if (!targeturl.startsWith("http://")) {
+        targeturl = "http://" + targeturl
+    }
+    StringBuilder url = new StringBuilder(targeturl)
     if (!server.contextUrl.endsWith("/") && !apiEndpoint.startsWith("/")) {
         url.append("/")
     }
 
     url.append(apiEndpoint);
-    log.debug("Target URL: " + url.toString())
+    log.error("Target URL: " + url.toString())
 
     HttpClient client = null
     try {
