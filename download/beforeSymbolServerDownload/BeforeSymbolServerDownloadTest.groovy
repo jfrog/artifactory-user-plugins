@@ -45,15 +45,14 @@ class BeforeSymbolServerDownloadTest extends Specification {
             conn = new URL (logfile).openConnection()
             conn.requestMethod = 'GET'
             conn.setRequestProperty('Authorization', auth)
-            assert conn.responseCode == 200
         }
         if (conn.responseCode != 200) {
             logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
             conn = new URL (logfile).openConnection()
             conn.requestMethod = 'GET'
             conn.setRequestProperty('Authorization', auth)
-            assert conn.responseCode == 200
         }
+        assert conn.responseCode == 200
         def reader = new InputStreamReader(conn.inputStream)
         def textlog = reader.text
         conn.disconnect()
