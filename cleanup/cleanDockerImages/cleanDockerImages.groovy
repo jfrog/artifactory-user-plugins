@@ -72,7 +72,6 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
-        log.debug("Image currentPath: ${currentPath}")
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
             continue
