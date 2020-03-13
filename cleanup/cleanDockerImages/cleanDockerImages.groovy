@@ -72,6 +72,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
+        log.debug("Image currentPath: ${currentPath}")
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
             continue
@@ -83,6 +84,10 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
         //   qualify
         // - aggregate the image info to group by image and sort by create
         //   date for maxCount policy
+
+        if (checkKeepTags(childItem)) {
+            continue
+        }
         if (checkDaysPassedForDelete(childItem)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
@@ -101,6 +106,28 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
         break
     }
 }
+
+// This method will check to see if the docker image's tags match any of the
+// tags listed in the keepTags label in the image
+// This allows you to not clean up a rotating tag, like "latest"
+def checkKeepTags(item) {
+    def repoPathParts = item.repoPath.toString().split(":")
+    def repo = repoPathParts[0]
+    def imageParts = repoPathParts[1].split("/")
+    def image = imageParts[0]
+    def tag =  imageParts[1]
+    def keepTagsProps = "docker.label.com.jfrog.artifactory.retention.keepTags"
+    def props = repositories.getProperty(item.repoPath, keepTagsProps)
+    if (props != null) {
+        for (prop in props.split(",")) {
+            if (prop == tag) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
 
 // This method checks if the docker image's manifest has the property
 // "com.jfrog.artifactory.retention.maxDays" for purge
