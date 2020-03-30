@@ -55,7 +55,7 @@ executions {
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? new Boolean(params['dryRun'][0]) : false
         def disablePropertiesSupport = params['disablePropertiesSupport'] ? new Boolean(params['disablePropertiesSupport'][0]) : false
-        Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
+        def paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
 
         // Enable fallback support for deprecated month parameter
         if ( params['months'] && !params['timeInterval'] ) {
@@ -65,7 +65,7 @@ executions {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
 
-        artifactCleanup(timeUnit, timeInterval, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
+        artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
