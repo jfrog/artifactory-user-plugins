@@ -1,6 +1,11 @@
 Artifactory Storage Summary User Plugin
 =======================================
 
+*NOTE: This plugin is deprecated as of Artifactory v7.0. Instead you should use
+the built-in [Storage Summary Info][] API.*
+
+[Storage Info]: https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-GetStorageSummaryInfo
+
 Exposes a summary of the storage info via the REST api.
 
 Usage
