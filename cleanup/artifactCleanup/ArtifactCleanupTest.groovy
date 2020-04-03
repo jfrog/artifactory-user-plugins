@@ -317,8 +317,10 @@ class ArtifactCleanupTest extends Specification {
 
     def 'artifact cleanup test with cron job'() {
         setup:
-        def path = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.json"
-        def plugin = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.groovy"
+        def path1 = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.json"
+        def path2 = "/var/opt/jfrog/artifactory/etc/plugins/artifactCleanup.json"
+        def plugin1 = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.groovy"
+        def plugin2 = "/var/opt/jfrog/artifactory/etc/plugins/artifactCleanup.groovy"
         def innercontent = [
             cron: "0/10 * * * * ?",
             repos: ["maven-local"],
@@ -329,8 +331,13 @@ class ArtifactCleanupTest extends Specification {
             disablePropertiesSupport: true
         ]
         def content = [policies: [innercontent]]
-        Control.setFileContent(8088, path, new JsonBuilder(content).toString())
-        Control.touchFile(8088, plugin)
+        try {
+            Control.setFileContent(8088, path1, new JsonBuilder(content).toString())
+            Control.touchFile(8088, plugin1)
+        } catch (Exception ex) {
+            Control.setFileContent(8088, path2, new JsonBuilder(content).toString())
+            Control.touchFile(8088, plugin2)
+        }
         def artifactory = createClientAndMavenRepo('maven-local')
         def reloadreq = new ArtifactoryRequestImpl()
             .apiUrl("api/plugins/reload")
