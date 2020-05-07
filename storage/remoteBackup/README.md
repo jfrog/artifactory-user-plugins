@@ -10,6 +10,9 @@ Whenever an artifact is added to the cache, the plugin immediately copies the
 artifact to the backup repository. The plugin will also backup the entire cache
 via a cron job, or on demand via a REST endpoint.
 
+Note that this plugin will not copy properties on folders, including Docker
+image folders. Properties on artifacts are copied as expected.
+
 Configuration
 -------------
 
