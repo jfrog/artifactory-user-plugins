@@ -104,6 +104,7 @@ if ( deprecatedConfigFile.exists() ) {
         def config = new ConfigSlurper().parse(deprecatedConfigFile.toURL())
         log.info "Schedule job policy list: $config.policies"
 
+        def count=1
         config.policies.each{ policySettings ->
             def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
             def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
@@ -113,11 +114,12 @@ if ( deprecatedConfigFile.exists() ) {
             def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
 
             jobs {
-                "scheduledCleanup_$cron"(cron: cron) {
+                "scheduledCleanup_$count"(cron: cron) {
                     log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
                     artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
                 }
             }
+            count++
         }
     } else  {
         log.warn "Deprecated 'artifactCleanup.properties' file is still present, but ignored. You should remove the file."
@@ -129,6 +131,7 @@ if ( configFile.exists() ) {
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
 
+    def count=1
     config.policies.each{ policySettings ->
         def cron = policySettings.containsKey("cron") ? policySettings.cron as String : ["0 0 5 ? * 1"]
         def repos = policySettings.containsKey("repos") ? policySettings.repos as String[] : ["__none__"]
@@ -139,11 +142,12 @@ if ( configFile.exists() ) {
         def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
 
         jobs {
-            "scheduledCleanup_$cron"(cron: cron) {
+            "scheduledCleanup_$count"(cron: cron) {
                 log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit($timeUnit), timeInterval($timeInterval), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
                 artifactCleanup( timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
             }
         }
+        count++
     }  
 }
 
