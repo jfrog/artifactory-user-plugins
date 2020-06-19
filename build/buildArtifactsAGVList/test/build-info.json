@@ -40,8 +40,8 @@
     "id" : "org.jfrog.test:multi:2.17-SNAPSHOT",
     "artifacts" : [ {
       "type" : "pom",
-      "sha1" : "6e30ba1d0b93ded6d66337b1aa89ad00ffa002d6",
-      "md5" : "1708ab050b8289fc266cac4bfef33f6d",
+      "sha1" : "985a6d2c5e9effcdf05782153fc2020935eecc44",
+      "md5" : "5501722638c96573123b9021512c1add",
       "name" : "multi-2.17-SNAPSHOT.pom"
     } ]
   } ],

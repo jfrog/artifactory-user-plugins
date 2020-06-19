@@ -18,7 +18,7 @@ class BuildArtifactsAGVListTest extends Specification {
         artifactory.repositories().create(0, local)
 
         def pom = new File('./src/test/groovy/BuildArtifactsAGVListTest/multi-2.17-SNAPSHOT.pom')
-        def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom"
+        def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom;build.name=plugin-demo;build.number=2"
         artifactory.repository("libs-snapshots-local").upload(path,pom).doUpload();
 
 

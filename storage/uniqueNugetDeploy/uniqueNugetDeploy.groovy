@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.sun.jersey.core.util.MultivaluedMapImpl
 import org.artifactory.addon.nuget.rest.NuGetRequestContext
 import org.artifactory.addon.nuget.search.delegate.packages.PackageEntryRequestDelegate
 import org.artifactory.exception.CancelException
@@ -63,7 +64,7 @@ class FakeUriInfo implements UriInfo {
 storage {
     beforeCreate { item ->
         def cpath = "plugins/uniqueNugetDeploy.properties"
-        def cfile = new File(ctx.artifactoryHome.haAwareEtcDir, cpath)
+        def cfile = new File(ctx.artifactoryHome.etcDir, cpath)
         def config = new ConfigSlurper().parse(cfile.toURL())
         def repoKeys = config.checkedRepos as String[]
         def filtKeys = config.filteredRepos as String[]
@@ -85,7 +86,7 @@ storage {
         def urlid = "(Id='$id',Version='$ver')"
         def repoService = ctx.beanForType(InternalRepositoryService.class)
         def ps3 = new LinkedMultiValueMap()
-        def ps4 = new MultivaluedHashMap()
+        def ps4 = new MultivaluedMapImpl()
         def context = new NuGetRequestContext()
         try {
             context.uriInfo = new FakeUriInfo(ps4)

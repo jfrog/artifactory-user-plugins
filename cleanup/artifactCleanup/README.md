@@ -13,6 +13,10 @@ To ensure logging for this plugin, edit ${ARTIFACTORY_HOME}/etc/logback.xml to a
     </logger>
 ```
 
+**Note:**
+
+If you're trying to clean Docker images, this plugin may lead to unexpectedly partial or broken cleans. It is recommended to instead use the [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/tree/master/cleanup/cleanDockerImages) plugin for this purpose.
+
 Parameters
 ----------
 

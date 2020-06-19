@@ -105,7 +105,7 @@ class ExpirePackagesMetadataTest extends Specification {
         def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder()
         remoteBuilder.key(key)
         remoteBuilder.repositorySettings(new DebianRepositorySettingsImpl())
-        remoteBuilder.url('http://localhost:8088/artifactory/source-local')
+        remoteBuilder.url('http://localhost:8088/artifactory/source-local').username('admin').password('password')
         artifactory.repositories().create(0, remoteBuilder.build())
         return artifactory.repository(key)
     }

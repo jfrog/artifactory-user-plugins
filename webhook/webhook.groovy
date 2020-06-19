@@ -125,6 +125,8 @@ class Globals {
     static repositories
 }
 
+WebHook.init(ctx, log)
+
 /**
  * REST APIs for the webhook
  */
@@ -536,12 +538,10 @@ class WebHook {
     def debug = false
     def connectionTimeout = 15000
     def baseUrl
+    def ctx = null
+    def log = null
     // Used for async POSTS
     ExecutorService excutorService = Executors.newFixedThreadPool(10)
-
-    static {
-        init()
-    }
 
     /**
      * Sends the event to the particular webhooks for filtering and processing
@@ -709,12 +709,18 @@ class WebHook {
      * @return The response/error code from the remote site
      */
     private String callPost(String urlString, String content) {
-        def post = new URL(urlString).openConnection()
+        def url = new URL(urlString)
+        def post = url.openConnection()
         post.method = "POST"
         post.doOutput = true
         post.setConnectTimeout(connectionTimeout)
         post.setReadTimeout(connectionTimeout)
         post.setRequestProperty("Content-Type", "application/json")
+        def authidx = url.authority.indexOf('@')
+        if (authidx > 0) {
+            def auth = url.authority[0..<authidx].bytes.encodeBase64()
+            post.setRequestProperty("Authorization", "Basic $auth")
+        }
         def writer = null, reader = null
         try {
             writer = post.outputStream
@@ -739,22 +745,28 @@ class WebHook {
      * Reloads the configuration, discarding the previous one.
      */
     static void reload() {
+        def tctx = null
+        def tlog = null
         if (me != null) {
+            tctx = me.ctx
+            tlog = me.log
             me.excutorService.shutdown()
             me = null
         }
-        init()
+        init(tctx, tlog)
     }
 
     /**
      * Initializes the webhook
      */
-    private synchronized static void init() {
+    synchronized static void init(ctx, log) {
         if (me == null) {
             me = new WebHook()
+            me.ctx = ctx
+            me.log = log
+            failedToLoadConfig = false
             try {
                 me.loadConfig()
-                failedToLoadConfig = false
             } catch (ex) {
                 failedToLoadConfig = true
                 me = null
@@ -766,7 +778,7 @@ class WebHook {
      * Loads and processes the configuration file
      */
     private void loadConfig() {
-        final String CONFIG_FILE_PATH = "${System.properties.'artifactory.home'}/etc/plugins/webhook.config.json"
+        final String CONFIG_FILE_PATH = "${ctx.artifactoryHome.etcDir}/plugins/webhook.config.json"
         def inputFile = new File(CONFIG_FILE_PATH)
         def config = new JsonSlurper().parseText(inputFile.text)
         if (config && config.webhooks) {

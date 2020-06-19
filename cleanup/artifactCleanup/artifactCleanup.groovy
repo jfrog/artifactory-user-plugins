@@ -55,7 +55,7 @@ executions {
         def repos = params['repos'] as String[]
         def dryRun = params['dryRun'] ? new Boolean(params['dryRun'][0]) : false
         def disablePropertiesSupport = params['disablePropertiesSupport'] ? new Boolean(params['disablePropertiesSupport'][0]) : false
-        Global.paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
+        def paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
 
         // Enable fallback support for deprecated month parameter
         if ( params['months'] && !params['timeInterval'] ) {
@@ -65,7 +65,7 @@ executions {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
 
-        artifactCleanup(timeUnit, timeInterval, repos, log, Global.paceTimeMS, dryRun, disablePropertiesSupport)
+        artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
@@ -95,8 +95,8 @@ executions {
     }
 }
 
-def deprecatedConfigFile = new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH)
-def configFile = new File(ctx.artifactoryHome.haAwareEtcDir, CONFIG_FILE_PATH)
+def deprecatedConfigFile = new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH)
+def configFile = new File(ctx.artifactoryHome.etcDir, CONFIG_FILE_PATH)
 
 if ( deprecatedConfigFile.exists() ) {
 
@@ -104,6 +104,7 @@ if ( deprecatedConfigFile.exists() ) {
         def config = new ConfigSlurper().parse(deprecatedConfigFile.toURL())
         log.info "Schedule job policy list: $config.policies"
 
+        def count=1
         config.policies.each{ policySettings ->
             def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
             def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
@@ -113,11 +114,12 @@ if ( deprecatedConfigFile.exists() ) {
             def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
 
             jobs {
-                "scheduledCleanup_$cron"(cron: cron) {
+                "scheduledCleanup_$count"(cron: cron) {
                     log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
                     artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
                 }
             }
+            count++
         }
     } else  {
         log.warn "Deprecated 'artifactCleanup.properties' file is still present, but ignored. You should remove the file."
@@ -129,6 +131,7 @@ if ( configFile.exists() ) {
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
 
+    def count=1
     config.policies.each{ policySettings ->
         def cron = policySettings.containsKey("cron") ? policySettings.cron as String : ["0 0 5 ? * 1"]
         def repos = policySettings.containsKey("repos") ? policySettings.repos as String[] : ["__none__"]
@@ -139,11 +142,12 @@ if ( configFile.exists() ) {
         def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
 
         jobs {
-            "scheduledCleanup_$cron"(cron: cron) {
+            "scheduledCleanup_$count"(cron: cron) {
                 log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit($timeUnit), timeInterval($timeInterval), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
                 artifactCleanup( timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
             }
         }
+        count++
     }  
 }
 
@@ -226,10 +230,14 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
 
     if (dryRun) {
         log.info "Dry run - nothing deleted. Found $cntFoundArtifacts artifacts consuming $bytesFound bytes"
-        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
+        if (cntNoDeletePermissions > 0) {
+            log.info "$cntNoDeletePermissions artifacts cannot be deleted due to lack of permissions ($bytesFoundWithNoDeletePermission bytes)"
+        }
     } else {
-        log.info "Finished cleanup, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
-        log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
+        log.info "Finished cleanup, deleting $cntFoundArtifacts artifacts that took up $bytesFound bytes"
+        if (cntNoDeletePermissions > 0) {
+            log.info "$cntNoDeletePermissions artifacts could not be deleted due to lack of permissions ($bytesFoundWithNoDeletePermission bytes)"
+        }
     }
 }
 

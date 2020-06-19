@@ -30,16 +30,28 @@ class BeforeSymbolServerDownloadTest extends Specification {
         def file = new ByteArrayInputStream('test symbol'.bytes)
         artifactory2.repository('symbols').upload(filePath, file).doUpload()
 
-        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
+        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).username('admin').password('password').repositorySettings(new NugetRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, remoteRepo)
 
         when:
         artifactory.repository(remoteRepokey).download(filePath).doDownload();
 
-        def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
+        def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory-service.log'
         def conn = new URL (logfile).openConnection()
         conn.requestMethod = 'GET'
         conn.setRequestProperty('Authorization', auth)
+        if (conn.responseCode != 200) {
+            logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=service.log'
+            conn = new URL (logfile).openConnection()
+            conn.requestMethod = 'GET'
+            conn.setRequestProperty('Authorization', auth)
+        }
+        if (conn.responseCode != 200) {
+            logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
+            conn = new URL (logfile).openConnection()
+            conn.requestMethod = 'GET'
+            conn.setRequestProperty('Authorization', auth)
+        }
         assert conn.responseCode == 200
         def reader = new InputStreamReader(conn.inputStream)
         def textlog = reader.text

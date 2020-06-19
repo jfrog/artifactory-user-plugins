@@ -30,6 +30,6 @@ class StorageSummaryTest extends Specification {
         def pluginout2 = new JsonSlurper().parseText(pluginstream2)
 
         then:
-        pluginout1 == apiout.storageSummary || pluginout2 == apiout.storageSummary
+        pluginout1 == apiout.storageSummary || pluginout2 == apiout.storageSummary || pluginout1 == apiout || pluginout2 == apiout
     }
 }

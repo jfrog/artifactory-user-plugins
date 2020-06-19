@@ -151,7 +151,7 @@ def trySendNotification(String level, String headline, String message) {
  * Load Slack Webhook url from configuration file
  */
 def getWebhookUrl() {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def configFile = new File(etcdir, configurationFilePath)
     def props = new JsonSlurper().parse(configFile)
     def url = props.webhookUrl
@@ -162,7 +162,7 @@ def getWebhookUrl() {
  *  Seet Webhook url at configuration file
  */
 def setWebhookUrl(url) {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def configFile = new File(etcdir, configurationFilePath)
     def json = new JsonBuilder()
     json {

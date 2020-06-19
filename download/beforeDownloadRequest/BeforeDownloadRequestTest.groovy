@@ -24,7 +24,7 @@ class BeforeDownloadRequestTest extends Specification {
         // Create a remote repository and link it to the local one
         def remote = builder.remoteRepositoryBuilder().key('test-remote')
         remote.repositorySettings(new MavenRepositorySettingsImpl())
-        remote.url('http://localhost:8088/artifactory/test-local')
+        remote.url('http://localhost:8088/artifactory/test-local').username('admin').password('password')
         artifactory.repositories().create(0, remote.build())
 
         // Get the repos

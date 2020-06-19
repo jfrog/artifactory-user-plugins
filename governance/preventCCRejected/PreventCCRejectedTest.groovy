@@ -26,6 +26,7 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appVersion', '3.14').
             withParameter('status', 'approved').sync()
         def conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        conn.setRequestProperty("Authorization", "Basic ${'admin:password'.bytes.encodeBase64().toString()}")
         def code1 = conn.getResponseCode()
 
         then:
@@ -38,6 +39,7 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appVersion', '3.14').
             withParameter('status', 'rejected').sync()
         conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        conn.setRequestProperty("Authorization", "Basic ${'admin:password'.bytes.encodeBase64().toString()}")
         def code2 = conn.getResponseCode()
 
         then:

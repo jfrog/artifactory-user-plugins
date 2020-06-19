@@ -15,7 +15,7 @@ The `cleanDockerImages.properties` file has the following field:
 For example:
 
 ``` json
-dockerRepos: ["example-docker-local", "example-docker-local-2"]
+dockerRepos = ["example-docker-local", "example-docker-local-2"]
 ```
 
 Usage

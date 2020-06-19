@@ -18,7 +18,7 @@ import groovy.io.FileType
 import groovy.json.JsonBuilder
 
 executions {
-  def artHome = ctx.artifactoryHome.haAwareEtcDir
+  def artHome = ctx.artifactoryHome.etcDir
 
   //usage: curl -X GET http://localhost:8088/artifactory/api/plugins/execute/listPlugins
   listPlugins(httpMethod: 'GET') {

@@ -17,7 +17,7 @@
 import org.artifactory.exception.CancelException
 import groovy.json.JsonSlurper
 
-def repositories = new JsonSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, 'plugins/validateArtifactLowerCase.json'))
+def repositories = new JsonSlurper().parse(new File(ctx.artifactoryHome.etcDir, 'plugins/validateArtifactLowerCase.json'))
 
 storage {
     beforeCreate { item ->

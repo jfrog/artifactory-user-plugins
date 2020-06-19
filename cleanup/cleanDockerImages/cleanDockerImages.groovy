@@ -25,7 +25,7 @@ import org.artifactory.repo.RepoPathFactory
 executions {
     cleanDockerImages() { params ->
         def deleted = []
-        def etcdir = ctx.artifactoryHome.haAwareEtcDir
+        def etcdir = ctx.artifactoryHome.etcDir
         def propsfile = new File(etcdir, "plugins/cleanDockerImages.properties")
         def repos = new ConfigSlurper().parse(propsfile.toURL()).dockerRepos
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false

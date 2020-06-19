@@ -49,7 +49,7 @@ pluginVersion = "5.10.4"
 
 //global variables
 verbose = false
-artHome = ctx.artifactoryHome.haAwareEtcDir
+artHome = ctx.artifactoryHome.etcDir
 cronExpression = null
 ignoredUsers = ['anonymous', '_internal', 'xray', 'access-admin']
 

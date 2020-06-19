@@ -1,8 +1,12 @@
+import org.jfrog.artifactory.client.ArtifactoryRequest
+import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import org.jfrog.artifactory.client.model.Privilege
 import org.apache.http.client.HttpResponseException
+import groovy.json.JsonBuilder
+import org.jfrog.lilypad.Control
 import spock.lang.Specification
 
 class ArtifactCleanupTest extends Specification {
@@ -45,6 +49,36 @@ class ArtifactCleanupTest extends Specification {
 
         then:
         thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup test with dryrun'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
+        def file = new ByteArrayInputStream('test'.bytes)
+        artifactory.repository('maven-local').upload('test', file).doUpload()
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').sync()
+        artifactory.repository('maven-local').file('test').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        when:
+        artifactory.plugins().execute('cleanup').
+            withParameter('repos', 'maven-local').
+            withParameter('timeUnit', 'month').
+            withParameter('timeInterval', '0').
+            withParameter('dryRun', 'true').sync()
+        artifactory.repository('maven-local').file('test').info()
+
+        then:
+        notThrown(HttpResponseException)
 
         cleanup:
         artifactory.repository('maven-local').delete()
@@ -243,5 +277,84 @@ class ArtifactCleanupTest extends Specification {
         artifactory.security().deletePermissionTarget('testperm')
         artifactory.security().deleteUser('nobody')
         artifactory.security().deleteGroup('cleaners')
+    }
+
+    def 'artifact cleanup test with control features'() {
+        setup:
+        def artifactory = createClientAndMavenRepo('maven-local')
+
+        def file1 = new ByteArrayInputStream('test1'.bytes)
+        artifactory.repository('maven-local').upload('test1', file1).doUpload()
+        def file2 = new ByteArrayInputStream('test2'.bytes)
+        artifactory.repository('maven-local').upload('test2', file2).doUpload()
+
+        when:
+        Thread.start {
+            artifactory.plugins().execute('cleanup').
+                withParameter('repos', 'maven-local').
+                withParameter('timeUnit', 'month').
+                withParameter('timeInterval', '0').
+                withParameter('paceTimeMS', '5000').sync()
+        }
+        Thread.sleep(2500)
+        artifactory.plugins().execute('cleanupCtl').
+            withParameter('command', 'stop').sync()
+        Thread.sleep(3000)
+        artifactory.repository('maven-local').file('test1').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        when:
+        artifactory.repository('maven-local').file('test2').info()
+
+        then:
+        notThrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
+    }
+
+    def 'artifact cleanup test with cron job'() {
+        setup:
+        def path1 = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.json"
+        def path2 = "/var/opt/jfrog/artifactory/etc/plugins/artifactCleanup.json"
+        def plugin1 = "/var/opt/jfrog/artifactory/etc/artifactory/plugins/artifactCleanup.groovy"
+        def plugin2 = "/var/opt/jfrog/artifactory/etc/plugins/artifactCleanup.groovy"
+        def innercontent = [
+            cron: "0/10 * * * * ?",
+            repos: ["maven-local"],
+            timeUnit: "month",
+            timeInterval: 0,
+            dryRun: false,
+            paceTimeMS: 500,
+            disablePropertiesSupport: true
+        ]
+        def content = [policies: [innercontent]]
+        try {
+            Control.setFileContent(8088, path1, new JsonBuilder(content).toString())
+            Control.touchFile(8088, plugin1)
+        } catch (Exception ex) {
+            Control.setFileContent(8088, path2, new JsonBuilder(content).toString())
+            Control.touchFile(8088, plugin2)
+        }
+        def artifactory = createClientAndMavenRepo('maven-local')
+        def reloadreq = new ArtifactoryRequestImpl()
+            .apiUrl("api/plugins/reload")
+            .method(ArtifactoryRequest.Method.POST)
+        artifactory.restCall(reloadreq)
+
+        def file = new ByteArrayInputStream('test'.bytes)
+        artifactory.repository('maven-local').upload('test', file).doUpload()
+
+        when:
+        Thread.sleep(12000)
+        artifactory.repository('maven-local').file('test').info()
+
+        then:
+        thrown(HttpResponseException)
+
+        cleanup:
+        artifactory.repository('maven-local').delete()
     }
 }

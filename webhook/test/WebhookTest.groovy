@@ -32,13 +32,16 @@ class WebhookTest extends Specification {
     static def DOCKER_REPO_NAME = "docker-local"
 
     // Webhook
-    static def WEBHOOK_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhook.groovy'
-    static def WEBHOOK_CONFIG_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhook.config.json'
+    static def WEBHOOK_PATH_1 = '/var/opt/jfrog/artifactory/etc/artifactory/plugins/webhook.groovy'
+    static def WEBHOOK_PATH_2 = '/var/opt/jfrog/artifactory/etc/plugins/webhook.groovy'
+    static def WEBHOOK_CONFIG_PATH_1 = '/var/opt/jfrog/artifactory/etc/artifactory/plugins/webhook.config.json'
+    static def WEBHOOK_CONFIG_PATH_2 = '/var/opt/jfrog/artifactory/etc/plugins/webhook.config.json'
     static def WEBHOOK_INFO_URL = 'api/plugins/execute/webhookInfo'
     static def WEBHOOK_PING_URL = 'api/plugins/execute/pingWebhook'
     static def WEBHOOK_RELOAD_URL = 'api/plugins/execute/webhookReload'
     // Loopback
-    static def WEBHOOK_LOOPBACK_PATH = '/var/opt/jfrog/artifactory/etc/plugins/webhookLoopback.groovy'
+    static def WEBHOOK_LOOPBACK_PATH_1 = '/var/opt/jfrog/artifactory/etc/plugins/webhookLoopback.groovy'
+    static def WEBHOOK_LOOPBACK_PATH_2 = '/var/opt/jfrog/artifactory/etc/artifactory/plugins/webhookLoopback.groovy'
     static def WEBHOOK_LOOPBACK_CLEAR_URL = 'api/plugins/execute/webhookLoopbackClear'
     static def WEBHOOK_LOOPBACK_POST_URL = 'api/plugins/execute/webhookLoopback'
     static def WEBHOOK_LOOPBACK_GET_URL = 'api/plugins/execute/webhookLoopbackDetails'
@@ -87,7 +90,11 @@ executions {
 
 
         // Load the loopback plugin used for testing
-        Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, WEBHOOK_LOOPBACK_CODE)
+        try {
+            Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH_1, WEBHOOK_LOOPBACK_CODE)
+        } catch (Exception ex) {
+            Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH_2, WEBHOOK_LOOPBACK_CODE)
+        }
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
     }
 
@@ -98,9 +105,18 @@ executions {
         artifactory.repository(DOCKER_REPO_NAME).delete()
 
         // Delete loopback plugin
-        Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH, "")
+        try {
+            Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH_1, "")
+        } catch (Exception ex) {
+            Control.setFileContent(BASE_PORT, WEBHOOK_LOOPBACK_PATH_2, "")
+        }
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
-        Control.deleteFolder(BASE_PORT, WEBHOOK_LOOPBACK_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_LOOPBACK_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_LOOPBACK_PATH_2)
+        } catch (Exception ex) {}
     }
 
     /**
@@ -108,9 +124,17 @@ executions {
      * @param config The contents of what should go in webhook.config.json
      */
     def reloadAndVerifyConfig(config) {
-        Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, config)
+        try {
+            Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH_1, config)
+        } catch (Exception ex) {
+            Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH_2, config)
+        }
         // Force plugin reload to avoid double hook issue
-        Control.setFileContent(BASE_PORT, WEBHOOK_PATH, Control.getFileContent(BASE_PORT, WEBHOOK_PATH))
+        try {
+            Control.setFileContent(BASE_PORT, WEBHOOK_PATH_1, Control.getFileContent(BASE_PORT, WEBHOOK_PATH_1))
+        } catch (Exception ex) {
+            Control.setFileContent(BASE_PORT, WEBHOOK_PATH_2, Control.getFileContent(BASE_PORT, WEBHOOK_PATH_2))
+        }
         callPost("${BASE_URL}/${RELOAD_PLUGINS_URL}", "")
         return callPost("${BASE_URL}/${WEBHOOK_RELOAD_URL}", "")
     }
@@ -118,7 +142,11 @@ executions {
 
     def 'test basic'() {
         setup:
-        Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH, "{}")
+        try {
+            Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH_1, "{}")
+        } catch (Exception ex) {
+            Control.setFileContent(BASE_PORT, WEBHOOK_CONFIG_PATH_2, "{}")
+        }
 
         // webhookInfo execution point
         when:
@@ -133,7 +161,12 @@ executions {
         results.code == SUCCESS_CODE && results.response.contains("Reloaded")
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test storage'() {
@@ -145,7 +178,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -173,7 +206,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterDelete"
                   ]
@@ -199,7 +232,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterMove"
                   ]
@@ -229,7 +262,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCopy"
                   ]
@@ -256,7 +289,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterPropertyCreate"
                   ]
@@ -282,7 +315,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterPropertyDelete"
                   ]
@@ -302,7 +335,12 @@ executions {
         json[0].artifactory.webhook.event == "storage.afterPropertyDelete"
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test build'() {
@@ -314,7 +352,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "build.afterSave"
                   ]
@@ -336,7 +374,12 @@ executions {
 
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test execute'() {
@@ -348,7 +391,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ]
@@ -367,7 +410,12 @@ executions {
 
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test docker'() {
@@ -380,7 +428,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ]
@@ -405,7 +453,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagDeleted"
                   ]
@@ -429,7 +477,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -454,7 +502,12 @@ executions {
         json[0].artifacts[0].reference == "http://localhost:8081/artifactory/$DOCKER_REPO_NAME/busybox:latest"
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test docker tag filter'() {
@@ -467,7 +520,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -493,7 +546,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "docker.tagCreated"
                   ],
@@ -511,7 +564,12 @@ executions {
         json.size() == 0
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test formatters'() {
@@ -523,7 +581,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -547,7 +605,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -566,7 +624,12 @@ executions {
         assert json[0].text.contains("Artifactory:")
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test path and repo combo filter'() {
@@ -578,7 +641,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -605,7 +668,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -633,7 +696,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -660,7 +723,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -686,7 +749,12 @@ executions {
         json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test path filter'() {
@@ -698,7 +766,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -726,7 +794,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -754,7 +822,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -778,7 +846,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -802,7 +870,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -826,7 +894,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -845,7 +913,12 @@ executions {
         json.size() == 1
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test repo filter'() {
@@ -857,7 +930,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ]
@@ -884,7 +957,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -911,7 +984,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -942,7 +1015,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "storage.afterCreate"
                   ],
@@ -966,7 +1039,12 @@ executions {
         json[0].artifactory.webhook.data.repoKey == MAVEN_REPO1_NAME
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
     }
 
     def 'test enabled'() {
@@ -978,7 +1056,7 @@ executions {
         def reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ]
@@ -1002,7 +1080,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -1025,7 +1103,7 @@ executions {
         reload = reloadAndVerifyConfig('''{
           "webhooks": {
               "test_webhook": {
-                  "url": "http://localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
+                  "url": "http://admin:password@localhost:8081/artifactory/api/plugins/execute/webhookLoopback",
                   "events": [
                     "execute.pingWebhook"
                   ],
@@ -1045,7 +1123,12 @@ executions {
 
 
         cleanup:
-        Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH)
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_1)
+        } catch (Exception ex) {}
+        try {
+            Control.deleteFolder(BASE_PORT, WEBHOOK_CONFIG_PATH_2)
+        } catch (Exception ex) {}
 
     }
 
