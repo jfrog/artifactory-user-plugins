@@ -32,17 +32,17 @@ import static org.artifactory.repo.RepoPathFactory.create
 executions {
     // this execution is named 'deleteEmptyDirs' and it will be called by REST by this name
     // map parameters provide extra information about this execution, such as version, description, users that allowed to call this plugin, etc.
-    // The expected parameter is comma separated list of paths from which empty folders will be searched.
+    // The expected (and mandatory) parameter is comma separated list of paths from which empty folders will be searched.
     // curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/deleteEmptyDirsPlugin?params=paths=repo,otherRepo/some/path"
     deleteEmptyDirsPlugin(version: '1.1', description: 'Deletes empty directories', users: ['admin'].toSet()) { params ->
         if (!params || !params.paths) {
-            log.info 'Paths parameter not given, use all.'
-
-            params['paths'] = []
-            insertAllRepositories(params.paths)
+            def errorMessage = 'Paths parameter is mandatory, please supply it.'
+            log.error errorMessage
+            status = 400
+            message = errorMessage
+        } else {
+            deleteEmptyDirectories(params.paths as String[])
         }
-        
-        deleteEmptyDirectories(params.paths as String[])
     }
 }
 
@@ -60,17 +60,18 @@ private def insertAllRepositories(ArrayList paths) {
         }
 }
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURL())
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURI().toURL())
 log.info "Schedule job policy list: $config.policies"
 
 config.policies.each{ policySettings ->
     def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
-    def paths = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : []
+    def paths = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
 
-    if (paths.size == 0) {
+    if (paths[0] == "__all__") {
+        paths = []
         insertAllRepositories(paths)
     }
-    
+
     jobs {
         "scheduledDeleteEmptyDirs_$cron"(cron: cron) {
             log.info "Policy settings for scheduled run at($cron): path list($paths)"
