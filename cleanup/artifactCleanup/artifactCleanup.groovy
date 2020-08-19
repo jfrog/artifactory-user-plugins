@@ -45,7 +45,7 @@ class Global {
 
 def pluginGroup = 'cleaners'
 def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
-def regex = ~/-\d+\.\d+\.\d+/
+def regex = ~/.*-[\.\d+]*[-+][\.\d+]*\..*/
 
 
 executions {
@@ -123,8 +123,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     Global.stopCleaning = false
     int cntFoundArtifacts = 0
     int cntNoDeletePermissions = 0
+    int cntRemovedArtifacts = 0
     long bytesFound = 0
     long bytesFoundWithNoDeletePermission = 0
+    long bytesRemoved = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
     artifactsCleanedUp.find {
         try {
@@ -152,24 +154,26 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 cntNoDeletePermissions++
             }
             if (dryRun) {
-                    log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                    log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
-                    log.info "\t==> canDelete: ${security.canDelete(it)}"
+                    log.debug "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.debug "\t==> currentUser: ${security.currentUser().getUsername()}"
+                    log.debug "\t==> canDelete: ${security.canDelete(it)}"
                     if (!checkName(keepArtifacts, keepArtifactsRegex, it)) {
-                        log.info "\t==> protected by regex: ${keepArtifactsRegex}"
+                        log.debug "\t==> protected by regex: ${keepArtifactsRegex}"
                     }
             } else {
                 if (security.canDelete(it) && (checkName(keepArtifacts, keepArtifactsRegex, it))) {
-                    log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    bytesRemoved += repositories.getItemInfo(it)?.getSize()
+                    log.debug "Deleting $it, [$cntFoundArtifacts/$artifactsCleanedUp.size]. Removed $bytesRemoved of total $bytesFound bytes"
                     repositories.delete it
                 } else {
-                    log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
+                    log.debug "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
                     cntNoDeletePermissions++
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
-            log.info "Failed to find $it, skipping"
+            log.debug "Failed to find $it, skipping"
         }
 
         def sleepTime = (Global.paceTimeMS > 0) ? Global.paceTimeMS : paceTimeMS
@@ -184,8 +188,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
         log.info "Dry run - nothing deleted. Found $cntFoundArtifacts artifacts consuming $bytesFound bytes"
         log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     } else {
-        log.info "Finished cleanup, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
+        cntRemovedArtifacts = cntFoundArtifacts - cntNoDeletePermissions
+        log.info "Finished cleanup $repos repositories, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
         log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
+        log.info "After this cleanup, $cntRemovedArtifacts artifacts ($bytesRemoved bytes) was removed from $repos repositories"
     }
 }
 
@@ -234,5 +240,5 @@ private def getSkippedPaths(String[] repos) {
 }
 
 private def checkName(keepArtifacts, keepArtifactsRegex, artifactName) {
-    return !keepArtifacts || !((artifactName =~ keepArtifactsRegex).count > 0)
+    return !keepArtifacts || (!((artifactName =~ keepArtifactsRegex).count > 0) || artifactName.contains("debug"))
 }
