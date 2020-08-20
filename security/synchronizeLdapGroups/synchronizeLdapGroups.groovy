@@ -27,7 +27,8 @@ realms {
     myrealm([autoCreateUsers: false, realmPolicy: RealmPolicy.ADDITIVE]) {
         authenticate { username, credentials ->
             // Common special or internal users can be skipped
-            if (username in ['anonymous', '_internal', 'xray', 'access-admin']) {
+            if (username in ['anonymous', '_internal', 'xray', 'access-admin', 'admin', 'jffe@000']
+                || username.startsWith("token:jf")) {
                 return true
             }
             def settings = new LdapGroupsSettings()
