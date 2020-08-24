@@ -28,7 +28,7 @@ realms {
         authenticate { username, credentials ->
             // Common special or internal users can be skipped
             if (username in ['anonymous', '_internal', 'xray', 'access-admin', 'admin', 'jffe@000']
-                || username.startsWith("token:jf")) {
+                || username ==~ /^token:jf[a-z]+@01e[a-z0-9]{23}$/) {
                 return true
             }
             def settings = new LdapGroupsSettings()
