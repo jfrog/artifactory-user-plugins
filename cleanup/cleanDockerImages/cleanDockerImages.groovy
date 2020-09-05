@@ -62,7 +62,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
         deleted << img.id
         if (!dryRun) {
             repositories.delete(img)
-            sleep(0.2)
+            sleep(200)
         }
         log.debug("Deleted $img.id")
     }
