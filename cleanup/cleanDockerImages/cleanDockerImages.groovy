@@ -95,7 +95,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
-            toBeDeletedImageTagsInCurrentRepo << parentRepoPath.name
+            toBeDeletedImageTagsInCurrentRepo.push(parentRepoPath.name)
         }
         break
     }
