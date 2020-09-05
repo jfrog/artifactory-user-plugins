@@ -76,16 +76,17 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     for (childItem in repositories.getChildren(parentRepoPath)) {
         // log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
-        if (currentPath.name == "latest") {
-            latestImageItemInfo = childItem
-            // continue
-        }
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
             continue
         }
         // log.debug("Scanning File: $currentPath.name")
         if (currentPath.name != "manifest.json") continue
+
+        if (parentRepoPath.name == "latest") {
+            latestImageItemInfo = parentInfo
+            continue
+        }
         // get the properties here and delete based on policies:
         // - implement daysPassed policy first and delete the images that
         //   qualify
