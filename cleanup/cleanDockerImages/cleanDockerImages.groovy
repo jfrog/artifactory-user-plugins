@@ -19,6 +19,7 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.transform.Field
+import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.exception.CancelException
@@ -122,6 +123,11 @@ def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
     def lastModified = itemInfo.getLastModified()
     def lastUsed = lastDownloaded > lastModified ? lastDownloaded : lastModified
+    if(item.repoPath.path.contains("migration")) {
+        log.debug("MIGRATION FOUND")
+        def calendarUntilFormatted = new SimpleDateFormat("yyyy/MM/dd HH:mm").format(calendarUntil.getTime());
+        log.debug("Last Used of $item.repoPath.name: $calendarUntilFormatted")
+    }
     return (new Date().time - lastUsed) >= maxUnusedSecondsAllowed
 }
 
