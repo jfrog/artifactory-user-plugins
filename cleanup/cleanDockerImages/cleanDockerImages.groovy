@@ -41,7 +41,7 @@ executions {
 
         def calendarUntil = Calendar.getInstance()
         calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
-        def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime()
+        def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime().getTime()
 
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
