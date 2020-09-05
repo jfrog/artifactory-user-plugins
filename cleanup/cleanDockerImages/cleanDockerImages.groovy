@@ -100,7 +100,7 @@ def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def itemInfo = repositories.getItemInfo(item.repoPath)
     def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
     def lastModified = itemInfo.getLastModified()
-    log.info("childItem.repoPath: ${childItem.repoPath.getName()}")
+    log.info("childItem.repoPath: ${item.repoPath.getName()}")
     log.info("lastDownloaded: $lastDownloaded")
     log.info("lastModified: $lastModified")
     log.info("new Date().time: ${new Date().time}")
