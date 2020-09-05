@@ -60,7 +60,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
-        if (!dryRun) log.debug("delete $img")//repositories.delete(img)
+        if (!dryRun) log.info("delete $img")//repositories.delete(img)
     }
     for (key in imagesPathMap.keySet()) {
         def repoList = imagesPathMap[key]
@@ -71,7 +71,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
         def deleteCount = repoList.size() - maxImagesCount
         for (i = 0; i < deleteCount; i += 1) {
             deleted << repoList[i][0].id
-            if (!dryRun) log.debug("delete $repoList[i][0]") //repositories.delete(repoList[i][0])
+            if (!dryRun) log.info("delete $repoList[i][0]") //repositories.delete(repoList[i][0])
         }
     }
     return deleted
@@ -91,7 +91,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
             simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
             continue
         }
-        log.debug("Scanning File: $currentPath.name")
+        // log.debug("Scanning File: $currentPath.name")
         if (currentPath.name != "manifest.json") continue
         // get the properties here and delete based on policies:
         // - implement daysPassed policy first and delete the images that
@@ -107,12 +107,12 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
 }
 
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
-    log.info("ITEM REPOPATH: $item.repoPath")
     def stats = repositories.getStats(item.repoPath)
     def itemInfo = repositories.getItemInfo(item.repoPath)
     def lastDownloaded = stats == null ? itemInfo.getLastModified() : stats.getLastDownloaded()
-    log.info("LASTDL: $lastDownloaded")
-    log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
+    // log.info("ITEMREPOPATH: $item.repoPath")
+    // log.info("LASTDL: $lastDownloaded")
+    // log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
     return (new Date().time - lastDownloaded) >= maxUnusedSecondsAllowed
 }
 
