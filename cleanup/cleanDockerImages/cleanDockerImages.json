@@ -1,0 +1,9 @@
+{
+    "cron": "0 0 1 ? * 1",
+    "repos": [
+        "libs-releases-local"
+    ],
+    "timeUnit": "day",
+    "timeInterval": 14,
+    "dryRun": true
+}

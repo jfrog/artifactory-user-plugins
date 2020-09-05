@@ -17,8 +17,11 @@
 // Created by Madhu Reddy on 6/16/17.
 
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
 import java.util.concurrent.TimeUnit
 import org.artifactory.repo.RepoPathFactory
+
+@Field final String CONFIG_FILE_PATH = "plugins/${this.class.name}.json"
 
 // usage: curl -X POST http://localhost:8088/artifactory/api/plugins/execute/cleanDockerImages
 
@@ -26,12 +29,21 @@ executions {
     cleanDockerImages() { params ->
         def deleted = []
         def etcdir = ctx.artifactoryHome.etcDir
-        def propsfile = new File(etcdir, "plugins/cleanDockerImages.properties")
-        def repos = new ConfigSlurper().parse(propsfile.toURL()).dockerRepos
-        def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
+        def configFile = new File(ctx.artifactoryHome.etcDir, CONFIG_FILE_PATH)
+        def config = new JsonSlurper().parse(configFile.toURL())
+
+        def repos = config.repos ? config.repos : []
+        def timeUnit = config.timeUnit ? config.timeUnit : "day"
+        def timeInterval = config.timeInterval ? config.timeInterval : 1
+        def dryRun = config.dryRun ? config.dryRun : false
+
+        def calendarUntil = Calendar.getInstance()
+        calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
+        def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime()
+
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
-            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun)
+            def del = buildParentRepoPaths(RepoPathFactory.create(it), maxUnusedSecondsAllowed, dryRun)
             deleted.addAll(del)
         }
         def json = [status: 'okay', dryRun: dryRun, deleted: deleted]
@@ -40,10 +52,10 @@ executions {
     }
 }
 
-def buildParentRepoPaths(path, dryRun) {
+def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
     def parentInfo = repositories.getItemInfo(path)
-    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount)
+    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
         if (!dryRun) repositories.delete(img)
@@ -67,13 +79,14 @@ def buildParentRepoPaths(path, dryRun) {
 // - delete the images immediately if the maxDays policy applies
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
-def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
+def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
+        log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
+            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
             continue
         }
         log.debug("Scanning File: $currentPath.name")
@@ -83,45 +96,35 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
         //   qualify
         // - aggregate the image info to group by image and sort by create
         //   date for maxCount policy
-        if (checkDaysPassedForDelete(childItem)) {
+        if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
-        } else if ((maxCount = getMaxCountForDelete(childItem)) > 0) {
-            log.debug("Adding to IMAGES MAP: $parentRepoPath")
-            def parentCreatedDate = parentInfo.created
-            def parentId = parentRepoPath.parent.id
-            def oldmax = maxCount
-            if (parentId in imagesCount) oldmax = imagesCount[parentId]
-            imagesCount[parentId] = maxCount > oldmax ? maxCount : oldmax
-            if (!imagesPathMap.containsKey(parentId)) {
-                imagesPathMap[parentId] = []
-            }
-            imagesPathMap[parentId] << [parentRepoPath, childItem.created]
         }
         break
     }
 }
 
-// This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxDays" for purge
-def checkDaysPassedForDelete(item) {
-    def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
+def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
-    def prop = repositories.getProperty(item.repoPath, maxDaysProp)
-    if (!prop) return false
-    log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
-    prop = prop.isInteger() ? prop.toInteger() : null
-    if (prop == null) return false
-    return ((new Date().time - item.created) / oneday) >= prop
+    def lastDownloaded = repositories.getStats(item.repoPath).getLastDownloaded()
+    return (new Date().time - lastDownloaded) >= maxUnusedSecondsAllowed
 }
 
-// This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxCount" for purge
-def getMaxCountForDelete(item) {
-    def maxCountProp = "docker.label.com.jfrog.artifactory.retention.maxCount"
-    def prop = repositories.getProperty(item.repoPath, maxCountProp)
-    if (!prop) return 0
-    log.debug "PROPERTY $maxCountProp FOUND = $prop IN MANIFEST FILE"
-    prop = prop.isInteger() ? prop.toInteger() : 0
-    return prop > 0 ? prop : 0
+private def mapTimeUnitToCalendar (String timeUnit) {
+    switch ( timeUnit ) {
+        case "minute":
+            return Calendar.MINUTE
+        case "hour":
+            return Calendar.HOUR
+        case "day":
+            return Calendar.DAY_OF_YEAR
+        case "month":
+            return Calendar.MONTH
+        case "year":
+            return Calendar.YEAR
+        default:
+            def errorMessage = "$timeUnit is no valid time unit. Please check your request or scheduled policy."
+            log.error errorMessage
+            throw new CancelException(errorMessage, 400)
+    }
 }
