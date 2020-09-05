@@ -75,10 +75,10 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
 
-        if (currentPath.name == "latest") {
+        if (currentPath.name == "latest"
+            && childItem.isFolder()
+            && hasManifestJsonInChildren(currentPath)) {
             latestImageItemInfo = childItem
-            // TODO: add check to make sure this `latest` is for a tag 
-            //       (is a folder that has a `manifest.json` file in its children)
             continue
         }
 
@@ -106,6 +106,14 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
 
     return toBeDeletedImageTagsInCurrentRepo
 
+}
+
+def hasManifestJsonInChildren(repoPath) {
+    for (childItemInfo in repositories.getChildren(repoPath)) {
+        if (!childItemInfo.isFolder() && childItemInfo.repoPath.name == "manifest.json")
+            return true
+    }
+    return false
 }
 
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
