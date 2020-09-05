@@ -59,7 +59,11 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
-        if (!dryRun) log.info("delete $img.id")//repositories.delete(img)
+        log.info("Deleted $img.id")
+        if (!dryRun) {
+            repositories.delete(img)
+            sleep(0.2)
+        }
     }
     return deleted
 }
