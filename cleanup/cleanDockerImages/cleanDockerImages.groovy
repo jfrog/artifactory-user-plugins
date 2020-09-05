@@ -107,7 +107,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     if (latestImageItemInfo != null) {
         log.info(toBeDeletedImageTagsInCurrentRepo.join(","))
         log.info((repositories.getChildren(parentRepoPath)*.name).join(","))
-        if (toBeDeletedImageTagsInCurrentRepo.size == repositories.getChildren(parentRepoPath).size - 1
+        if (toBeDeletedImageTagsInCurrentRepo.size() == repositories.getChildren(parentRepoPath).size() - 1
             && !toBeDeletedImageTagsInCurrentRepo.contains("latest")) { // tof!
             oldSet << latestImageItemInfo.repoPath
         }
