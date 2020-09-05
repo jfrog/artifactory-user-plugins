@@ -18,6 +18,7 @@
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import groovy.transform.Field
 import java.util.concurrent.TimeUnit
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.exception.CancelException
