@@ -85,7 +85,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
-        log.debug("CHILDITEM GETNAME: $childItem.getName()")
+        // log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
