@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Created by Madhu Reddy on 6/16/17.
+// Created by Mohammad Ali Toufighi on 9/5/2020.
 
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
@@ -42,7 +42,6 @@ executions {
         def calendarUntil = Calendar.getInstance()
         calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
         def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime().getTime()
-        log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
             def del = buildParentRepoPaths(RepoPathFactory.create(it), maxUnusedSecondsAllowed, dryRun)
@@ -65,10 +64,6 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     return deleted
 }
 
-// Traverse through the docker repo (directories and sub-directories) and:
-// - delete the images immediately if the maxDays policy applies
-// - Aggregate the images that qualify for maxCount policy (to get deleted in
-//   the execution closure)
 def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     def parentRepoPath = parentInfo.repoPath
     def latestImageItemInfo = null
@@ -87,15 +82,8 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             toBeDeletedImageTagsInCurrentRepo.addAll(simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed))
             continue
         }
-        // log.debug("Scanning File: $currentPath.name")
         if (currentPath.name != "manifest.json") continue
 
-        
-        // get the properties here and delete based on policies:
-        // - implement daysPassed policy first and delete the images that
-        //   qualify
-        // - aggregate the image info to group by image and sort by create
-        //   date for maxCount policy
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
@@ -105,8 +93,6 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     }
 
     if (latestImageItemInfo != null) {
-        log.info(toBeDeletedImageTagsInCurrentRepo.join(","))
-        log.info((repositories.getChildren(parentRepoPath)*.name).join(","))
         if (toBeDeletedImageTagsInCurrentRepo.size() == repositories.getChildren(parentRepoPath).size() - 1
             && !toBeDeletedImageTagsInCurrentRepo.contains("latest")) { // tof!
             oldSet << latestImageItemInfo.repoPath
@@ -124,8 +110,6 @@ def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def itemInfo = repositories.getItemInfo(item.repoPath)
     def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
     def lastModified = itemInfo.getLastModified()
-    log.info("----")
-    log.info("childItem.repoPath: ${item.repoPath.parent.getPath()}")
     def lastUsed = lastDownloaded > lastModified ? lastDownloaded : lastModified
     return (new Date().time - lastUsed) >= maxUnusedSecondsAllowed
 }
