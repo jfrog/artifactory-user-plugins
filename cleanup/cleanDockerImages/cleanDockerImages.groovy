@@ -60,7 +60,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
-        if (!dryRun) repositories.delete(img)
+        if (!dryRun) log.debug("delete $img")//repositories.delete(img)
     }
     for (key in imagesPathMap.keySet()) {
         def repoList = imagesPathMap[key]
@@ -71,7 +71,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
         def deleteCount = repoList.size() - maxImagesCount
         for (i = 0; i < deleteCount; i += 1) {
             deleted << repoList[i][0].id
-            if (!dryRun) repositories.delete(repoList[i][0])
+            if (!dryRun) log.debug("delete $repoList[i][0]") //repositories.delete(repoList[i][0])
         }
     }
     return deleted
