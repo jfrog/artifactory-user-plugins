@@ -108,7 +108,9 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
 
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     log.info("ITEM REPOPATH: $item.repoPath")
-    def lastDownloaded = repositories.getStats(item.repoPath).getLastDownloaded()
+    def stats = repositories.getStats(item.repoPath)
+    def itemInfo = repositories.getItemInfo(item.repoPath)
+    def lastDownloaded = stats == null ? itemInfo.getLastModified() : stats.getLastDownloaded()
     log.info("LASTDL: $lastDownloaded")
     log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
     return (new Date().time - lastDownloaded) >= maxUnusedSecondsAllowed
