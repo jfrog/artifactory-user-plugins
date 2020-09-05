@@ -42,7 +42,7 @@ executions {
         def calendarUntil = Calendar.getInstance()
         calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
         def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime().getTime()
-
+        log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
             def del = buildParentRepoPaths(RepoPathFactory.create(it), maxUnusedSecondsAllowed, dryRun)
@@ -55,24 +55,12 @@ executions {
 }
 
 def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
-    def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
+    def deleted = [], oldSet = []
     def parentInfo = repositories.getItemInfo(path)
-    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
+    simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
         if (!dryRun) log.info("delete $img")//repositories.delete(img)
-    }
-    for (key in imagesPathMap.keySet()) {
-        def repoList = imagesPathMap[key]
-        def maxImagesCount = imagesCount[key]
-        // If number of current docker images is more than maxcount, delete them
-        if (maxImagesCount <= 0 || repoList.size() <= maxImagesCount) continue
-        repoList = repoList.sort { it[1] }
-        def deleteCount = repoList.size() - maxImagesCount
-        for (i = 0; i < deleteCount; i += 1) {
-            deleted << repoList[i][0].id
-            if (!dryRun) log.info("delete $repoList[i][0]") //repositories.delete(repoList[i][0])
-        }
     }
     return deleted
 }
@@ -81,14 +69,14 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
 // - delete the images immediately if the maxDays policy applies
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
-def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed) {
+def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         // log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, maxUnusedSecondsAllowed)
+            simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
             continue
         }
         // log.debug("Scanning File: $currentPath.name")
@@ -107,10 +95,15 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
 }
 
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
+
     def stats = repositories.getStats(item.repoPath)
     def itemInfo = repositories.getItemInfo(item.repoPath)
     def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
     def lastModified = itemInfo.getLastModified()
+    log.info("childItem.repoPath: ${childItem.repoPath.getName()}")
+    log.info("lastDownloaded: $lastDownloaded")
+    log.info("lastModified: $lastModified")
+    log.info("new Date().time: ${new Date().time}")
 
     def lastUsed = lastDownloaded > lastModified ? lastDownloaded : lastModified
     return (new Date().time - lastUsed) >= maxUnusedSecondsAllowed
