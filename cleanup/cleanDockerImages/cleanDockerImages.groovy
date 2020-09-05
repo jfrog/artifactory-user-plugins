@@ -110,6 +110,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (toBeDeletedImageTagsInCurrentRepo.size() == repositories.getChildren(parentRepoPath).size() - 1
             && !toBeDeletedImageTagsInCurrentRepo.contains("latest")) { // tof!
             oldSet << latestImageItemInfo.repoPath
+            oldSet << latestImageItemInfo.repoPath.parent // remove the whole folder
         }
     }
 
