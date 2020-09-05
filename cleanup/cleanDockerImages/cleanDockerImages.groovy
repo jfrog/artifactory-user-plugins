@@ -79,7 +79,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             && childItem.isFolder()
             && hasManifestJsonInChildren(currentPath)) {
             latestImageItemInfo = childItem
-            log.debug("Determined $latestImageItemInfo.repoPath.name as latest image for $parentInfo.name")
+            log.debug("Determined $latestImageItemInfo.repoPath.path as latest image for $parentInfo.name")
             continue
         }
 
