@@ -80,6 +80,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             latestImageItemInfo = childItem
             // TODO: add check to make sure this `latest` is for a tag 
             //       (is a folder that has a `manifest.json` file in its children)
+            continue
         }
 
         if (childItem.isFolder()) {
@@ -98,23 +99,17 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
-            toBeDeletedImageTagsInCurrentRepo.addAll(parentRepoPath.name)
+            toBeDeletedImageTagsInCurrentRepo.add(parentRepoPath.name)
         }
         break
     }
 
     if (latestImageItemInfo != null) {
-        def shouldDeleteLatest = toBeDeletedImageTagsInCurrentRepo.contains("latest")
         log.info(toBeDeletedImageTagsInCurrentRepo.join(","))
         log.info((repositories.getChildren(parentRepoPath)*.name).join(","))
-        for(childItem in repositories.getChildren(parentRepoPath)) {
-            if (!toBeDeletedImageTagsInCurrentRepo.contains(childItem.name)) {
-                shouldDeleteLatest = false
-                break
-            }
-        }
-        if (shouldDeleteLatest) {
-            oldSet << latestImageItemInfo
+        if (toBeDeletedImageTagsInCurrentRepo.size == repositories.getChildren(parentRepoPath).size - 1
+            && !toBeDeletedImageTagsInCurrentRepo.contains("latest")) { // tof!
+            oldSet << latestImageItemInfo.repoPath
         }
     }
 
