@@ -59,11 +59,11 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
     simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed)
     for (img in oldSet) {
         deleted << img.id
-        log.info("Deleted $img.id")
         if (!dryRun) {
             repositories.delete(img)
             sleep(0.2)
         }
+        log.info("Deleted $img.id")
     }
     return deleted
 }
@@ -79,6 +79,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             && childItem.isFolder()
             && hasManifestJsonInChildren(currentPath)) {
             latestImageItemInfo = childItem
+            log.debug("Determined $latestImageItemInfo.repoPath.name as latest image for $parentInfo.name")
             continue
         }
 
@@ -89,7 +90,6 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (currentPath.name != "manifest.json") continue
 
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
-            log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
             toBeDeletedImageTagsInCurrentRepo.add(parentRepoPath.name)
         }
