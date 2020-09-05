@@ -97,7 +97,8 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     }
 
     if (latestImageItemInfo != null) {
-        if (toBeDeletedImageTagsInCurrentRepo.size() == repositories.getChildren(parentRepoPath).size() - 1
+        if (toBeDeletedImageTagsInCurrentRepo.size() > 0
+            && toBeDeletedImageTagsInCurrentRepo.size() == repositories.getChildren(parentRepoPath).size() - 1
             && !toBeDeletedImageTagsInCurrentRepo.contains("latest")) { // tof!
             oldSet << latestImageItemInfo.repoPath
             oldSet << latestImageItemInfo.repoPath.parent // remove the whole folder
@@ -123,11 +124,6 @@ def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
     def lastModified = itemInfo.getLastModified()
     def lastUsed = lastDownloaded > lastModified ? lastDownloaded : lastModified
-    if(item.repoPath.path.contains("migration")) {
-        log.debug("MIGRATION FOUND")
-        def calendarUntilFormatted = new SimpleDateFormat("yyyy/MM/dd HH:mm").format(calendarUntil.getTime());
-        log.debug("Last Used of $item.repoPath.name: $calendarUntilFormatted")
-    }
     return (new Date().time - lastUsed) >= maxUnusedSecondsAllowed
 }
 
