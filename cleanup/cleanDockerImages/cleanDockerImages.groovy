@@ -70,11 +70,16 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
 def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
-    def maxCount = null
     def parentRepoPath = parentInfo.repoPath
+    def latestImageItemInfo = null
+    def toBeDeletedImageTagsInCurrentRepo = []
     for (childItem in repositories.getChildren(parentRepoPath)) {
         // log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
+        if (currentPath.name == "latest") {
+            latestImageItemInfo = childItem
+            // continue
+        }
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
             continue
@@ -89,9 +94,26 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
+            toBeDeletedImageTagsInCurrentRepo << parentRepoPath.name
         }
         break
     }
+
+    if (latestImageItemInfo != null) {
+        def shouldDeleteLatest = true
+        log.info(toBeDeletedImageTagsInCurrentRepo)
+        log.info(repositories.getChildren(parentRepoPath)*.name)
+        for(childItem in repositories.getChildren(parentRepoPath)) {
+            if (!toBeDeletedImageTagsInCurrentRepo.contains(childItem.name)) {
+                shouldDeleteLatest = false
+                break
+            }
+        }
+        if (shouldDeleteLatest) {
+            oldSet << latestImageItemInfo
+        }
+    }
+
 }
 
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
