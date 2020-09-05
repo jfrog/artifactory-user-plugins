@@ -63,7 +63,7 @@ def buildParentRepoPaths(path, maxUnusedSecondsAllowed, dryRun) {
             repositories.delete(img)
             sleep(0.2)
         }
-        log.info("Deleted $img.id")
+        log.debug("Deleted $img.id")
     }
     return deleted
 }
@@ -79,7 +79,6 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             && childItem.isFolder()
             && hasManifestJsonInChildren(currentPath)) {
             latestImageItemInfo = childItem
-            log.debug("Determined $latestImageItemInfo.repoPath.path as latest image for $parentInfo.repoPath.path")
             continue
         }
 
