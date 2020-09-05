@@ -20,6 +20,7 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import java.util.concurrent.TimeUnit
 import org.artifactory.repo.RepoPathFactory
+import org.artifactory.exception.CancelException
 
 @Field final String CONFIG_FILE_PATH = "plugins/${this.class.name}.json"
 
