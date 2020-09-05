@@ -103,8 +103,8 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     if (latestImageItemInfo != null) {
         def shouldDeleteLatest = true
         log.info(toBeDeletedImageTagsInCurrentRepo.join(","))
-        log.info((repositories.getChildren(parentRepoPath)*.name).join(","))
-        for(childItem in repositories.getChildren(parentRepoPath)) {
+        log.info((repositories.getChildren(parentRepoPath.parent)*.name).join(","))
+        for(childItem in repositories.getChildren(parentRepoPath.parent)) {
             if (!toBeDeletedImageTagsInCurrentRepo.contains(childItem.name)) {
                 shouldDeleteLatest = false
                 break
