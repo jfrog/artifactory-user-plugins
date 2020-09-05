@@ -84,7 +84,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         }
 
         if (childItem.isFolder()) {
-            toBeDeletedImageTagsInCurrentRepo << simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
+            toBeDeletedImageTagsInCurrentRepo.addAll(simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed))
             continue
         }
         // log.debug("Scanning File: $currentPath.name")
@@ -99,7 +99,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
-            toBeDeletedImageTagsInCurrentRepo << parentRepoPath.name
+            toBeDeletedImageTagsInCurrentRepo.addAll(parentRepoPath.name)
         }
         break
     }
