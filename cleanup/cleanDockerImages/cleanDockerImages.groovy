@@ -74,19 +74,23 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     def latestImageItemInfo = null
     def toBeDeletedImageTagsInCurrentRepo = []
     for (childItem in repositories.getChildren(parentRepoPath)) {
-        // log.debug("CHILDITEM GETNAME: $childItem.getName()")
         def currentPath = childItem.repoPath
+
+        if (currentPath.name == "latest") {
+            latestImageItemInfo = childItem
+            // TODO: add check to make sure this `latest` is for a tag 
+            //       (is a folder that has a `manifest.json` file in its children)
+            continue
+        }
+
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
+            toBeDeletedImageTagsInCurrentRepo << simpleTraverse(childItem, oldSet, maxUnusedSecondsAllowed)
             continue
         }
         // log.debug("Scanning File: $currentPath.name")
         if (currentPath.name != "manifest.json") continue
 
-        if (parentRepoPath.name == "latest") {
-            latestImageItemInfo = parentInfo
-            continue
-        }
+        
         // get the properties here and delete based on policies:
         // - implement daysPassed policy first and delete the images that
         //   qualify
@@ -95,7 +99,7 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
         if (checkDaysPassedForDelete(childItem, maxUnusedSecondsAllowed)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
-            toBeDeletedImageTagsInCurrentRepo.push(parentRepoPath.name)
+            toBeDeletedImageTagsInCurrentRepo << parentRepoPath.name
         }
         break
     }
@@ -103,8 +107,8 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
     if (latestImageItemInfo != null) {
         def shouldDeleteLatest = true
         log.info(toBeDeletedImageTagsInCurrentRepo.join(","))
-        log.info((repositories.getChildren(parentRepoPath.parent)*.name).join(","))
-        for(childItem in repositories.getChildren(parentRepoPath.parent)) {
+        log.info((repositories.getChildren(parentRepoPath)*.name).join(","))
+        for(childItem in repositories.getChildren(parentRepoPath)) {
             if (!toBeDeletedImageTagsInCurrentRepo.contains(childItem.name)) {
                 shouldDeleteLatest = false
                 break
@@ -114,6 +118,8 @@ def simpleTraverse(parentInfo, oldSet, maxUnusedSecondsAllowed) {
             oldSet << latestImageItemInfo
         }
     }
+
+    return toBeDeletedImageTagsInCurrentRepo
 
 }
 
