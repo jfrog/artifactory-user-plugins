@@ -109,11 +109,11 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxUnusedSeco
 def checkDaysPassedForDelete(item, maxUnusedSecondsAllowed) {
     def stats = repositories.getStats(item.repoPath)
     def itemInfo = repositories.getItemInfo(item.repoPath)
-    def lastDownloaded = stats == null ? itemInfo.getLastModified() : stats.getLastDownloaded()
-    // log.info("ITEMREPOPATH: $item.repoPath")
-    // log.info("LASTDL: $lastDownloaded")
-    // log.info("maxUnusedSecondsAllowed: $maxUnusedSecondsAllowed")
-    return (new Date().time - lastDownloaded) >= maxUnusedSecondsAllowed
+    def lastDownloaded = stats == null ? 0 : stats.getLastDownloaded()
+    def lastModified = itemInfo.getLastModified()
+
+    def lastUsed = lastDownloaded > lastModified ? lastDownloaded : lastModified
+    return (new Date().time - lastUsed) >= maxUnusedSecondsAllowed
 }
 
 private def mapTimeUnitToCalendar (String timeUnit) {
