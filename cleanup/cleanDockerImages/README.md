@@ -7,48 +7,34 @@ policies.
 Configuration
 -------------
 
-The `cleanDockerImages.properties` file has the following field:
+The `cleanDockerImages.json` file has the following fields:
 
-- `dockerRepos`: A list of Docker repositories to clean. If a repo is not in
+- `repos`: A list of Docker repositories to clean. If a repo is not in
   this list, it will not be cleaned.
+- `timeInterval`: The time interval to look back before deleting an artifact. Defaults to *1*.
+- `timeUnit`: The unit of the time interval. Values of *year*, *month*, *day*, *hour* or *minute* are allowed. Defaults to *month*.
+- `dryRun`:  If this parameter is passed, artifacts will not actually be deleted. Defaults to *false*.
 
-For example:
+For example, a combination of `timeInterval` equal to `14` and a `timeUnit` equal to `day`, will trigger deletion of any Docker image not downloaded in recent two weeks:
 
-``` json
-dockerRepos = ["example-docker-local", "example-docker-local-2"]
+```json
+{
+    "repos": [
+        "libs-releases-local"
+    ],
+    "timeUnit": "day",
+    "timeInterval": 7,
+    "dryRun": false
+}
 ```
 
 Usage
 -----
 
-Cleanup policies are specified as labels on the Docker image. Currently, this
-plugin supports the following policies:
+You can trigger running of this cleanup script using API call:
 
-- `maxDays`: The maximum number of days a Docker image can exist in an
-  Artifactory repository. Any images older than this will be deleted.
-- `maxCount`: The maximum number of versions of a particular image which should
-  exist. For example, if there are 10 versions of a Docker image and `maxCount`
-  is set to 6, the oldest 4 versions of the image will be deleted.
-
-To set these labels for an image, add them to the Dockerfile before building:
-
-``` dockerfile
-LABEL com.jfrog.artifactory.retention.maxCount="10"
-LABEL com.jfrog.artifactory.retention.maxDays="7"
+```shell
+curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanDockerImages"
 ```
 
-When a Docker image is deployed, Artifactory will automatically create
-properties reflecting each of its labels. These properties are read by the
-plugin in order to decide on the cleanup policy for the image.
-
-Cleanup can be triggered via a REST endpoint. For example:
-
-``` shell
-curl -XPOST -uadmin:password http://localhost:8081/artifactory/api/plugins/execute/cleanDockerImages
-```
-
-A dry run can also be triggered:
-
-``` shell
-curl -XPOST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/cleanDockerImages?params=dryRun=true"
-```
+Also you can use a Cron job to cleanup your unused Docker repositories automatically.

@@ -35,7 +35,7 @@ executions {
         def config = new JsonSlurper().parse(configFile.toURL())
 
         def repos = config.repos ? config.repos : []
-        def timeUnit = config.timeUnit ? config.timeUnit : "day"
+        def timeUnit = config.timeUnit ? config.timeUnit : "month"
         def timeInterval = config.timeInterval ? config.timeInterval : 1
         def dryRun = config.dryRun ? config.dryRun : false
 
