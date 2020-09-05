@@ -43,7 +43,7 @@ executions {
         calendarUntil.add(mapTimeUnitToCalendar(timeUnit), -timeInterval)
         def maxUnusedSecondsAllowed = new Date().time - calendarUntil.getTime().getTime()
         repos.each {
-            log.debug("Cleaning Docker images in repo: $it")
+            log.info("Cleaning older than $timeInterval $timeUnit(s) unused Docker images in repo: $it")
             def del = buildParentRepoPaths(RepoPathFactory.create(it), maxUnusedSecondsAllowed, dryRun)
             deleted.addAll(del)
         }
