@@ -168,8 +168,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 } else {
                     log.debug "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                    bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
-                    cntNoDeletePermissions++
+                    if (security.canDelete(it)) {
+                        bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
+                        cntNoDeletePermissions++
+                    }
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
