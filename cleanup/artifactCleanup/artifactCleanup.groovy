@@ -242,5 +242,5 @@ private def getSkippedPaths(String[] repos) {
 }
 
 private def checkName(keepArtifacts, keepArtifactsRegex, artifactName) {
-    return !keepArtifacts || (!((artifactName =~ keepArtifactsRegex).count > 0) || artifactName.contains("debug"))
+    return !keepArtifacts || !((artifactName =~ keepArtifactsRegex).count > 0)
 }
