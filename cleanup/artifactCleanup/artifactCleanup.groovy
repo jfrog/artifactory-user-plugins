@@ -123,9 +123,11 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
     Global.stopCleaning = false
     int cntFoundArtifacts = 0
     int cntNoDeletePermissions = 0
+    int cntNoDeleteRegexPermissions = 0
     int cntRemovedArtifacts = 0
     long bytesFound = 0
     long bytesFoundWithNoDeletePermission = 0
+    long bytesFoundWithRegexProtection = 0
     long bytesRemoved = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(monthsUntil, monthsUntil, repos)
     artifactsCleanedUp.find {
@@ -158,7 +160,7 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                     log.debug "\t==> currentUser: ${security.currentUser().getUsername()}"
                     log.debug "\t==> canDelete: ${security.canDelete(it)}"
                     if (!checkName(keepArtifacts, keepArtifactsRegex, it)) {
-                        log.debug "\t==> protected by regex: ${keepArtifactsRegex}"
+                        log.info "\t==> protected by regex: ${keepArtifactsRegex}"
                     }
             } else {
                 if (security.canDelete(it) && (checkName(keepArtifacts, keepArtifactsRegex, it))) {
@@ -168,9 +170,12 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
                 } else {
                     log.debug "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                    if (security.canDelete(it)) {
-                        bytesFoundWithNoDeletePermission += repositories.getItemInfo(it)?.getSize()
-                        cntNoDeletePermissions++
+                    if (security.canDelete(it)) { 
+                        // Because previous block was not processed, security.canDelete(it) AND/OR checkName is FALSE. 
+                        // I am checking if permissions to delete files are proper. If that's true, that means function checkName returned FALSE
+                        // and artifact is protected by Regex.  
+                        bytesFoundWithRegexProtection += repositories.getItemInfo(it)?.getSize()
+                        cntNoDeleteRegexPermissions++
                     }
                 }
             }
@@ -190,9 +195,10 @@ private def artifactCleanup(int months, String[] repos, log, paceTimeMS, dryRun 
         log.info "Dry run - nothing deleted. Found $cntFoundArtifacts artifacts consuming $bytesFound bytes"
         log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
     } else {
-        cntRemovedArtifacts = cntFoundArtifacts - cntNoDeletePermissions
+        cntRemovedArtifacts = cntFoundArtifacts - cntNoDeletePermissions - cntNoDeleteRegexPermissions
         log.info "Finished cleanup $repos repositories, try to delete $cntFoundArtifacts artifacts that took up $bytesFound bytes"
         log.info "From that $cntNoDeletePermissions artifacts no delete permission by user ($bytesFoundWithNoDeletePermission bytes)"
+        log.info "and $cntNoDeleteRegexPermissions artifacts is protected by regex $keepArtifactsRegex ($bytesFoundWithRegexProtection bytes)"
         log.info "After this cleanup, $cntRemovedArtifacts artifacts ($bytesRemoved bytes) was removed from $repos repositories"
     }
 }
