@@ -1,3 +1,18 @@
+//Modified by Patrick Russell
+//Deletes Docker images based on the artifactCleanup algorithm
+// AKA "delete if not downloaded after X days"
+
+//Not tested heavily as of Dec 10, 2019
+//Re-tested and modified to work in 7.X on Sept 9, 2020
+
+// Name "artifactCleanup.groovy" and install under
+// /var/opt/jfrog/artifactory/etc/artifactory/plugins
+// Ensure owned by right user ("artifactory:artifactory")
+
+
+// Works the same as the public artifactCleanup plugin, 2 minor changes
+// on lines 208 and 233
+
 /*
  * Copyright (C) 2014 JFrog Ltd.
  *
@@ -128,7 +143,7 @@ if ( deprecatedConfigFile.exists() ) {
 }
 
 if ( configFile.exists() ) {
-  
+
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
 
@@ -149,7 +164,7 @@ if ( configFile.exists() ) {
             }
         }
         count++
-    }  
+    }
 }
 
 if ( deprecatedConfigFile.exists() && configFile.exists() ) {
@@ -190,6 +205,10 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
                 return true
             }
 
+            //Added to skip anything that's not a manifest.json
+            if ( repositories.getItemInfo(it).getName() != "manifest.json") return false
+            //
+
             if ( ! disablePropertiesSupport && skip[ it.repoKey ] && StringUtils.startsWithAny(it.path, skip[ it.repoKey ])){
                 if (log.isDebugEnabled()){
                     log.debug "Skip $it"
@@ -211,7 +230,12 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
             } else {
                 if (security.canDelete(it)) {
                     log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                    repositories.delete it
+                    // Instead of just deleting the file, delete the parent folder
+                    //repositories.delete it
+
+                    repositories.delete it.getParent()
+                    //
+
                 } else {
                     log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
