@@ -3,7 +3,7 @@
         {
             "cron": "0 0 1 ? * 1",
             "repos": [
-                "libs-releases-local"
+                "libs-release-local"
             ],
             "timeUnit": "day",
             "timeInterval": 3,
