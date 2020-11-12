@@ -46,7 +46,7 @@ executions {
     }
 }
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURL())
 log.info "Schedule job policy list: $config.policies"
 
 config.policies.each{ policySettings ->
