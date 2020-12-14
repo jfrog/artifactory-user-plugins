@@ -129,7 +129,7 @@ def genericRoutedCall(String serverId, String apiEndpoint, HttpRequestBase base)
     }
 
     url.append(apiEndpoint);
-    log.error("Target URL: " + url.toString())
+    log.debug("Target URL: " + url.toString())
 
     HttpClient client = null
     try {
