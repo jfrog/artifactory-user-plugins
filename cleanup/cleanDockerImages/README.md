@@ -15,7 +15,12 @@ The `cleanDockerImages.properties` file has the following field:
 For example:
 
 ``` json
-dockerRepos = ["example-docker-local", "example-docker-local-2"]
+dockerRepos = [
+// 		["repo_name", number_of_days_to_keep],
+//		if number_of_days_to_keep is empty, LABEL in Dockerfile with maxCount should be set.
+		["example-docker-local"],
+		["example-docker-local-2", 365]
+]
 ```
 
 Usage

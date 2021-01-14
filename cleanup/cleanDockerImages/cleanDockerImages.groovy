@@ -31,7 +31,7 @@ executions {
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
         config.dockerRepos.each{ policySettings ->
             def repos = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["__none__"]
-            def daysToKeep = policySettings[ 1 ] ? policySettings[ 1 ] as int : 6
+            def daysToKeep = policySettings[ 1 ] ? policySettings[ 1 ] as int : null
 
             log.info("Cleaning Docker images in repo: $repos")
             log.info("Max Age of images: $daysToKeep")
@@ -108,15 +108,15 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, daysToKeep) {
 }
 
 // This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxDays" for purge
+// "docker.label.com.jfrog.artifactory.retention.maxDays" for purge.
+// If not found, number_of_days_to_keep from properties file will be used instead.
+
 def checkDaysPassedForDelete(item, daysToKeep) {
     def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
-    if (!prop) {
-        if (((new Date().time - item.created) / oneday) >= daysToKeep) return true
-        else return false
-    } 
+    if (!prop && (daysToKeep == null)) return false
+        else if (((new Date().time - item.created) / oneday) >= daysToKeep) return true  
     log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false
