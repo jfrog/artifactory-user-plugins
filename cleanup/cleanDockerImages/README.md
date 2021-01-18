@@ -17,7 +17,10 @@ For example:
 ``` json
 dockerRepos = [
 // 		["repo_name", number_of_days_to_keep],
-//		if number_of_days_to_keep is empty, LABEL in Dockerfile with maxCount should be set.
+//		if number_of_days_to_keep is empty, LABEL in Dockerfile with maxDays should be set.
+//		See README below to check how to set up maxDays or MaxCount labels in Dockerfile.
+//		If you don't want to change Dockerfile, you can use number_of_days_to_keep variable
+//		to enable retention policy for docker repository.
 		["example-docker-local"],
 		["example-docker-local-2", 365]
 ]
