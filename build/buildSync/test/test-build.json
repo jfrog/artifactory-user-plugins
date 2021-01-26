@@ -2,7 +2,6 @@
   "version": "1.0.1",
   "name": "test-build",
   "number": "1",
-  "type": "MAVEN",
   "buildAgent": {
     "name": "Maven",
     "version": "3.0.5"
