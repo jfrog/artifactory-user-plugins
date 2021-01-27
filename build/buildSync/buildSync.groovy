@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 JFrog Ltd.
+ * Copyright (C) 2014-2021 JFrog Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 import groovyx.net.http.HTTPBuilder
-import org.apache.commons.lang.StringUtils
-import org.apache.http.HttpRequestInterceptor
-import org.apache.http.StatusLine
+
 import org.artifactory.addon.AddonsManager
 import org.artifactory.addon.plugin.PluginsAddon
 import org.artifactory.addon.plugin.build.AfterBuildSaveAction
@@ -36,12 +35,24 @@ import org.artifactory.exception.CancelException
 import org.artifactory.storage.build.service.BuildStoreService
 import org.artifactory.storage.db.DbService
 import org.artifactory.util.HttpUtils
-import org.jfrog.build.api.Build
-import org.slf4j.Logger
 import org.artifactory.search.Searches
+import org.artifactory.request.RequestThreadLocal
 
+import java.util.List
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+
+import org.apache.commons.lang.StringUtils
+import org.apache.http.HttpRequestInterceptor
+import org.apache.http.StatusLine
+import org.apache.http.impl.client.AbstractHttpClient
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.conn.PoolingClientConnectionManager
+import org.apache.http.params.HttpParams
+
+import org.jfrog.build.api.Build
+import org.slf4j.Logger
+import org.springframework.security.core.context.SecurityContextHolder
 
 import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.ContentType.JSON
@@ -50,112 +61,10 @@ import static groovyx.net.http.Method.DELETE
 import static groovyx.net.http.Method.PUT
 import static groovyx.net.http.Method.POST
 
-import java.util.List
-import org.apache.http.impl.client.AbstractHttpClient
-import org.apache.http.impl.client.DefaultHttpClient
-import org.apache.http.impl.conn.PoolingClientConnectionManager
-import org.apache.http.params.HttpParams
-import org.artifactory.request.RequestThreadLocal
-
-import org.springframework.security.core.context.SecurityContextHolder
-
 /**
- * Build Synchronization plugin replicates some build info json from one
- * Artifactory to multiple remotes Artifactory instances. In this document
- * "current server" means the Artifactory server where the plugin is installed
- * and running, and "remote server" or "remote servers" defines the Artifactory
- * servers accessed via URL from this plugin. The URLs are configured either as
- * fields in JSON to the REST query or as part of the buildSync.json file.
- *
- * This plugin can work in 3 modes:
- * 1. Pull: Reading build info from a remote server source and adding them
- *          to the current Artifactory server.
- * 2. Push: Deploying a list of build info from the current server and adding
- *          them to the remote servers.
- * 3. Event Push: Adding all (or certain) build info as they are deployed
- *          on the current server to the remote servers.
- *
- * 1. Set Up:
- *   1.1. Edit the ${ARTIFACTORY_HOME}/etc/logback.xml to add:
- *       <logger name="buildSync">
- *           <level value="debug"/>
- *       </logger>
- *   1.2. Edit the buildSync.json file:
- *     1.2.1 First list the servers with:
- *       "servers": [
- *         {
- *           "key": "local-1",
- *           "url": "http://localhost:8080/artifactory",
- *           "user": "admin",
- *           "password": "password"
- *         },
- *         ...
- *       ]
- *       Each server should have a unique key identifying it, and url/user/pass
- *       used to access the REST API.
- *     1.2.2 Then list the pull replication configurations with:
- *       "pullConfigs": [
- *         {
- *            "key": "AllFrom2",
- *            "source": "local-2",
- *            "buildNames": [".*"],
- *            "delete": true,
- *            "reinsert": false,
- *            "activatePlugins": true
- *         },
- *         ...
- *       ]
- *       Each pull configuration should have a unique key identifying it. (mandatory)
- *       The source is pointing to one server key and should exists in the above list of servers. (mandatory)
- *       The buildNames are a list of string to filter build names to synchronized. (mandatory)
- *        If the string contains a '*' star character it is considered as a regular expression.
- *        If not the build name should be exactly equal (with case sensitivity).
- *       The delete flag tells the synchronization to delete all the local build numbers
- *        that do not exists in the remote server. (Optional, false by default)
- *       The reinsert flag tells the synchronization to fully reinsert the build info locally. (Optional, false by default)
- *        This will activate all the plugins associated with build deployment:
- *        - Change Artifactory deployer to current user,
- *        - Activate Issues aggregation,
- *        - Activate Third Party Control, or OSS Governance,
- *        - Activate all Users Plugins
- *       The activatePlugins flag will add the new build info as is and activate only the User Plugins. (Optional, false by default)
- *     1.2.3 Then list the push replication configurations with:
- *       "pushConfigs": [
- *         {
- *            "key": "PushTo23",
- *            "destinations": [ "local-2", "local-3" ],
- *            "buildNames": [".*"],
- *            "delete": true,
- *            "activateOnSave": false
- *         },
- *         ...
- *       ]
- *       Each push configuration should have a unique key identifying it. (mandatory)
- *       The destinations is pointing to a list of server key and should exists in the above list of servers. (mandatory)
- *       The buildNames are a list of string to filter build names to synchronized. (mandatory)
- *        If the string contains a '*' star character it is considered as a regular expression.
- *        If not the build name should be exactly equal (with case sensitivity).
- *       The delete flag tells the synchronization to delete all the remote build numbers
- *        that do not exists in the local server. (Optional, false by default)
- *       The onSave flag will add a listener in this plugin that will trigger push as soon as a new build arrives. (Optional, false by default)
- *       IMPORTANT: In Push mode a full reinsert is done on the remote server.
- *   1.3. Place buildSync.json file under ${ARTIFACTORY_HOME}/etc/plugins.
- *   1.4. Place this script under the master Artifactory server ${ARTIFACTORY_HOME}/etc/plugins.
- *   1.5. Verify in the ${ARTIFACTORY_HOME}/logs/artifactory.log that the plugin loaded the configuration correctly.
- * 2. Executing Pull Replication:
- *  2.1. The plugin may run a pull configured key from buildSync.json
- *  2.2. Call the predefined pull config through the plugin execution by running:
- *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPullConfig?params=key=ABRelease|max=N|force=0"
- *       max params defined a reversing order sync max number
- *       force params will not stop sync if latest build match
- *
- * 3. Executing Push Replication:
- *  3.1. The plugin may run a push configured key from buildSync.json
- *  3.3. Call the predefined push config through the plugin execution by running:
- *    curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/buildSyncPushConfig?params=key=ABPush"
- *
+ * Refer to README.md for how to setup and install the Build Sync plugin.
  */
-
+//
 def baseConfHolder = new BaseConfigurationHolder(ctx, log)
 
 executions {
@@ -275,12 +184,20 @@ build {
 def pushIfMatch(DetailedBuildRunImpl buildRun, PushConfig pushConf, String buildNameFilter, ignoreStartDate) {
     String buildName = buildRun.name
     log.debug "Checking if ${buildRun.name} match $buildNameFilter"
-    boolean match
-    if (buildNameFilter.contains('*')) {
-        match = buildName.matches(buildNameFilter)
-    } else {
-        match = buildNameFilter.equals(buildName)
+    boolean match = false
+
+    if (buildNameFilter.contains("*")) {
+        try {
+            String regex = buildNameFilter.replace("*",  ".*")
+            match = buildName.matches(regex)
+        } catch (Exception e) {
+        }
     }
+
+    if (!match) {
+        match = buildName.equals(buildNameFilter);
+    }
+
     if (match) {
         pushConf.destinations.each { Server server ->
             try {
@@ -469,7 +386,7 @@ class RemoteBuildService extends BuildListBase {
             lastFailure = resp.statusLine
         }
         log.info "Extracting Artifactory version from ${server.url}api/system/version"
-        http.get(contentType: JSON, path: "api/system/version") { resp, json ->
+        http.get(contentType: JSON, path: "artifactory/api/system/version") { resp, json ->
             log.info "Got Artifactory version ${json.version} and license ${json.license} from ${server.url}"
             def v = json.version.tokenize('.')
             if (v.size() < 3) {
@@ -594,12 +511,10 @@ class RemoteBuildService extends BuildListBase {
     def addBuild(Build buildInfo) {
         lastFailure = null
         http.request(PUT, JSON) {
-            uri.path = "api/build"
+            uri.path = "artifactory/api/build"
             // Avoid sync loops by not firing event-base push for builds created by the plugin
             uri.query = [propagate: 'false']
-            // JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream)
-            // jsonGenerator.writeObject(buildInfo)
-            body = buildInfo
+            body = JsonOutput.toJson(buildInfo)
             response.success = {
                 log.info "Successfully uploaded build ${buildInfo.name}/${buildInfo.number} : ${buildInfo.started}"
             }
