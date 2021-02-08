@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="cool-froggy">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/test/cool-froggy.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
