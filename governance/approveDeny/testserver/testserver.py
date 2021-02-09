@@ -24,8 +24,8 @@ class MyServer(BaseHTTPRequestHandler):
         response = 0
         body = {}
 
-        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @unittest/testIP_true.json
-        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @unittest/testIP_false.json
+        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_true.json
+        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_false.json
         if self.path.upper() == "/validateIP".upper():
             if message['Address'] == "172.17.0.1" and message['Repository'] == 'test-repo':
                 response = 200
@@ -34,11 +34,11 @@ class MyServer(BaseHTTPRequestHandler):
                 response = 403
                 body = {'isAllowed': 'false'}
 
-        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @unittest/testEntitlements_true.json
-        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @unittest/testEntitlements_false.json
+        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @testserver/testEntitlements_true.json
+        # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @testserver/testEntitlements_false.json
         elif self.path.upper() == "/validateEntitlements".upper():
             if (message['Repository'] == 'test-repo' and message['Artifact'] == 'cool-froggy.jar' and
-                message['Username'] == "dude" and message['Email'] == 'test@test.com'):
+                message['Username'] == "admin" and message['Email'] == 'null'):
                 response = 200
                 body = {'productEntitlementValid': 'true'}
             else:
