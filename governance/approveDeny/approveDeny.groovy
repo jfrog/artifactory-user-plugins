@@ -18,62 +18,15 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import groovyx.net.http.HTTPBuilder
 
-//import org.artifactory.addon.AddonsManager
-//import org.artifactory.addon.plugin.PluginsAddon
-//import org.artifactory.addon.plugin.build.AfterBuildSaveAction
-//import org.artifactory.addon.plugin.build.BeforeBuildSaveAction
-//import org.artifactory.api.jackson.JacksonReader
-//import org.artifactory.api.rest.build.BuildInfo
-//import org.artifactory.build.BuildInfoUtils
-//import org.artifactory.build.BuildRun
-//import org.artifactory.build.Builds
-//import org.artifactory.build.DetailedBuildRun
-//import org.artifactory.build.DetailedBuildRunImpl
-//import org.artifactory.build.InternalBuildService
-//import org.artifactory.concurrent.ArtifactoryRunnable
-//import org.artifactory.exception.CancelException
-//import org.artifactory.storage.build.service.BuildStoreService
-//import org.artifactory.storage.db.DbService
-//import org.artifactory.util.HttpUtils
-//import org.artifactory.search.Searches
-//import org.artifactory.request.RequestThreadLocal
-//import sun.security.ssl.ContentType
-//
-//import java.util.List
-//import java.util.concurrent.Callable
-//import java.util.concurrent.Executors
-//
-//import org.apache.commons.lang.StringUtils
-//import org.apache.http.HttpRequestInterceptor
-//import org.apache.http.StatusLine
 import org.apache.http.impl.client.AbstractHttpClient
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.params.HttpParams
 
-//import org.jfrog.build.api.Build
 import org.slf4j.Logger
-//import org.springframework.security.core.context.SecurityContextHolder
 
-//import static groovyx.net.http.ContentType.BINARY
 import static groovyx.net.http.ContentType.JSON
-//import static groovyx.net.http.ContentType.TEXT
-//import static groovyx.net.http.Method.DELETE
-//import static groovyx.net.http.Method.PUT
 import static groovyx.net.http.Method.POST
-
-
-// Based on a specified set of repositories
-// If user email address ends in a certain domain, the user shall be considered internal, and the extra checks skipped
-//
-// Endpoint one should send a json object that contains the IP address of the requesting client, and the repository in
-// which access is being requested.  When it returns a json object that contains the field { “isAllowed” : “false” } it
-// should return a 403 with a message “This download request has been blocked due to export control restrictions.  If
-// you think this is in error please contact your account manager for resolution.”
-//
-// The second endpoint should send a json object that contains the user name, user email address, repo name, and repo
-// path.  If it does not get a response including the field { “productEntitlementValid”: “true” } then it should return
-// a 403: “You do not have permission to access this product, please contact your account manager for resolution”.
 
 def settings = new Settings(ctx, log)
 def compliance = new Compliance(log)
@@ -81,9 +34,8 @@ def compliance = new Compliance(log)
 download {
     altResponse { request, responseRepoPath ->
         try {
-            /*
             log.warn "Requesting artifact: $responseRepoPath"
-
+            /*
             def artifactStatus = repositories.getProperties(responseRepoPath).getFirst('approver.status')
             if (artifactStatus && artifactStatus != 'approved') {
                 status = 403
@@ -99,6 +51,7 @@ download {
             def email = user.getEmail()
 
             log.warn settings.getIpServer()
+            log.warn settings.getEntitlementServer()
             log.warn username
             log.warn email
             log.warn repository
@@ -106,8 +59,10 @@ download {
 
             Status result = compliance.validate(settings, address, repository, artifact, username, email)
 
-            status = result.status
-            message = result.message
+            if (result.status != Status.OK) {
+                status = result.status
+                message = result.message
+            }
             //*/
         }
         catch(Exception e) {
@@ -142,9 +97,11 @@ class Settings {
     String timeout // TODO
     String expires // TODO
     String flushCache // TODO
+    HashMap checks
 
     Settings(ctx, log) {
         this.log = log
+        //HashMap = ne
         File confFile = new File("${ctx.artifactoryHome.getEtcDir()}/plugins", "approveDeny.json")
         def reader
 
@@ -159,12 +116,15 @@ class Settings {
             this.timeout = content.timeout
             this.expires = content.expires
             this.flushCache = content.flushCache
+            this.checks = content.checks
         } finally {
             if (reader) {
                 reader.close()
             }
         }
     }
+
+
 
     String getIpServer() {
         return this.ipServer
@@ -239,7 +199,7 @@ class Compliance {
             Repository "${repository}"
         }
 
-        Status result = validate_internal(settings.getIpServer(), validateIpServerJson, IS_ALLOWED, String.valueOf(true))
+        Status result = validate_internal(settings.getIpServer(), validateIpJson, IS_ALLOWED, String.valueOf(true))
 
         if (result.status == Status.OK) {
             def validateEntitlementsJson = {
@@ -257,32 +217,37 @@ class Compliance {
 
     private Status validate_internal(String uri, jsonObj, String key, String value) {
         Status result = new Status(Status.FORBIDDEN, Globals.FAILED)
-        this.http.uri = uri
 
-        this.http.request(POST) {
-            requestContentType = JSON
-            contentType = JSON
-            body = JsonOutput.toJson(jsonObj).toString()
-            this.log.warn JsonOutput.toJson(jsonObj).toString()
+        try {
+            this.http.uri = uri
 
-            response.success = { resp, json ->
-                this.log.warn(Globals.SUCCESS)
+            this.http.request(POST) {
+                requestContentType = JSON
+                contentType = JSON
+                body = JsonOutput.toJson(jsonObj).toString()
+                this.log.warn JsonOutput.toJson(jsonObj).toString()
 
-                if (json.containsKey(key) && json.get(key) == value) {
-                    result.setStatus(Status.OK, Globals.SUCCESS)
+                response.success = { resp, json ->
+                    this.log.warn(Globals.SUCCESS)
+
+                    if (json.containsKey(key) && json.get(key) == value) {
+                        result.setStatus(Status.OK, Globals.SUCCESS)
+                    }
                 }
+                //            response.failure = { resp ->
+                //                this.log.warn(FAILED)
+                //                if (json && json.containsKey(IS_ALLOWED) && json.get(IS_ALLOWED) == String.valueOf(false)) {
+                //                    this.log.warn(FAILED)
+                //                    result.setStatus(403, Globals.FAILED)
+                //                }
+                //                else {
+                //                    this.log.warn "Unexpected error"
+                //                    result.setStatus(resp.status, Globals.ERROR)
+                //                }
+                //            }
             }
-//            response.failure = { resp ->
-//                this.log.warn(FAILED)
-//                if (json && json.containsKey(IS_ALLOWED) && json.get(IS_ALLOWED) == String.valueOf(false)) {
-//                    this.log.warn(FAILED)
-//                    result.setStatus(403, Globals.FAILED)
-//                }
-//                else {
-//                    this.log.warn "Unexpected error"
-//                    result.setStatus(resp.status, Globals.ERROR)
-//                }
-//            }
+        } catch (Exception e) {
+            log.warn e.toString()
         }
 
         return result
