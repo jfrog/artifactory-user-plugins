@@ -94,10 +94,6 @@ class Settings {
     Logger log
     String ipServer
     String entitlementServer
-    String timeout // TODO
-    String expires // TODO
-    String flushCache // TODO
-    HashMap checks
 
     Settings(ctx, log) {
         this.log = log
@@ -113,10 +109,6 @@ class Settings {
 
             this.ipServer = content.ipServer
             this.entitlementServer = content.entitlementServer
-            this.timeout = content.timeout
-            this.expires = content.expires
-            this.flushCache = content.flushCache
-            this.checks = content.checks
         } finally {
             if (reader) {
                 reader.close()
@@ -132,18 +124,6 @@ class Settings {
 
     String getEntitlementServer() {
         return this.entitlementServer
-    }
-
-    String getTimeout() {
-        return this.timeout
-    }
-
-    String getExpires() {
-        return this.expires
-    }
-
-    String getFlushCache() {
-        return this.flushCache
     }
 }
 
