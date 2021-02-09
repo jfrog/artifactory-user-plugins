@@ -27,7 +27,7 @@ class MyServer(BaseHTTPRequestHandler):
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_true.json
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_false.json
         if self.path.upper() == "/validateIP".upper():
-            if message['Address'] == "172.17.0.1" and message['Repository'] == 'test-repo':
+            if message['Address'] == "172.17.0.0":
                 response = 200
                 body = {'isAllowed': 'true'}
             else:

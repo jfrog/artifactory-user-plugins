@@ -176,7 +176,6 @@ class Compliance {
     Status validate(Settings settings, String address, String repository, String artifact, String username, String email) {
         def validateIpJson = {
             Address "${address}"
-            Repository "${repository}"
         }
 
         Status result = validate_internal(settings.getIpServer(), validateIpJson, IS_ALLOWED, String.valueOf(true))
