@@ -97,7 +97,6 @@ class Settings {
 
     Settings(ctx, log) {
         this.log = log
-        //HashMap = ne
         File confFile = new File("${ctx.artifactoryHome.getEtcDir()}/plugins", "approveDeny.json")
         def reader
 
@@ -115,8 +114,6 @@ class Settings {
             }
         }
     }
-
-
 
     String getIpServer() {
         return this.ipServer
