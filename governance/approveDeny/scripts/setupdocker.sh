@@ -19,12 +19,24 @@ docker cp rt1:/opt/jfrog/artifactory/var/etc/artifactory/logback.xml .
 python3 $DIR/updatelogback.py logback.xml
 docker cp logback.xml  rt1:/opt/jfrog/artifactory/var/etc/artifactory/logback.xml
 rm logback.xml
+docker exec -it --user root rt1 chown artifactory:artifactory /opt/jfrog/artifactory/var/etc/artifactory/logback.xml
 
 # Create the test repository
-curl -u admin:password -XPUT -H'Content-Type: application/json' "http://localhost:8081/artifactory/api/repositories/test-repo" -T $DIR/createRepo.json
+curl -u admin:password -XPUT -H'Content-Type: application/json' "http://localhost:8081/artifactory/api/repositories/test-docker" -T $DIR/createDockerRepo.json
 
-# Upload an initial file to test with (NOTE: This is not a real jar it really doesn't matter)
-curl -XPUT -u admin:password -T $DIR/test.txt "http://localhost:8081/artifactory/test-repo/test.txt"
+# Upload test docker image
+pushd $DIR/docker
+bash uploaddocker.sh
+popd
 
 # Creat the lib directory for the plugins dependent libraries
 docker exec -it rt1 mkdir /opt/jfrog/artifactory/var/etc/artifactory/plugins/lib
+
+# Copy jars to container
+docker cp lib/http-builder-0.7.2.jar  rt1:/opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/http-builder-0.7.2.jar
+docker cp lib/json-lib-2.4-jdk13.jar  rt1:/opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/json-lib-2.4-jdk13.jar
+docker cp lib/xml-resolver-1.2.jar  rt1:/opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/xml-resolver-1.2.jar
+
+docker exec -it --user root rt1 chown artifactory:artifactory /opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/http-builder-0.7.2.jar
+docker exec -it --user root rt1 chown artifactory:artifactory /opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/json-lib-2.4-jdk13.jar
+docker exec -it --user root rt1 chown artifactory:artifactory /opt/jfrog/artifactory/var/etc/artifactory/plugins/lib/xml-resolver-1.2.jar

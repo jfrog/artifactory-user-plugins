@@ -27,23 +27,28 @@ class MyServer(BaseHTTPRequestHandler):
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_true.json
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateIP -d @testserver/testIP_false.json
         if self.path.upper() == "/validateIP".upper():
-            if message['Address'] == "172.17.0.0":
+            if (message['Transaction_IP'] == "172.17.0.1" and
+                message['AppName'] == "null" and
+                message['Email'] == "null"):
                 response = 200
-                body = {'isAllowed': 'true'}
+                body = {'status': 'Approved', 'country': 'null', 'country2letter': 'null', 'domain': 'null', 'region': 'null', 'message': 'null'}
             else:
                 response = 403
-                body = {'isAllowed': 'false'}
+                body = {'status': 'DECLINE', 'country': 'null', 'country2letter': 'null', 'domain': 'null', 'region': 'null', 'message': 'null'}
 
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @testserver/testEntitlements_true.json
         # curl -i -v -XPOST -H'Content-Type: application/json' http://localhost:8888/validateEntitlements -d @testserver/testEntitlements_false.json
         elif self.path.upper() == "/validateEntitlements".upper():
-            if (message['Repository'] == 'test-repo' and message['Artifact'] == 'cool-froggy.jar' and
-                message['Username'] == "admin" and message['Email'] == 'null'):
+            if (message['Email'] == "null" and
+                message['RepositoryName'] == "test-docker" and
+                message['ModuleName'] == "test-image" and
+                message['ProductNameSpace'] == "null" and
+                message['Version'] == "latest"):
                 response = 200
-                body = {'productEntitlementValid': 'true'}
+                body = {'status': 'Approved'}
             else:
                 response = 403
-                body = {'productEntitlementValid': 'false'}
+                body = {'status': 'DECLINE'}
 
 
         self.send_response(response)

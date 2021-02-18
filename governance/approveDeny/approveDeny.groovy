@@ -28,42 +28,53 @@ import org.slf4j.Logger
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.POST
 
+
 def settings = new Settings(ctx, log)
 def compliance = new Compliance(log)
+
+def UNINITIALIZED = "null"
 
 download {
     altResponse { request, responseRepoPath ->
         try {
             log.warn "Requesting artifact: $responseRepoPath"
-            /*
-            def artifactStatus = repositories.getProperties(responseRepoPath).getFirst('approver.status')
-            if (artifactStatus && artifactStatus != 'approved') {
-                status = 403
-                message = 'This artifact wasn\'t approved yet, please use the Approver application.'
-                log.warn "You asked for an unapproved artifact: $responseRepoPath. 403"
-            }
-            /*/
-            def address = request.httpRequest.request.request.remoteAddr
-            def repository = responseRepoPath.getRepoKey()
-            def artifact = responseRepoPath.getPath()
+
+            def transaction_ip = request.clientAddress
+            def repository_name = responseRepoPath.getRepoKey()
+            def app_name = UNINITIALIZED
+
             def user = security.currentUser()
-            def username = security.getCurrentUsername()
             def email = user.getEmail()
 
-            log.warn settings.getIpServer()
-            log.warn settings.getEntitlementServer()
-            log.warn username
-            log.warn email
-            log.warn repository
-            log.warn artifact
+            String[] items = responseRepoPath.getPath().split("/");
+            def product_name_space = UNINITIALIZED
+            int index = 0
 
-            Status result = compliance.validate(settings, address, repository, artifact, username, email)
-
-            if (result.status != Status.OK) {
-                status = result.status
-                message = result.message
+            if (items.length == 4) {
+                product_name_space = items[0]
+                index++
             }
-            //*/
+
+            def module_name = items[index]
+            def version = items[index + 1]
+
+            if (items[index + 2].compareTo("manifest.json") == 0) {
+            log.warn "ipServer: ${settings.getIpServer()}"
+            log.warn "entitlementServer: ${settings.getEntitlementServer()}"
+                log.warn "transaction_ip: ${transaction_ip}"
+                log.warn "app_name: ${app_name}"
+                log.warn "repository_name: ${repository_name}"
+                log.warn "module_name: ${module_name}"
+                log.warn "product_name_space: ${product_name_space}"
+                log.warn "version: ${version}"
+            log.warn "email: ${email}"
+
+                Result result = compliance.validate(settings, transaction_ip, app_name, repository_name, module_name, product_name_space, version, email)
+
+                if (result.success()) {
+                    status = result.status
+                }
+            }
         }
         catch(Exception e) {
             log.warn e.toString()
@@ -74,7 +85,7 @@ download {
 executions {
     test { params ->
         log.warn(log.getClass().toString())
-        Status result = approve.validate(settings, "172.17.0.1", "test-repo", "dude", "dude@dude.net")
+        Result result = approve.validate(settings, "172.17.0.1", "test-repo", "admin", "null")
 
         log.warn(String.valueOf(result.status))
         log.warn(result.message)
@@ -84,7 +95,6 @@ executions {
 final class Globals {
     private Globals() {}
 
-    // TODO Change to desired messsage responses
     final static SUCCESS = "success"
     final static FAILED = "failed"
     final static ERROR = 'error'
@@ -133,17 +143,14 @@ class ThreadSafeHTTPBuilder extends HTTPBuilder {
     }
 }
 
-class Status {
+class Result {
     int status
     String message
 
     final static OK = 200
     final static FORBIDDEN = 403
-    final static BAD_REQUEST = 400
 
-    Status() {}
-
-    Status(int status, String message) {
+    Result(int status, String message) {
         this.status = status
         this.message = message
     }
@@ -154,7 +161,7 @@ class Status {
     }
 
     boolean success() {
-        return status == Status.OK
+        return status == Result.OK
     }
 }
 
@@ -162,37 +169,40 @@ class Compliance {
     Logger log
     ThreadSafeHTTPBuilder http
 
-    final static IS_ALLOWED = "isAllowed"
-    final static PRODUCT_ENTITLEMENT_VALID = "productEntitlementValid"
+    final static STATUS = "status"
+    final static APPROVED = "Approved"
 
     Compliance(log) {
         this.log = log
         this.http = new ThreadSafeHTTPBuilder()
     }
 
-    Status validate(Settings settings, String address, String repository, String artifact, String username, String email) {
+    Result validate(Settings settings, String transaction_ip, String app_name, String repository_name, String module_name, String product_name_space, String version, String email) {
         def validateIpJson = {
-            Address "${address}"
+            Transaction_IP "${transaction_ip}"
+            AppName "${app_name}"
+            Email "${email}"
         }
 
-        Status result = validate_internal(settings.getIpServer(), validateIpJson, IS_ALLOWED, String.valueOf(true))
+        Result result = validate_internal(settings.getIpServer(), validateIpJson, STATUS, APPROVED)
 
-        if (result.status == Status.OK) {
+        if (result.success()) {
             def validateEntitlementsJson = {
-                Repository "${repository}"
-                Artifact "${artifact}"
-                Username "${username}"
+                RepositoryName "${repository_name}"
+                ModuleName "${module_name}"
+                ProductNameSpace "${product_name_space}"
+                Version "${version}"
                 Email "${email}"
             }
 
-            result = validate_internal(settings.getEntitlementServer(), validateEntitlementsJson, PRODUCT_ENTITLEMENT_VALID, String.valueOf(true))
+            result = validate_internal(settings.getEntitlementServer(), validateEntitlementsJson, STATUS, APPROVED)
         }
 
         return result;
     }
 
-    private Status validate_internal(String uri, jsonObj, String key, String value) {
-        Status result = new Status(Status.FORBIDDEN, Globals.FAILED)
+    private Result validate_internal(String uri, jsonObj, String key, String value) {
+        Result result = new Result(Result.FORBIDDEN, Globals.FAILED)
 
         try {
             this.http.uri = uri
@@ -201,26 +211,15 @@ class Compliance {
                 requestContentType = JSON
                 contentType = JSON
                 body = JsonOutput.toJson(jsonObj).toString()
-                this.log.warn JsonOutput.toJson(jsonObj).toString()
+                log.warn body
 
                 response.success = { resp, json ->
                     this.log.warn(Globals.SUCCESS)
 
                     if (json.containsKey(key) && json.get(key) == value) {
-                        result.setStatus(Status.OK, Globals.SUCCESS)
+                        result.setStatus(Result.OK, Globals.SUCCESS)
                     }
                 }
-                //            response.failure = { resp ->
-                //                this.log.warn(FAILED)
-                //                if (json && json.containsKey(IS_ALLOWED) && json.get(IS_ALLOWED) == String.valueOf(false)) {
-                //                    this.log.warn(FAILED)
-                //                    result.setStatus(403, Globals.FAILED)
-                //                }
-                //                else {
-                //                    this.log.warn "Unexpected error"
-                //                    result.setStatus(resp.status, Globals.ERROR)
-                //                }
-                //            }
             }
         } catch (Exception e) {
             log.warn e.toString()
@@ -229,3 +228,5 @@ class Compliance {
         return result
     }
 }
+
+

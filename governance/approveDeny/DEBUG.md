@@ -44,6 +44,26 @@ Setup
   bash scripts/rundocker.sh
   ```
 
+1. Docker must be setup to support insecure registries. Before running this
+script, go to Docker Desktop | Preferences | Docker Engine
+and add the line:
+
+  ```
+  "insecure-registries": ["host.docker.internal:8081"]
+  ```
+
+  so the file looks like this:
+
+  ```
+  {
+   "experimental": false,
+   "features": {
+     "buildkit": true
+   },
+   "insecure-registries": ["host.docker.internal:8081"]
+  }
+  ```
+
 1. Install the license file:
 
   ```
@@ -103,16 +123,12 @@ Setup Artifactory to test the **approveDeny** plugin:
 
 1. Attach the debugger to the Artifactory process **^D**.
 1. Set a breakpoint in the plugin code.
-1. Attempt to download the jar from Artifactory:
+1. Run the script to attempt to download the docker image. It will also
+clear the docker image from any previous runs to force a download:
 
   ```
-  bash test.sh
-  ```
-
-A manual test can be invoked with:
-
-  ```
-  curl -u admin:password -XPOST -H'Content-Type: application/json' "http://localhost:8082/artifactory/api/plugins/execute/test?params=key=value"
+    cd scripts/docker
+    bash testdocker.sh
   ```
 
 1. Debugging:
@@ -141,3 +157,29 @@ Remove Artifactory docker container:
   ```
   docker rm --force rt1
   ```
+
+Sometimes you have to go digging around the Artifactory docker container:
+
+  ```
+  docker exec -it --user root rt1 sh
+  ```
+
+  then type ``su`` and you'll have full control of the bash shell.
+
+You may see the error:
+
+  ```
+  16:29:27,284 |-ERROR in ch.qos.logback.classic.joran.JoranConfigurator@4d9bb279 - Could not open [/opt/jfrog/artifactory/var/etc/artifactory/logback.xml]. java.io.FileNotFoundException: /opt/jfrog/artifactory/var/etc/artifactory/logback.xml (Permission denied)
+	at java.io.FileNotFoundException: /opt/jfrog/artifactory/var/etc/artifactory/logback.xml (Permission denied)
+  ```
+
+  This means the the file ``logback.xml`` does not have the correct ownership.
+  To correct this, open up a terminal with the command above, then check with
+  this command:
+
+  ```
+  ls -al /opt/jfrog/artifactory/var/etc/artifactory/logback.xml
+  -rw-r-----    1 artifact artifact     15982 Feb 18 16:29 /opt/jfrog/artifactory/var/etc/artifactory/logback.xml
+  ```
+
+  Look at ``setupdocker.sh`` for how to setup ownership.
