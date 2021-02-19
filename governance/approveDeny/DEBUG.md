@@ -81,7 +81,7 @@ and add the line:
     1. Choose **Run External Tool**
     1. Name: Push Changes
       Program: bash
-      Arguments: deploy.sh
+      Arguments: beforeDebug.sh
       Working directory: $ProjectFileDir$
 
 1. Logs are very important when debugging and will provide valuable information.
