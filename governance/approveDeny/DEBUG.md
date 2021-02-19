@@ -13,7 +13,7 @@ Requrements:
   1. Python3
   1. curl
   1. [JFrog CLI](https://jfrog.com/getcli/)
-
+  1. IntelliJ (but any Java IDE or even JDB will work)
 
 Setup
 ---------------------
@@ -21,7 +21,6 @@ Setup
 
   ```
   git clone git@github.com:jfrog/artifactory-user-plugins.git
-  cd artifactory-user-plugins/governance/approveDeny
   ```
 
 1. Create the ``lib`` directory:
