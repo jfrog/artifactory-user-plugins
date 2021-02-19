@@ -1,6 +1,8 @@
 Artifactory Authenticate Entitlements User Plugin
 =================================================
 
+*Please Note:  This plugin is still in the PROTOTYPE phase.  Please contact JFrog Support before using it.*
+
 This plugin authenticates client IP address and entitlements by
 injecting the approval of an external REST service into the authentication
 process using **altResponse**.
