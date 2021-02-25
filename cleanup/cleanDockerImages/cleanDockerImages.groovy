@@ -15,20 +15,34 @@
  */
 
 // Created by Madhu Reddy on 6/16/17.
-
+// Modified by Ruben Castrelo on 25/02/2021
 import groovy.json.JsonBuilder
 import java.util.concurrent.TimeUnit
 import org.artifactory.repo.RepoPathFactory
+String repoGlobal = "politicas-docker" // Virtual Repository for clean docker images
+String cron = "0 * * ? * *" // only works in quartz date
+boolean dryRunCron = true
+
 
 // usage: curl -X POST http://localhost:8088/artifactory/api/plugins/execute/cleanDockerImages
 
 executions {
     cleanDockerImages() { params ->
-        def deleted = []
-        def etcdir = ctx.artifactoryHome.etcDir
-        def propsfile = new File(etcdir, "plugins/cleanDockerImages.properties")
-        def repos = new ConfigSlurper().parse(propsfile.toURL()).dockerRepos
+        def deleted = []   
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
+        def repos = []
+        def aqlRepo = "items.find({\"repo\":\""+repoGlobal+"\"})"
+        searches.aql(aqlRepo.toString()) {
+            for (item in it) {
+                if (repos.isEmpty()) {
+                    repos.add(item.repo)
+                }
+                if( repos.last() == item.repo) { 
+                }else{ 
+                    repos.add(item.repo)
+                }
+            }
+        }
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
             def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun)
@@ -39,6 +53,40 @@ executions {
         status = 200
     }
 }
+
+// Schedule for run cleanDockerImages
+
+jobs {
+    "scheduledCleanDockerImages_1"(cron: cron) {
+        log.info "Policy settings for scheduled run at($cron) for docker images, virtual repo ($repoGlobal)"
+        def deleted = []   
+        
+        def repos = []
+        def aqlRepo = "items.find({\"repo\":\""+repoGlobal+"\"})"
+        searches.aql(aqlRepo.toString()) {
+            for (item in it) {
+                if (repos.isEmpty()) {
+                    repos.add(item.repo)
+                }
+                if( repos.last() == item.repo) { 
+                }else{ 
+                    repos.add(item.repo)
+                }
+            }
+        }
+        repos.each {
+            log.debug("Cleaning Docker images in repo: $it")
+            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRunCron)
+            deleted.addAll(del)
+        }
+        def json = [status: 'okay', dryRun: dryRunCron, deleted: deleted]
+        message = new JsonBuilder(json).toPrettyString()
+        log.info "Result $message"
+
+    }
+}
+
+
 
 def buildParentRepoPaths(path, dryRun) {
     def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
@@ -71,6 +119,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
+        log.debug "childItem es $childItem"
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
             simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
@@ -105,7 +154,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
 // This method checks if the docker image's manifest has the property
 // "com.jfrog.artifactory.retention.maxDays" for purge
 def checkDaysPassedForDelete(item) {
-    def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
+    def maxDaysProp = "com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
     if (!prop) return false
@@ -113,15 +162,11 @@ def checkDaysPassedForDelete(item) {
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false
     return ((new Date().time - item.created) / oneday) >= prop
+    //return 0 // numero maximo de dias
 }
 
 // This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxCount" for purge
+//  for purge
 def getMaxCountForDelete(item) {
-    def maxCountProp = "docker.label.com.jfrog.artifactory.retention.maxCount"
-    def prop = repositories.getProperty(item.repoPath, maxCountProp)
-    if (!prop) return 0
-    log.debug "PROPERTY $maxCountProp FOUND = $prop IN MANIFEST FILE"
-    prop = prop.isInteger() ? prop.toInteger() : 0
-    return prop > 0 ? prop : 0
+    return 3 // maximun number of docker images
 }
