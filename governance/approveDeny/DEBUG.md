@@ -88,7 +88,7 @@ and add the line:
 The log files are located in the ``/var/opt/jfrog/artifactory``. The most useful
 one for plugins is ``artifactory-service.log``. There are two ways to get the logs:
 
-    1. SSH into the Docker container and look at the file:
+    1. Shell into the Docker container and look at the file:
       ```
       docker exec -it rt1 sh
       cat /opt/jfrog/artifactory/var/log/artifactory-service.log
