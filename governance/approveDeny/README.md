@@ -87,6 +87,30 @@ REST API
   {'status': 'Approved/DECLINE'}
   ```
 
+Custom Approve Deny REST Endpoints
+==================================
+
+The Approve Deny user plugin caches the responses from the IP and the Entitlement
+servers. The cache will grow and each cached item will become stale after
+10 minutes but the entire cache is cleared manually. For that there are REST APIs
+
+1. The **getcachesize** API is to find out how many elements are in the cache:
+  ```
+  curl -u admin:password -XPOST -H'Content-Type: application/json' "http://localhost:8082/artifactory/api/plugins/execute/getcachesize"
+  ```
+
+  The return JSON is of the following format:
+
+  ```
+  {"CacheSize":"0"}
+  ```
+
+1. The **purgecache** API will purge the entire cache marking all of the items
+for garbage collection:
+
+  ```
+  curl -u admin:password -XPOST -H'Content-Type: application/json' "http://localhost:8082/artifactory/api/plugins/execute/purgecache"
+  ```
 
 Testing
 -------

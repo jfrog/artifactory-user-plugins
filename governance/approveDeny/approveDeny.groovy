@@ -25,6 +25,10 @@ import org.apache.http.params.HttpParams
 
 import org.slf4j.Logger
 
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalTime
+
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.POST
 
@@ -72,7 +76,7 @@ download {
                 Result result = compliance.validate(settings, transaction_ip, app_name, repository_name, module_name, product_name_space, version, email)
 
                 if (result.success()) {
-                    status = result.status
+                    status = result.status // NOTE: status can only be assigned once
                 }
             }
         }
@@ -90,6 +94,29 @@ executions {
         log.warn(String.valueOf(result.status))
         log.warn(result.message)
     }
+
+    getcachesize { params ->
+        try {
+            def jsonObj = {
+                CacheSize "${compliance.getCacheSize()}"
+            }
+            message = JsonOutput.toJson(jsonObj).toString()
+            status = 200
+        }
+        catch(Exception e) {
+            status = 400
+        }
+    }
+
+    purgecache { params ->
+        try {
+            compliance.purgeCache()
+            status = 200
+        }
+        catch(Exception e) {
+            status = 400
+        }
+    }
 }
 
 final class Globals {
@@ -98,6 +125,8 @@ final class Globals {
     final static SUCCESS = "success"
     final static FAILED = "failed"
     final static ERROR = 'error'
+
+    final static int TIMEOUT = 10 // This is in minutes
 }
 
 class Settings {
@@ -165,9 +194,45 @@ class Result {
     }
 }
 
+class CacheItem {
+    String jsonStr
+    Result result
+    LocalDate date = LocalDate.now();
+    LocalTime time = LocalTime.now();
+
+    CacheItem(def jsonObj, Result result) {
+        this.jsonStr = JsonOutput.toJson(jsonObj).toString()
+        this.result = result
+    }
+
+    boolean isValid(def jsonObj) {
+        LocalDate currentDate = LocalDate.now()
+        LocalTime currentTime = LocalTime.now()
+        LocalTime endTime = this.time.plus(Duration.ofMinutes(Globals.TIMEOUT))
+
+        if (currentDate.isEqual(this.date)) {
+            if (currentTime.isAfter(this.time)) {
+                if (currentTime.isBefore(endTime)) {
+                    def jsonTemp = JsonOutput.toJson(jsonObj).toString()
+                    if (this.jsonStr.contentEquals(jsonTemp)) {
+                        return true
+                    }
+                }
+            }
+        }
+
+        return false
+    }
+
+    Result getResult() {
+        return this.result
+    }
+}
+
 class Compliance {
     Logger log
     ThreadSafeHTTPBuilder http
+    HashMap cache = new HashMap()
 
     final static STATUS = "status"
     final static APPROVED = "Approved"
@@ -177,6 +242,14 @@ class Compliance {
         this.http = new ThreadSafeHTTPBuilder()
     }
 
+    int getCacheSize() {
+        return cache.size()
+    }
+
+    void purgeCache() {
+        cache = new HashMap()
+    }
+
     Result validate(Settings settings, String transaction_ip, String app_name, String repository_name, String module_name, String product_name_space, String version, String email) {
         def validateIpJson = {
             Transaction_IP "${transaction_ip}"
@@ -184,7 +257,7 @@ class Compliance {
             Email "${email}"
         }
 
-        Result result = validate_internal(settings.getIpServer(), validateIpJson, STATUS, APPROVED)
+        Result result = validate_cache_internal(transaction_ip, settings.getIpServer(), validateIpJson, STATUS, APPROVED)
 
         if (result.success()) {
             def validateEntitlementsJson = {
@@ -195,10 +268,24 @@ class Compliance {
                 Email "${email}"
             }
 
-            result = validate_internal(settings.getEntitlementServer(), validateEntitlementsJson, STATUS, APPROVED)
+            result = validate_cache_internal(email, settings.getEntitlementServer(), validateEntitlementsJson, STATUS, APPROVED)
         }
 
         return result;
+    }
+    
+    private Result validate_cache_internal(String cachekey, String uri, jsonObj, String key, String value) {
+        CacheItem item = cache.get(cachekey)
+
+        if (item != null && item.isValid(jsonObj)) {
+            return item.getResult()
+        }
+
+        cache.remove(cachekey)
+        Result result = validate_internal(uri, jsonObj, key, value)
+        item = new CacheItem(jsonObj, result)
+        cache.put(cachekey, item)
+        return result
     }
 
     private Result validate_internal(String uri, jsonObj, String key, String value) {
