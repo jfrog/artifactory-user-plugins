@@ -41,7 +41,7 @@ def UNINITIALIZED = "null"
 download {
     altResponse { request, responseRepoPath ->
         try {
-            log.warn "Requesting artifact: $responseRepoPath"
+            log.info "Requesting artifact: $responseRepoPath"
 
             def transaction_ip = request.clientAddress
             def repository_name = responseRepoPath.getRepoKey()
@@ -63,21 +63,19 @@ download {
             def version = items[index + 1]
 
             if (items[index + 2].compareTo("manifest.json") == 0) {
-                log.warn "ipServer: ${settings.getIpServer()}"
-                log.warn "entitlementServer: ${settings.getEntitlementServer()}"
-                log.warn "transaction_ip: ${transaction_ip}"
-                log.warn "app_name: ${app_name}"
-                log.warn "repository_name: ${repository_name}"
-                log.warn "module_name: ${module_name}"
-                log.warn "product_name_space: ${product_name_space}"
-                log.warn "version: ${version}"
-                log.warn "email: ${email}"
+                log.info "ipServer: ${settings.getIpServer()}"
+                log.info "entitlementServer: ${settings.getEntitlementServer()}"
+                log.info "transaction_ip: ${transaction_ip}"
+                log.info "app_name: ${app_name}"
+                log.info "repository_name: ${repository_name}"
+                log.info "module_name: ${module_name}"
+                log.info "product_name_space: ${product_name_space}"
+                log.info "version: ${version}"
+                log.info "email: ${email}"
 
                 Result result = compliance.validate(settings, transaction_ip, app_name, repository_name, module_name, product_name_space, version, email)
 
-                if (result.success()) {
-                    status = result.status // NOTE: status can only be assigned once
-                }
+                status = result.status // NOTE: status can only be assigned once
             }
         }
         catch(Exception e) {
@@ -197,8 +195,8 @@ class Result {
 class CacheItem {
     String jsonStr
     Result result
-    LocalDate date = LocalDate.now();
-    LocalTime time = LocalTime.now();
+    LocalDate date = LocalDate.now()
+    LocalTime time = LocalTime.now()
 
     CacheItem(def jsonObj, Result result) {
         this.jsonStr = JsonOutput.toJson(jsonObj).toString()
@@ -247,6 +245,7 @@ class Compliance {
     }
 
     void purgeCache() {
+        log.info "Purging cache"
         cache = new HashMap()
     }
 
@@ -257,6 +256,7 @@ class Compliance {
             Email "${email}"
         }
 
+        log.info "Validating IP"
         Result result = validate_cache_internal(transaction_ip, settings.getIpServer(), validateIpJson, STATUS, APPROVED)
 
         if (result.success()) {
@@ -268,23 +268,32 @@ class Compliance {
                 Email "${email}"
             }
 
+            log.info "Validating entitlement"
             result = validate_cache_internal(email, settings.getEntitlementServer(), validateEntitlementsJson, STATUS, APPROVED)
         }
 
         return result;
     }
-    
+
     private Result validate_cache_internal(String cachekey, String uri, jsonObj, String key, String value) {
+        log.debug "Getting item from cache using key: ${cachekey}"
         CacheItem item = cache.get(cachekey)
 
         if (item != null && item.isValid(jsonObj)) {
+            log.debug "Cached item found"
             return item.getResult()
         }
 
+        log.debug "No cached item found."
         cache.remove(cachekey)
+
+        log.debug "Validate with server"
         Result result = validate_internal(uri, jsonObj, key, value)
+
+        log.debug "Caching validation result for key: ${cachekey}"
         item = new CacheItem(jsonObj, result)
         cache.put(cachekey, item)
+
         return result
     }
 
@@ -292,6 +301,7 @@ class Compliance {
         Result result = new Result(Result.FORBIDDEN, Globals.FAILED)
 
         try {
+            log.info "Validating with server ${uri}"
             this.http.uri = uri
 
             this.http.request(POST) {
@@ -301,19 +311,23 @@ class Compliance {
                 log.warn body
 
                 response.success = { resp, json ->
-                    this.log.warn(Globals.SUCCESS)
-
+                    log.info "Received success response from server: ${json}"
                     if (json.containsKey(key) && json.get(key) == value) {
+                        log.info Globals.SUCCESS
                         result.setStatus(Result.OK, Globals.SUCCESS)
                     }
+                }
+
+                response.failure = { resp, json ->
+                    log.info "Received failure response from server: ${json}"
+                    log.error Globals.FAILED
                 }
             }
         } catch (Exception e) {
             log.warn e.toString()
         }
 
+        log.info "Validation result: ${result.status}"
         return result
     }
 }
-
-
