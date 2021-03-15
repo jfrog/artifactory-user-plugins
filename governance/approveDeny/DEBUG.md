@@ -160,7 +160,7 @@ Remove Artifactory docker container:
 Sometimes you have to go digging around the Artifactory docker container:
 
   ```
-  docker exec -it --user root rt1 sh
+  docker exec -it --user root rt1 bash
   ```
 
   then type ``su`` and you'll have full control of the bash shell.
