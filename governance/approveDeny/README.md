@@ -44,6 +44,8 @@ Installation
 1. Verify in the `$JF_PRODUCT_DATA_INTERNAL/logs/artifactory-service.log` that the plugin
    loaded the configuration correctly.
 
+**NOTE**: We recommend you to setup a `.netrc` file (see https://everything.curl.dev/usingcurl/netrc) to store your username and password for `curl`, e.g. `curl -n`, `curl --netrc`, `curl --netrc-file`.
+
 Creating an approveDeny.json
 -------------------------
 
