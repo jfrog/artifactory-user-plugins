@@ -31,18 +31,20 @@ Installation
    ```
 
 1. Download the following dependency jars, and copy them to the
-  `${ARTIFACTORY_HOME}/etc/plugins/lib` directory:
-  * [HTTPBuilder](https://bintray.com/bintray/jcenter/org.codehaus.groovy.modules.http-builder%3Ahttp-builder/_latestVersion)
-  * [Json-lib](https://bintray.com/bintray/jcenter/net.sf.json-lib%3Ajson-lib/_latestVersion)
-  * [Xml-resolver](https://bintray.com/bintray/jcenter/xml-resolver%3Axml-resolver/_latestVersion)
+  `${ARTIFACTORY_HOME}/var/etc/artifactory/plugins/lib` directory:
+  * [HTTPBuilder](https://mvnrepository.com/artifact/org.codehaus.groovy.modules.http-builder/http-builder/0.7.2)
+  * [Json-lib](https://mvnrepository.com/artifact/net.sf.json-lib/json-lib/2.4)
+  * [Xml-resolver](https://mvnrepository.com/artifact/xml-resolver/xml-resolver/1.2)
 1. Edit the `approveDeny.json` file. See the example `approveDeny.json` provided or
    the details below on how to edit `approveDeny.json`.
-1. Copy `approveDeny.groovy` and `approveDeny.json` to the `${ARTIFACTORY_HOME}/etc/artifactory/plugins` directory.
+1. Copy `approveDeny.groovy` and `approveDeny.json` to the `${ARTIFACTORY_HOME}/var/etc/artifactory/artifactory/plugins` directory.
 1. There are two ways to load the plugin:
-   - Manually force the plugin to be loaded `curl -u username:password -XPOST -H'Content-Type: application/json' http://localhost:8080/artifactory/api/plugins/reload`
+   - Manually force the plugin to be loaded `curl -u username:password -XPOST -H'Content-Type: application/json' http://localhost:8082/artifactory/api/plugins/reload`
    - Refer to the Plugin documentation for how to enable **Auto Reload**.
 1. Verify in the `$JF_PRODUCT_DATA_INTERNAL/logs/artifactory-service.log` that the plugin
    loaded the configuration correctly.
+
+**NOTE**: We recommend you to setup a `.netrc` file (see https://everything.curl.dev/usingcurl/netrc) to store your username and password for `curl`, e.g. `curl -n`, `curl --netrc`, `curl --netrc-file`.
 
 Creating an approveDeny.json
 -------------------------

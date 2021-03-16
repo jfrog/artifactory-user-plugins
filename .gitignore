@@ -8,3 +8,5 @@
 /.gradle
 /.idea/
 *.iml
+
+.DS_Store
