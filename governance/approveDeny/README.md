@@ -32,9 +32,9 @@ Installation
 
 1. Download the following dependency jars, and copy them to the
   `${ARTIFACTORY_HOME}/var/etc/artifactory/plugins/lib` directory:
-  * [HTTPBuilder](https://bintray.com/bintray/jcenter/org.codehaus.groovy.modules.http-builder%3Ahttp-builder/_latestVersion)
-  * [Json-lib](https://bintray.com/bintray/jcenter/net.sf.json-lib%3Ajson-lib/_latestVersion)
-  * [Xml-resolver](https://bintray.com/bintray/jcenter/xml-resolver%3Axml-resolver/_latestVersion)
+  * [HTTPBuilder](https://mvnrepository.com/artifact/org.codehaus.groovy.modules.http-builder/http-builder/0.7.2)
+  * [Json-lib](https://mvnrepository.com/artifact/net.sf.json-lib/json-lib/2.4)
+  * [Xml-resolver](https://mvnrepository.com/artifact/xml-resolver/xml-resolver/1.2)
 1. Edit the `approveDeny.json` file. See the example `approveDeny.json` provided or
    the details below on how to edit `approveDeny.json`.
 1. Copy `approveDeny.groovy` and `approveDeny.json` to the `${ARTIFACTORY_HOME}/var/etc/artifactory/artifactory/plugins` directory.

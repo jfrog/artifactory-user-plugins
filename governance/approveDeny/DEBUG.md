@@ -31,9 +31,9 @@ Setup
 
   And download these libraries and put them in the ``lib`` directory just created:
 
-  * [HTTPBuilder](https://bintray.com/bintray/jcenter/org.codehaus.groovy.modules.http-builder%3Ahttp-builder/_latestVersion)
-  * [Json-lib](https://bintray.com/bintray/jcenter/net.sf.json-lib%3Ajson-lib/_latestVersion)
-  * [Xml-resolver](https://bintray.com/bintray/jcenter/xml-resolver%3Axml-resolver/_latestVersion)
+  * [HTTPBuilder](https://mvnrepository.com/artifact/org.codehaus.groovy.modules.http-builder/http-builder/0.7.2)
+  * [Json-lib](https://mvnrepository.com/artifact/net.sf.json-lib/json-lib/2.4)
+  * [Xml-resolver](https://mvnrepository.com/artifact/xml-resolver/xml-resolver/1.2)
 
   The ``beforeDebug.sh`` script will put these libraries where they need to be in the Docker container.
 
