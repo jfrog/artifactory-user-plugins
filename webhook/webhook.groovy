@@ -316,8 +316,14 @@ class KeelFormatter {
     def format(String event, JsonBuilder data) {
         def builder = new JsonBuilder()
         def json = data.content
+        def imagePath 
+        if (WebHook.dockerRegistryUrl()) {
+          imagePath = "${WebHook.dockerRegistryUrl()}/${json.docker.image}"
+        } else {
+          imagePath = "${WebHook.baseUrl()}/${json.repoKey}/${json.docker.image}"
+        }
         builder {
-          name "${WebHook.dockerRegistryUrl()}/${json.docker.image}"
+          name "${imagePath}"
           tag json.docker.tag
         }
         return builder
