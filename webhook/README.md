@@ -155,7 +155,7 @@ In order to work with keel format, you need to set your docker registry url in y
         ],
         "format": "keel"
     }
-  }
+  },
   "dockerRegistryUrl": "docker-registry.example.com"
 }
 
