@@ -3,6 +3,8 @@ Artifactory Expires Files Metadata User Plugin
 
 This plugin expires files when they are requested according to file pattern and expire delay stored in properties file so that the files are redownloaded.
 
+This plugin is supported for Generic repositories only.
+
 This plugin is inspired from [Expires Packages Metadata User Plugin](https://github.com/jfrog/artifactory-user-plugins/tree/master/metadata/expirePackagesMetadata).
 
 `expireFilesMetadata.json`
@@ -40,7 +42,7 @@ Features
 
 This plugin runs every time a download request is received. It will force a check for expiry when:
 
-- Artifact belongs to a remote repository
+- Artifact belongs to a remote repository and its package type is generic
 - Artifact local cache is older than the expire delay specified in the properties file
 - Artifact name statisfying the pattern given in the properties file
 
