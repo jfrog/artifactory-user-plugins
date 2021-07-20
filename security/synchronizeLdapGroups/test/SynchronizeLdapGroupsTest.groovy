@@ -1,5 +1,5 @@
 import groovy.xml.XmlUtil
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.model.Group
 import org.jfrog.artifactory.client.model.Privilege
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
@@ -7,14 +7,14 @@ import spock.lang.Shared
 import spock.lang.Specification
 import org.jfrog.lilypad.util.Docker
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class SynchronizeLdapGroupsTest extends Specification {
 
     static final baseurl = 'http://localhost:8088/artifactory'
     static final adminPassword = 'admin:password'
     static final auth = "Basic ${adminPassword.bytes.encodeBase64().toString()}"
-    @Shared artifactory = create(baseurl, 'admin', 'password')
+    @Shared artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername('admin').setPassword('password').build()
 
     static final ldapPort = Docker.findPort()
     static final ldapBaseurl = "ldap://localhost:$ldapPort"
@@ -81,7 +81,8 @@ class SynchronizeLdapGroupsTest extends Specification {
 
         when:
         // Upload artifact to repo using ldap user
-        def artifactoryLdapUser = create(baseurl, ldapUser, ldapUserPassword)
+        def artifactoryLdapUser = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername(ldapUser).setPassword(ldapUserPassword).build()
         def repo = artifactoryLdapUser.repository(repoKey)
         repo.upload("artifact", new ByteArrayInputStream("content".bytes)).doUpload()
 

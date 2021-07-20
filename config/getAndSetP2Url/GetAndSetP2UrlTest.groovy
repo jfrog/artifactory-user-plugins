@@ -26,9 +26,9 @@ class GetAndSetP2UrlTest extends Specification {
 
         when:
         def exurl = 'http://localhost:8088/artifactory/api/plugins/execute/'
-        def cnfg = [repo: 'p2-virtual',
-                    urls: ['local://nonexistent', 'local://p2-local',
-                           'http://localhost:8088/artifactory/p2-remote']]
+        def urls = ['local://nonexistent', 'local://p2-local']
+        urls << 'http://localhost:8088/artifactory/p2-remote'
+        def cnfg = [repo: 'p2-virtual', urls: urls]
         def cnct = new URL("${exurl}modifyP2Urls").openConnection()
         cnct.doOutput = true
         cnct.requestMethod = 'POST'

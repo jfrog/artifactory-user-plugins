@@ -1,5 +1,6 @@
 Artifactory Prevent Xray Rejected User Plugin
 =============================================
+**This plugin is deprecated and will not be tested against new versions. Xray (since 1.12) no longer uses properties to denote severity. The same behavior can be accomplished with Xray Policies.**
 
 This plugin rejects downloads of artifacts which have been marked with an alert
 by Xray. By default, all artifacts with alerts are rejected, but you may modify

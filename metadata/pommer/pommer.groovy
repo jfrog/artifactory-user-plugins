@@ -69,7 +69,7 @@ executions {
 }
 
 def readExclusionList() {
-  def etcdir = ctx.artifactoryHome.haAwareEtcDir
+  def etcdir = ctx.artifactoryHome.etcDir
   // This function reads the file and creates an arraylist that can be compared against the uploaded items.
   try {
     def extfile = new File(etcdir, "plugins/pommer.json")

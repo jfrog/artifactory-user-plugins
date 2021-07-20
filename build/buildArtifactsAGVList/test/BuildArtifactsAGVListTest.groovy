@@ -1,6 +1,6 @@
 import spock.lang.Specification
 import groovy.json.JsonSlurper
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
 class BuildArtifactsAGVListTest extends Specification {
@@ -10,14 +10,15 @@ class BuildArtifactsAGVListTest extends Specification {
     def 'test build artifacts AGVList '() {
 
         setup:
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('libs-snapshots-local')
                 .repositorySettings(new MavenRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, local)
 
         def pom = new File('./src/test/groovy/BuildArtifactsAGVListTest/multi-2.17-SNAPSHOT.pom')
-        def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom"
+        def path = "org/jfrog/test/multi/2.17-SNAPSHOT/multi-2.17-SNAPSHOT.pom;build.name=plugin-demo;build.number=2"
         artifactory.repository("libs-snapshots-local").upload(path,pom).doUpload();
 
 

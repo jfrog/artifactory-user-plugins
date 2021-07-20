@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+import java.util.concurrent.Executors
+
 import org.artifactory.api.common.MoveMultiStatusHolder
+import org.artifactory.concurrent.ArtifactoryRunnable
 import org.artifactory.repo.RepoPathFactory
 import org.artifactory.repo.service.InternalRepositoryService
 import org.artifactory.repo.service.mover.DefaultRepoPathMover
@@ -22,6 +25,8 @@ import org.artifactory.repo.service.mover.MoverConfigBuilder
 import org.artifactory.request.NullRequestContext
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor
 import org.artifactory.storage.fs.service.FileService
+
+import org.springframework.security.core.context.SecurityContextHolder
 
 // The number of milliseconds to sleep before reverting a repomd.xml's iteminfo
 // (see the storage hook for more details). This exists to avoid a race
@@ -45,9 +50,8 @@ etagMutex = new Object()
 etagQueue = [:]
 etagWorking = false
 
-// The Artifactory thread pool, necessary to download metadata files as a
-// background task
-threadPool = ctx.beanForType(CachedThreadPoolTaskExecutor)
+// The thread pool, necessary to download metadata files as a background task
+threadPool = Executors.newFixedThreadPool(10)
 
 storage {
     // If a new repomd.xml is available, but none of the other necessary
@@ -74,7 +78,7 @@ storage {
         }
         // start a thread, so we can wait for the original thread to update the
         // file, before reverting it to its proper state
-        threadPool.submit {
+        def task = [run:{
             synchronized (etagMutex) {
                 asSystem {
                     try {
@@ -88,7 +92,12 @@ storage {
                         def (etag, info) = etagQueue[item.repoPath.id]
                         repositories.setProperty(item.repoPath, name, etag)
                         def fileserv = ctx.beanForType(FileService)
-                        def fileid = fileserv.getFileNodeId(item.repoPath)
+                        def fileid = null
+                        try {
+                            fileid = fileserv.getNodeId(item.repoPath)
+                        } catch (groovy.lang.MissingMethodException ex) {
+                            fileid = fileserv.getFileNodeId(item.repoPath)
+                        }
                         fileserv.updateFile(fileid, info)
                         log.info("Wrote etag $etag to path $item.repoPath.id")
                     } catch (Exception ex) {
@@ -101,7 +110,9 @@ storage {
                     }
                 }
             }
-        }
+        }] as Runnable
+        def authctx = SecurityContextHolder.context.authentication
+        threadPool.submit(new ArtifactoryRunnable(task, ctx, authctx))
     }
 }
 
@@ -184,7 +195,7 @@ download {
         }
         // in separate threads, cache any necessary metadata files
         downloads.each { download ->
-            threadPool.submit {
+            def task = [run:{
                 asSystem {
                     def (matchl, matchr, origloc) = download
                     def origpath = RepoPathFactory.create(repo.key, origloc)
@@ -241,7 +252,9 @@ download {
                         }
                     }
                 }
-            }
+            }] as Runnable
+            def authctx = SecurityContextHolder.context.authentication
+            threadPool.submit(new ArtifactoryRunnable(task, ctx, authctx))
         }
         // if there is no cached repomd.xml, return the new one
         if (!repositories.exists(repoPath)) {

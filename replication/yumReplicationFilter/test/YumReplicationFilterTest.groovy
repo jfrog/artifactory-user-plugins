@@ -1,7 +1,6 @@
 import org.jfrog.artifactory.client.model.repository.settings.impl.YumRepositorySettingsImpl
 import spock.lang.Specification
-import groovyx.net.http.HttpResponseException
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class YumReplicationFilterTest extends Specification {
 
@@ -10,8 +9,8 @@ class YumReplicationFilterTest extends Specification {
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
         def replicationurl = 'http://localhost:8081/artifactory'
-        def artifactory1 = create(baseurl1, 'admin', 'password')
-        def artifactory2 = create(baseurl2, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def rpmfile = new File('./src/test/groovy/YumReplicationFilterTest/wget-1.19.1-3.fc27.aarch64.rpm')
 

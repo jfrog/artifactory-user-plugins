@@ -1,8 +1,6 @@
 import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-
 class PluginsConfigTest extends Specification {
   def 'list installed plugins test'() {
     setup:

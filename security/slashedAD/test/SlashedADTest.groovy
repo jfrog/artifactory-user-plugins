@@ -4,14 +4,14 @@ import spock.lang.Shared
 import spock.lang.Specification
 import org.jfrog.lilypad.util.Docker
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class SlashedADTest extends Specification {
 
     static final baseurl = 'http://localhost:8088/artifactory'
     static final adminPassword = 'admin:password'
     static final auth = "Basic ${adminPassword.bytes.encodeBase64().toString()}"
-    @Shared artifactory = create(baseurl, 'admin', 'password')
+    @Shared artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername('admin').setPassword('password').build()
 
     static final ldapName = 'ldap'
     static final ldapPort = Docker.findPort()

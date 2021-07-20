@@ -22,7 +22,7 @@ import groovy.transform.Field
 
 @Field final String PROPERTIES_FILE_PATH = "plugins/${this.class.name}.properties"
 
-def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURI().toURL())
+def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURI().toURL())
 def repositoriesMSCWR = [:]
 
 log.info "Check 'Maven Snapshot Cleanup When Release' plugin repositories list: $config.repositories"
@@ -39,7 +39,14 @@ executions {
     mavenSnapshotCleanupWhenReleaseConfig() { params ->
         log.info "Update configuration with parameters: " + params
         def action = params['action'] ? params['action'][0] as String : "add"
-        def repositoriesString = params['repositories'] ? params['repositories'][0] as String : "[]"
+        def repositoriesString = "[]"
+        if (params['repositories']) {
+            if (params['repositories'].size == 1) {
+                repositoriesString = params['repositories'][0]
+            } else {
+                repositoriesString = params['repositories'].join(',')
+            }
+        }
         def configRepositories = new ConfigSlurper().parse('repositories=' + repositoriesString)
 
         if (action == 'reset'){

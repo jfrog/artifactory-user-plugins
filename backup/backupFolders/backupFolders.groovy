@@ -61,7 +61,7 @@ jobs {
     backUpFolder(cron: "0 0 1 1/1 * ? *") {
         try {
             //getting the information from the properties file
-            def etcdir = ctx.artifactoryHome.haAwareEtcDir
+            def etcdir = ctx.artifactoryHome.etcDir
             def configFile = new ConfigSlurper().parse(new File(etcdir, "plugins/backupFolders.properties").toURL())
             startBackup(configFile.destinationFolder as String, configFile.pathToFolder as String)
 

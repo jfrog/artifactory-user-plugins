@@ -4,7 +4,7 @@ import org.jfrog.artifactory.client.model.Item
 import org.jfrog.artifactory.client.model.repository.settings.impl.DebianRepositorySettingsImpl
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 /*
  * Copyright (C) 2017 JFrog Ltd.
@@ -26,12 +26,19 @@ class ExpirePackagesMetadataTest extends Specification {
     static final baseUrl = 'http://localhost:8088/artifactory'
     static final remoteRepoKey = 'debian-remote'
     static final virtualRepoKey = 'debian-virtual'
-    static final remoteRepoUrl = 'http://jfrog.bintray.com/artifactory-pro-debs/'
     static final packagesPath = 'dists/xenial/main/binary-i386/Packages.gz'
 
     def 'Packages.gz not expired download test'() {
         setup:
-        def artifactory = create(baseUrl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
+            .setUsername('admin').setPassword('password').build()
+        def builder = artifactory.repositories().builders()
+        def source = builder.localRepositoryBuilder().key('source-local')
+        source.repositorySettings(new DebianRepositorySettingsImpl())
+        artifactory.repositories().create(0, source.build())
+        def sourcerepo = artifactory.repository('source-local')
+        def pkgs = new File('./src/test/groovy/ExpirePackagesMetadataTest/Packages.gz')
+        sourcerepo.upload(packagesPath, pkgs).doUpload();
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
 
@@ -49,13 +56,22 @@ class ExpirePackagesMetadataTest extends Specification {
         infoSecondDownloadRequest.lastUpdated == infoFirstDownloadRequest.lastUpdated
 
         cleanup:
+        sourcerepo?.delete()
         remote?.delete()
         virtual?.delete()
     }
 
     def 'Packages.gz expired download test'() {
         setup:
-        def artifactory = create(baseUrl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseUrl)
+            .setUsername('admin').setPassword('password').build()
+        def builder = artifactory.repositories().builders()
+        def source = builder.localRepositoryBuilder().key('source-local')
+        source.repositorySettings(new DebianRepositorySettingsImpl())
+        artifactory.repositories().create(0, source.build())
+        def sourcerepo = artifactory.repository('source-local')
+        def pkgs = new File('./src/test/groovy/ExpirePackagesMetadataTest/Packages.gz')
+        sourcerepo.upload(packagesPath, pkgs).doUpload();
         def remote = createRemoteDebianRepo(artifactory, remoteRepoKey)
         def virtual = createVirtualRepo(artifactory, virtualRepoKey, remoteRepoKey)
         // Set packages.gz cache time to 1 second
@@ -78,6 +94,7 @@ class ExpirePackagesMetadataTest extends Specification {
         infoSecondDownloadRequest.lastUpdated > infoFirstDownloadRequest.lastUpdated
 
         cleanup:
+        sourcerepo?.delete()
         remote?.delete()
         virtual?.delete()
         // Set packages.gz cache time back to the default value
@@ -86,9 +103,9 @@ class ExpirePackagesMetadataTest extends Specification {
 
     private RepositoryHandleImpl createRemoteDebianRepo(Artifactory artifactory, String key) {
         def remoteBuilder = artifactory.repositories().builders().remoteRepositoryBuilder()
-                .key(key)
-                .repositorySettings(new DebianRepositorySettingsImpl())
-                .url(remoteRepoUrl)
+        remoteBuilder.key(key)
+        remoteBuilder.repositorySettings(new DebianRepositorySettingsImpl())
+        remoteBuilder.url('http://localhost:8088/artifactory/source-local').username('admin').password('password')
         artifactory.repositories().create(0, remoteBuilder.build())
         return artifactory.repository(key)
     }

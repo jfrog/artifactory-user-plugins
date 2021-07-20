@@ -1,16 +1,16 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import groovy.util.XmlSlurper
 
 class SynchronizeUserKeysTest extends Specification {
     def 'synchronize user keys test'() {
         setup:
         def baseurl1 = 'http://localhost:8088/artifactory'
-        def artifactory1 = create(baseurl1, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
 
         def baseurl2 = 'http://localhost:8081/artifactory'
-        def artifactory2 = create(baseurl2, 'admin', 'password')
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
 
         def builder = artifactory1.repositories().builders()

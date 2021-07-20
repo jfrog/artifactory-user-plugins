@@ -1,13 +1,14 @@
 import spock.lang.Specification
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class WhitesourceTest extends Specification {
     def 'whitesource storage test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def settings = new GenericRepositorySettingsImpl()
         def builders = artifactory.repositories().builders()
         def repobuilder = builders.localRepositoryBuilder()

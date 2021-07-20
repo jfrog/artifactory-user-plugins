@@ -1,10 +1,10 @@
 package common
 
 import artifactory.SecurityTestApi
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.apache.http.HttpException
 import org.jfrog.artifactory.client.Artifactory
-import org.jfrog.artifactory.client.ArtifactoryClient
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.User
 
 /**
@@ -144,18 +144,18 @@ class ArtUsers {
     static def verifyApiKeyonAllNodes (String userID, Artifactory master, Artifactory node1, Artifactory node2) {
         def masterAPiKey
 
-        Artifactory artMaster = ArtifactoryClient.create(master.getUri(), userID, 'jfrog')
+        Artifactory artMaster = ArtifactoryClientBuilder.create().setUrl(master.getUri()).setUsername(userID).setPassword('jfrog').build()
         SecurityTestApi sa = new SecurityTestApi(artMaster)
         masterAPiKey = sa.getUserApiKey(userID, 'jfrog')
 
-        Artifactory artNode1 = ArtifactoryClient.create(node1.getUri(), userID, 'jfrog')
+        Artifactory artNode1 = ArtifactoryClientBuilder.create().setUrl(node1.getUri()).setUsername(userID).setPassword('jfrog').build()
         SecurityTestApi n1 = new SecurityTestApi(artNode1)
         if (masterAPiKey != n1.getUserApiKey(userID, 'jfrog')) {
             println "Master fail to replicate ApiKey for user ${userID} to node 1"
             return false
         }
 
-        Artifactory artNode2 = ArtifactoryClient.create(node2.getUri(), userID, 'jfrog')
+        Artifactory artNode2 = ArtifactoryClientBuilder.create().setUrl(node2.getUri()).setUsername(userID).setPassword('jfrog').build()
         SecurityTestApi n2 = new SecurityTestApi(artNode2)
         if (masterAPiKey != n2.getUserApiKey(userID, 'jfrog')) {
             println "Master fail to replicate ApiKey for user ${userID} to node 2"

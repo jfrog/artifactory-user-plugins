@@ -1,17 +1,18 @@
 import groovy.json.JsonSlurper
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.ItemHandle
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class PromotionTest extends Specification {
 
     def static final baseurl = 'http://localhost:8088/artifactory'
     def static final auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
-    @Shared def artifactory = create(baseurl, 'admin', 'password')
+    @Shared def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+          .setUsername('admin').setPassword('password').build()
 
     def static final stageRepoKey = 'my-snapshot-local'
     def static final releaseRepoKey = 'my-release-local'

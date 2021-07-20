@@ -3,7 +3,7 @@ import org.jfrog.artifactory.client.model.repository.settings.impl.GenericReposi
 import org.jfrog.lilypad.Control
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 /*
  * Copyright (C) 2017 JFrog Ltd.
@@ -38,7 +38,7 @@ class BackupFoldersTest extends Specification {
         def backupFolder = "/tmp/backupfoldertest/${System.currentTimeMillis()}"
 
         setup:
-        def artifactory = create(baseurl, user, password)
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername(user).setPassword(password).build()
         // Create temporary folder to receive backup
         Control.createFolder(basePort, backupFolder)
         // Create repository
@@ -71,7 +71,7 @@ class BackupFoldersTest extends Specification {
         def backupFolder = "/tmp/backupfoldertest/${System.currentTimeMillis()}"
 
         setup:
-        def artifactory = create(baseurl, user, password)
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl).setUsername(user).setPassword(password).build()
         // Create temporary folder to receive backup
         Control.createFolder(basePort, backupFolder)
         // Create repository

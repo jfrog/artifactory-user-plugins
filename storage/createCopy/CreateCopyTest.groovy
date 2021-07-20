@@ -1,5 +1,5 @@
 import spock.lang.Specification
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
@@ -7,7 +7,8 @@ class CreateCopyTest extends Specification {
     def 'create copy test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def file = new File('/home/auser/weatherr_0.1.2.tar.gz')
 
         def builder1 = artifactory.repositories().builders()

@@ -69,7 +69,7 @@ class UserPwdConfigurationHolder {
     long confFileLastChecked = 0L
     long confFileLastModified = 0L
     List<String> errors
-    String dir = "${ctx.artifactoryHome.getHaAwareEtcDir()}/plugins"
+    String dir = "${ctx.artifactoryHome.getEtcDir()}/plugins"
     UserPwdConfigurationHolder(ctx, log) {
         this.log = log
         this.confFile = new File(dir, "oldPasswordRealm.json")

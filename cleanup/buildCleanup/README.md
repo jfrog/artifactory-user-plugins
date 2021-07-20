@@ -4,6 +4,12 @@ Artifactory Build Cleanup User Plugin
 This plugin deletes all builds that are older than n days. It can be run
 manually from the REST API, or automatically as a scheduled job.
 
+**&ast;&ast;&ast; DEPRECATION NOTICE &ast;&ast;&ast;**
+
+*Artifactory 6.6 introduced [Build Info Repositories](https://www.jfrog.com/confluence/display/RTF/Release+Notes#ReleaseNotes-Artifactory6.6).  With this introduction, standard artifact cleanup techniques such as via the [CLI](https://jfrog.com/blog/aql-cli-a-match-made-in-heaven/) or via the [artifactCleanup plugin](https://github.com/markgalpin/artifactory-user-plugins/tree/master/cleanup/artifactCleanup) should work equivalently to this plugin, so we are deprecating this plugin.*
+
+*Documentation and plugin is preserved here for users of older versions.*
+
 Parameters
 ----------
 

@@ -1,8 +1,7 @@
 import org.jfrog.lilypad.Control
 import spock.lang.Specification
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.NugetRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
 import org.artifactory.repo.*
 
 class BeforeSymbolServerDownloadTest extends Specification {
@@ -19,8 +18,10 @@ class BeforeSymbolServerDownloadTest extends Specification {
         setup:
         Control.setLoggerLevel(8088, 'org.apache.http.wire', 'debug')
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
-        def artifactory2 = create('http://localhost:8081/artifactory', 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl('http://localhost:8081/artifactory')
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def builder2 = artifactory2.repositories().builders()
 
@@ -29,16 +30,28 @@ class BeforeSymbolServerDownloadTest extends Specification {
         def file = new ByteArrayInputStream('test symbol'.bytes)
         artifactory2.repository('symbols').upload(filePath, file).doUpload()
 
-        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).repositorySettings(new NugetRepositorySettingsImpl()).build()
+        def remoteRepo = builder.remoteRepositoryBuilder().key(remoteRepokey).url(url).username('admin').password('password').repositorySettings(new NugetRepositorySettingsImpl()).build()
         artifactory.repositories().create(0, remoteRepo)
 
         when:
         artifactory.repository(remoteRepokey).download(filePath).doDownload();
 
-        def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
+        def logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory-service.log'
         def conn = new URL (logfile).openConnection()
         conn.requestMethod = 'GET'
         conn.setRequestProperty('Authorization', auth)
+        if (conn.responseCode != 200) {
+            logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=service.log'
+            conn = new URL (logfile).openConnection()
+            conn.requestMethod = 'GET'
+            conn.setRequestProperty('Authorization', auth)
+        }
+        if (conn.responseCode != 200) {
+            logfile ='http://localhost:8088/artifactory/api/systemlogs/downloadFile?id=artifactory.log'
+            conn = new URL (logfile).openConnection()
+            conn.requestMethod = 'GET'
+            conn.setRequestProperty('Authorization', auth)
+        }
         assert conn.responseCode == 200
         def reader = new InputStreamReader(conn.inputStream)
         def textlog = reader.text

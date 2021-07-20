@@ -6,7 +6,7 @@ import spock.lang.Specification
 import java.security.MessageDigest
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 import groovyx.net.http.HttpResponseException
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 
 class DownloadDirectoryContentTest extends Specification {
@@ -14,7 +14,8 @@ class DownloadDirectoryContentTest extends Specification {
 
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def xmlfile = new File('./src/test/groovy/DownloadDirectoryContentTest/maven-metadata.xml')
         def jarfile = new File('./src/test/groovy/DownloadDirectoryContentTest/lib-aopalliance-1.0.jar')

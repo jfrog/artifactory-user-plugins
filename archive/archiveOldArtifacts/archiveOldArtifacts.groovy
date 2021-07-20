@@ -16,6 +16,7 @@
 
 import org.artifactory.exception.CancelException
 import org.artifactory.fs.StatsInfo
+import org.artifactory.model.xstream.fs.StatsImpl
 import org.artifactory.md.Properties
 import org.artifactory.repo.RepoPath
 import org.artifactory.repo.RepoPathFactory
@@ -376,6 +377,13 @@ boolean checkArchiveTimingPolicies(
     if (lastDownloadedDays != 0) {
         // Get the StatsInfo on the item
         def statsInfo = (StatsInfo) repositories.getStats(artifact)
+
+        // If artifact is never downloaded
+        if (statsInfo == null){
+            statsInfo = new StatsImpl()
+            statsInfo.lastDownloaded = itemInfo.getCreated()
+        }
+
         log.debug('Artifact {} stats info: {}', artifact, statsInfo)
 
         // Get the last downloaded date

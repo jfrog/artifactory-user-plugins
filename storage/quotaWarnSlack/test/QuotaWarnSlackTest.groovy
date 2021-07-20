@@ -7,14 +7,15 @@ import groovy.json.JsonSlurper
 import spock.lang.Shared
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class QuotaWarnSlackTest extends Specification {
 
     static final def baseurl = 'http://localhost:8088/artifactory'
     static final auth = "Basic ${("admin:password").bytes.encodeBase64().toString()}"
     @Shared
-    def artifactory = create(baseurl, 'admin', 'password')
+    def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+        .setUsername('admin').setPassword('password').build()
 
     static final def slackMockServerPort = 8000
 

@@ -1,0 +1,23 @@
+{
+    "properties" : {
+        "buildInfo.env.SONAR_CETASKID" : "myTaskId"
+    },
+    "version" : "1.0.1",
+    "name" : "maven-dependent-example",
+    "number" : "1",
+    "type" : "GENERIC",
+    "started" : "2017-09-16T00:07:53.765+0000",
+    "durationMillis" : 27219,
+    "modules" : [ {
+        "properties" : {
+            "project.build.sourceEncoding" : "UTF-8"
+        },
+        "id" : "org.jfrog.test:multi1:3.7-SNAPSHOT",
+        "artifacts" : [ {
+            "type" : "jar",
+            "sha1" : "9c15fce46018b8505b94d0ba8f92c2c0eedbd123",
+            "md5" : "c4c81d801d7a029beb187fc2e7a1ba04",
+            "name" : "multi1-3.7-SNAPSHOT.jar"
+        } ]
+    } ]
+}

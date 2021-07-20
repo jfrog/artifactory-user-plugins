@@ -1,15 +1,15 @@
 import spock.lang.Specification
 import groovyx.net.http.HttpResponseException
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class BuildReplicationTest extends Specification {
     def 'build replication test'() {
         setup:
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
-        def artifactory1 = create(baseurl1, 'admin', 'password')
-        def artifactory2 = create(baseurl2, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
 
         when:

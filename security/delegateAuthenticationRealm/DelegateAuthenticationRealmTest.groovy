@@ -1,6 +1,6 @@
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.builder.UserBuilder
 
 class DelegateAuthenticationRealmTest extends Specification {
@@ -8,8 +8,8 @@ class DelegateAuthenticationRealmTest extends Specification {
         setup:
         def baseurl1 = 'http://localhost:8081/artifactory'
         def baseurl2 = 'http://localhost:8088/artifactory'
-        def artifactory1 = create(baseurl1, 'admin', 'password')
-        def artifactory2 = create(baseurl2, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
 
         when:
         UserBuilder userBuilder = artifactory1.security().builders().userBuilder()

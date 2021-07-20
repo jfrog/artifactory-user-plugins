@@ -1,14 +1,15 @@
-import groovyx.net.http.HttpResponseException
 import spock.lang.Specification
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.GenericRepositorySettingsImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
+import org.apache.http.client.HttpResponseException
 
 class RestrictOverwriteTest extends Specification {
     def 'restrict overwrite test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('generic-local')
         local.repositorySettings(new GenericRepositorySettingsImpl())
@@ -22,7 +23,7 @@ class RestrictOverwriteTest extends Specification {
         def resp = localrepo.upload('some/path/file', is2).doUpload()
 
         then:
-        resp.checksums == null
+        thrown(HttpResponseException)
 
         cleanup:
         localrepo?.delete()

@@ -123,7 +123,7 @@ void indexPackagesRecursive(RepoPath dir) {
 			// If this package is already in the correct subdir, update the repodata.
 			// Otherwise, move the package into the correct subdir (and let recursion handle updating repodata).
 			String correctSubdir = Iterables.getOnlyElement(packageInfo.values()).subdir
-			if (dir.getName() == correctSubdir) { // note: paths are case sensitive
+			if (correctSubdir == null || dir.getName() == correctSubdir) { // note: paths are case sensitive
 				repodataJson.packages << packageInfo
 				repodataUpdated = true
 			} else {
