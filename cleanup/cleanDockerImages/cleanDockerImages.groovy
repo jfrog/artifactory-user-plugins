@@ -27,11 +27,16 @@ executions {
         def deleted = []
         def etcdir = ctx.artifactoryHome.etcDir
         def propsfile = new File(etcdir, "plugins/cleanDockerImages.properties")
-        def repos = new ConfigSlurper().parse(propsfile.toURL()).dockerRepos
+        def config = new ConfigSlurper().parse(propsfile.toURL())
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
-        repos.each {
-            log.debug("Cleaning Docker images in repo: $it")
-            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun)
+        config.dockerRepos.each{ policySettings ->
+            def repos = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["__none__"]
+            def daysToKeep = policySettings[ 1 ] ? policySettings[ 1 ] as int : null
+
+            log.info("Cleaning Docker images in repo: $repos")
+            log.info("Max Age of images: $daysToKeep")
+
+            def del = buildParentRepoPaths(RepoPathFactory.create(repos), dryRun, daysToKeep)
             deleted.addAll(del)
         }
         def json = [status: 'okay', dryRun: dryRun, deleted: deleted]
@@ -40,10 +45,10 @@ executions {
     }
 }
 
-def buildParentRepoPaths(path, dryRun) {
+def buildParentRepoPaths(path, dryRun, daysToKeep) {
     def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
     def parentInfo = repositories.getItemInfo(path)
-    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount)
+    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, daysToKeep)
     for (img in oldSet) {
         deleted << img.id
         if (!dryRun) repositories.delete(img)
@@ -67,13 +72,13 @@ def buildParentRepoPaths(path, dryRun) {
 // - delete the images immediately if the maxDays policy applies
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
-def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
+def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, daysToKeep) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
+            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, daysToKeep)
             continue
         }
         log.debug("Scanning File: $currentPath.name")
@@ -83,7 +88,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
         //   qualify
         // - aggregate the image info to group by image and sort by create
         //   date for maxCount policy
-        if (checkDaysPassedForDelete(childItem)) {
+        if (checkDaysPassedForDelete(childItem, daysToKeep)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
         } else if ((maxCount = getMaxCountForDelete(childItem)) > 0) {
@@ -103,12 +108,15 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
 }
 
 // This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxDays" for purge
-def checkDaysPassedForDelete(item) {
+// "docker.label.com.jfrog.artifactory.retention.maxDays" for purge.
+// If not found, number_of_days_to_keep from properties file will be used instead.
+
+def checkDaysPassedForDelete(item, daysToKeep) {
     def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
-    if (!prop) return false
+    if (!prop && (daysToKeep == null)) return false
+        else if (((new Date().time - item.created) / oneday) >= daysToKeep) return true  
     log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 import org.artifactory.exception.CancelException
@@ -47,6 +50,7 @@ class Global {
 // curl -i -uadmin:password -X POST "http://localhost:8081/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"
 
 def pluginGroup = 'cleaners'
+regex = ~/.*-[\.\d+]*[-+][\.\d+]*\..*/
 
 executions {
     cleanup(groups: [pluginGroup]) { params ->
@@ -56,7 +60,9 @@ executions {
         def dryRun = params['dryRun'] ? new Boolean(params['dryRun'][0]) : false
         def disablePropertiesSupport = params['disablePropertiesSupport'] ? new Boolean(params['disablePropertiesSupport'][0]) : false
         def paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
-
+        def keepArtifacts = params['keepArtifacts'] ? new Boolean(params['keepArtifacts'][0]) : false
+        def keepArtifactsRegex = params['keepArtifactsRegex'] ? params['keepArtifactsRegex'] as Pattern : regex
+        
         // Enable fallback support for deprecated month parameter
         if ( params['months'] && !params['timeInterval'] ) {
             log.info('Deprecated month parameter is still in use, please use the new timeInterval parameter instead!', properties)
@@ -65,7 +71,7 @@ executions {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
 
-        artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
+        artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport, keepArtifacts, keepArtifactsRegex)
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
@@ -113,11 +119,13 @@ if ( deprecatedConfigFile.exists() ) {
             def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
             def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
             def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+            def keepArtifacts = policySettings[ 6 ] ? policySettings[ 6 ] as Boolean : false
+            def keepArtifactsRegex = policySettings[ 7 ] ? policySettings[ 7 ] as Pattern : regex
 
             jobs {
                 "scheduledCleanup_$count"(cron: cron) {
-                    log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
-                    artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+                    log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit(month), timeInterval($months), paceTimeMS($paceTimeMS), dryrun($dryRun), disablePropertiesSupport($disablePropertiesSupport), keepArtifacts($keepArtifacts), keepArtifactsRegex($keepArtifactsRegex)"
+                    artifactCleanup( "month", months, repos, log, paceTimeMS, dryRun, disablePropertiesSupport, keepArtifacts, keepArtifactsRegex )
                 }
             }
             count++
@@ -131,6 +139,7 @@ if ( configFile.exists() ) {
   
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
+    log.info "Schedule regex: $keepArtifactsRegex"
 
     def count=1
     config.policies.each{ policySettings ->
@@ -141,11 +150,13 @@ if ( configFile.exists() ) {
         def paceTimeMS = policySettings.containsKey("paceTimeMS") ? policySettings.paceTimeMS as int : 0
         def dryRun = policySettings.containsKey("dryRun") ? new Boolean(policySettings.dryRun) : false
         def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
+        def keepArtifacts = policySettings.containsKey("keepArtifacts") ? new Boolean(policySettings.keepArtifacts) : false
+        def keepArtifactsRegex = policySettings.containsKey("keepArtifactsRegex") ? policySettings.keepArtifactsRegex as Pattern : regex
 
         jobs {
             "scheduledCleanup_$count"(cron: cron) {
-                log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit($timeUnit), timeInterval($timeInterval), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport)"
-                artifactCleanup( timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport )
+                log.info "Policy settings for scheduled run at($cron): repo list($repos), timeUnit($timeUnit), timeInterval($timeInterval), paceTimeMS($paceTimeMS) dryrun($dryRun) disablePropertiesSupport($disablePropertiesSupport), keepArtifacts($keepArtifacts), keepArtifactsRegex($keepArtifactsRegex)"
+                artifactCleanup( timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport, keepArtifacts, keepArtifactsRegex )
             }
         }
         count++
@@ -156,8 +167,8 @@ if ( deprecatedConfigFile.exists() && configFile.exists() ) {
     log.warn "The deprecated artifactCleanup.properties and the new artifactCleanup.json are defined in parallel. You should migrate the old file and remove it."
 }
 
-private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
-    log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
+private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false, keepArtifacts = false, keepArtifactsRegex = regex) {
+    log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport, keepArtifacts: $keepArtifacts, keepArtifactsRegex: $keepArtifactsRegex"
 
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
     def skip = [:]
@@ -175,8 +186,12 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
     Global.stopCleaning = false
     int cntFoundArtifacts = 0
     int cntNoDeletePermissions = 0
+    int cntNoDeleteRegexPermissions = 0
+    int cntRemovedArtifacts = 0
     long bytesFound = 0
     long bytesFoundWithNoDeletePermission = 0
+    long bytesFoundWithRegexProtection = 0
+    long bytesRemoved = 0
     def artifactsCleanedUp = searches.artifactsNotDownloadedSince(calendarUntil, calendarUntil, repos)
     artifactsCleanedUp.find {
         try {
@@ -204,21 +219,31 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
                 cntNoDeletePermissions++
             }
             if (dryRun) {
-                log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
-                log.info "\t==> canDelete: ${security.canDelete(it)}"
-
+                log.debug "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                log.debug "\t==> currentUser: ${security.currentUser().getUsername()}"
+                log.debug "\t==> canDelete: ${security.canDelete(it)}"
+                if (!checkName(keepArtifacts, keepArtifactsRegex, it)) {
+                        log.info "\t==> protected by regex: ${keepArtifactsRegex}"
+                }
             } else {
-                if (security.canDelete(it)) {
-                    log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                if (security.canDelete(it) && (checkName(keepArtifacts, keepArtifactsRegex, it))) {
+                    bytesRemoved += repositories.getItemInfo(it)?.getSize()
+                    log.debug "Deleting $it, [$cntFoundArtifacts/$artifactsCleanedUp.size]. Removed $bytesRemoved of total $bytesFound bytes"
                     repositories.delete it
                 } else {
-                    log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
+                    log.debug "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    if (security.canDelete(it)) { 
+                        // Because previous block was not processed, security.canDelete(it) AND/OR checkName is FALSE. 
+                        // I am checking if permissions to delete files are proper. If that's true, that means function checkName returned FALSE
+                        // and artifact is protected by Regex.  
+                        bytesFoundWithRegexProtection += repositories.getItemInfo(it)?.getSize()
+                        cntNoDeleteRegexPermissions++
+                    }
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
-            log.info "Failed to find $it, skipping"
+            log.debug "Failed to find $it, skipping"
         }
 
         def sleepTime = (Global.paceTimeMS > 0) ? Global.paceTimeMS : paceTimeMS
@@ -235,10 +260,13 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
             log.info "$cntNoDeletePermissions artifacts cannot be deleted due to lack of permissions ($bytesFoundWithNoDeletePermission bytes)"
         }
     } else {
-        log.info "Finished cleanup, deleting $cntFoundArtifacts artifacts that took up $bytesFound bytes"
+        cntRemovedArtifacts = cntFoundArtifacts - cntNoDeletePermissions - cntNoDeleteRegexPermissions
+        log.info "Finished cleanup $repos repositories, deleting $cntFoundArtifacts artifacts that took up $bytesFound bytes"
         if (cntNoDeletePermissions > 0) {
             log.info "$cntNoDeletePermissions artifacts could not be deleted due to lack of permissions ($bytesFoundWithNoDeletePermission bytes)"
         }
+        log.info "and $cntNoDeleteRegexPermissions artifacts is protected by regex $keepArtifactsRegex ($bytesFoundWithRegexProtection bytes)"
+        log.info "After this cleanup, $cntRemovedArtifacts artifacts ($bytesRemoved bytes) was removed from $repos repositories"
     }
 }
 
@@ -303,4 +331,8 @@ private def mapTimeUnitToCalendar (String timeUnit) {
             log.error errorMessage
             throw new CancelException(errorMessage, 400)
     }
+}
+
+private def checkName(keepArtifacts, keepArtifactsRegex, artifactName) {
+    return !keepArtifacts || !((artifactName =~ keepArtifactsRegex).count > 0)
 }
