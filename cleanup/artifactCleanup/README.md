@@ -7,6 +7,7 @@ which is by default 1 month. It can be run manually from the REST API, or automa
 Many delete operations can affect performance due to disk I/O occurring. A new parameter now allows a delay per delete operation. See below.
 
 To ensure logging for this plugin, edit ${ARTIFACTORY_HOME}/etc/logback.xml to add:
+
 ```xml
     <logger name="artifactCleanup">
         <level value="info"/>
@@ -25,15 +26,10 @@ Parameters
 - `timeInterval`: The time interval to look back before deleting an artifact. Default *1*.
 - `repos`: A list of repositories to clean. This parameter is required.
 - `dryRun`: If this parameter is passed, artifacts will not actually be deleted. Default *false*.
+- `disablePropertiesSupport`: Disable the support of Artifactory Properties (see below *Artifactory Properties support* section). Default
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default *0*.
-- `disablePropertiesSupport`: Disable the support of Artifactory Properties (see below *Artifactory Properties support* section). Default *false*.
-
-Properties
-----------
-
-- `monthsUntil`: The number of months back to look before deleting an artifact.
-- `repos`: A list of repositories to clean.
-- `paceTimeMS`: The number of milliseconds to delay between delete operations.
+- `keepArtifacts`: Enable protection of artifacts that should not be deleted. Default *false*.
+- `keepArtifactsRegex`: Regular expression for protecting artifacts to not be deleted. Default `/.*-[\.\d+]*[-+][\.\d+]*\..*/`.
 
 Artifactory Properties support
 ----------
@@ -42,22 +38,25 @@ Some Artifactory [Properties](https://www.jfrog.com/confluence/display/RTF/Prope
 
 - `cleanup.skip`: Skip the artifact deletion if property defined on artifact's path ; artifact itself or in a parent folder(s).
 
-
 `artifactCleanup.json`
 ----------
 
 The json contains the policies for scheduling cleanup jobs for different repositories.
 
 The following properties are supported by each policy descriptor object:
+
 - `cron`: The cron time when the job is executed. Default `0 0 5 ? * 1` *should* be redefined.
 - `repos`: The mandatory list of repositories the policies will be applied to.
 - `timeUnit`: The unit of the time interval. *year*, *month*, *day*, *hour* or *minute* are allowed values. Default *month*.
 - `timeInterval`: The time interval to look back before deleting an artifact. Default *1*.
-- `dryRun`:  If this parameter is passed, artifacts will not actually be deleted. Default *false*.
+- `dryRun`: If this parameter is passed, artifacts will not actually be deleted. Default *false*.
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default *0*.
 - `disablePropertiesSupport`: Disable the support of Artifactory Properties (see above *Artifactory Properties support* section).
+- `keepArtifacts`: Enable protection of artifacts that should not be deleted. Default *false*.
+- `keepArtifactsRegex`: Regular expression for protecting artifacts to not be deleted. Default `/.*-[\.\d+]*[-+][\.\d+]*\..*/`.
 
 An example file could contain the following json:
+
 ```json
 {
     "policies": [
@@ -70,7 +69,9 @@ An example file could contain the following json:
             "timeInterval": 3,
             "dryRun": true,
             "paceTimeMS": 500,
-            "disablePropertiesSupport": true
+            "disablePropertiesSupport": true,
+            "keepArtifacts": true,
+            "keepArtifactsRegex": "~/.\_-\d+\.\d+\.\d+\-\d{2}\.\d\.\*/"
         }
     ]
 }
@@ -78,12 +79,36 @@ An example file could contain the following json:
 
 **Note**: If a deprecated `artifactCleanup.properties` is defined it will only be applied if no `artifactCleanup.json` is present.
 
+`artifactCleanup.properties` (DEPRECATED)
+----------
+
+The properties file contains the policies for scheduling cleanup jobs for different repositories.
+
+The following properties are supported by each policy descriptor object:
+
+- `cron`: The cron time when the job is executed. Default `0 0 5 ? * 1` *should* be redefined.
+- `repos`: The mandatory list of repositories the policies will be applied to.
+- `months`: The number of months back to look before deleting an artifact. Default: *6*.
+- `paceTimeMS`: The number of milliseconds to delay between delete operations. Default *0*.
+- `dryRun`: If this parameter is passed, artifacts will not actually be deleted. Default *false*.
+- `disablePropertiesSupport`: Disable the support of Artifactory Properties (see above *Artifactory Properties support* section).
+- `keepArtifacts`: Enable protection of artifacts that should not be deleted. Default *false*.
+- `keepArtifactsRegex`: Regular expression for protecting artifacts to not be deleted. Default `~/.*-[\.\d+]*[-+][\.\d+]*\..*/`.
+
+An example file could contain the following policy:
+
+```
+policies = [
+               [ "0 0 5 ? * 1", [ "libs-release-local" ], 3, 500, true, true, true, ~/.*-\d+\.\d+\.\d+\.*/ ],
+           ]
+```
+
 Executing
 ---------
 
 To execute the plugin:
 
-For Artifactory 4.x: 
+For Artifactory 4.x:
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=timeUnit=month|timeInterval=1|repos=libs-release-local|dryRun=true|paceTimeMS=2000|disablePropertiesSupport=true"`
 
 For Artifactory 5.x or higher:
@@ -104,17 +129,19 @@ The plugin have 4 control options:
 - `stop`: When detected, the loop deleting artifacts is exited and the script ends. Example:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=stop"`
+
 - `pause`: Suspend operation. The thread continues to run with a 1 minute sleep for retest. Example:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=pause"`
+
 - `resume`: Resume normal execution. Example:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
+
 - `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
 
-
 For Artifactory 4.x
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"` 
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"`
 
 For Artifactory 5.x or higher:
-`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"` 
+`curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS;value=-1000"`
