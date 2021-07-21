@@ -62,7 +62,7 @@ executions {
         def paceTimeMS = params['paceTimeMS'] ? params['paceTimeMS'][0] as int : 0
         def keepArtifacts = params['keepArtifacts'] ? new Boolean(params['keepArtifacts'][0]) : false
         def keepArtifactsRegex = params['keepArtifactsRegex'] ? params['keepArtifactsRegex'] as Pattern : regex
-        
+
         // Enable fallback support for deprecated month parameter
         if ( params['months'] && !params['timeInterval'] ) {
             log.info('Deprecated month parameter is still in use, please use the new timeInterval parameter instead!', properties)
@@ -136,7 +136,7 @@ if ( deprecatedConfigFile.exists() ) {
 }
 
 if ( configFile.exists() ) {
-  
+
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
     log.info "Schedule regex: $keepArtifactsRegex"
@@ -160,7 +160,7 @@ if ( configFile.exists() ) {
             }
         }
         count++
-    }  
+    }
 }
 
 if ( deprecatedConfigFile.exists() && configFile.exists() ) {
@@ -233,10 +233,10 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
                 } else {
                     log.debug "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
                             "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
-                    if (security.canDelete(it)) { 
-                        // Because previous block was not processed, security.canDelete(it) AND/OR checkName is FALSE. 
+                    if (security.canDelete(it)) {
+                        // Because previous block was not processed, security.canDelete(it) AND/OR checkName is FALSE.
                         // I am checking if permissions to delete files are proper. If that's true, that means function checkName returned FALSE
-                        // and artifact is protected by Regex.  
+                        // and artifact is protected by Regex.
                         bytesFoundWithRegexProtection += repositories.getItemInfo(it)?.getSize()
                         cntNoDeleteRegexPermissions++
                     }
