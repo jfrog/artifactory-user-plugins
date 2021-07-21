@@ -2,8 +2,6 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-
 class LdapGroupsConfigTest extends Specification {
     def 'ldap groups plugin test'() {
         setup:

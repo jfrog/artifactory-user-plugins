@@ -1,8 +1,8 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 
 class SkipReplicationTest extends Specification {
@@ -11,8 +11,8 @@ class SkipReplicationTest extends Specification {
         def baseurl1 = 'http://localhost:8088/artifactory'
         def baseurl2 = 'http://localhost:8081/artifactory'
         def replicationurl = 'http://localhost:8081/artifactory'
-        def artifactory1 = create(baseurl1, 'admin', 'password')
-        def artifactory2 = create(baseurl2, 'admin', 'password')
+        def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
+        def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def xmlfile = new File('./src/test/groovy/SkipReplicationTest/maven-metadata.xml')
         def jarfile = new File('./src/test/groovy/SkipReplicationTest/lib-aopalliance-1.0.jar')

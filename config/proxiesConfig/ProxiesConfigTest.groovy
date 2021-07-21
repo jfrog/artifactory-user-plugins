@@ -2,8 +2,6 @@ import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
-
 class ProxiesConfigTest extends Specification {
     def 'proxies plugin test'() {
         setup:

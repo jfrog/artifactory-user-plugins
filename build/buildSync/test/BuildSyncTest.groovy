@@ -1,20 +1,36 @@
+/*
+ * Copyright (C) 2021 JFrog Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import spock.lang.Shared
 import spock.lang.Specification
 import groovy.json.JsonSlurper
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class BuildSyncTest extends Specification {
 
     @Shared def baseurl1 = 'http://localhost:8088/artifactory'
-    @Shared def artifactory1 = create(baseurl1, 'admin', 'password')
+    @Shared def artifactory1 = ArtifactoryClientBuilder.create().setUrl(baseurl1).setUsername('admin').setPassword('password').build()
     @Shared def baseurl2 = 'http://localhost:8081/artifactory'
-    @Shared def artifactory2 = create(baseurl2, 'admin', 'password')
+    @Shared def artifactory2 = ArtifactoryClientBuilder.create().setUrl(baseurl2).setUsername('admin').setPassword('password').build()
 
     def setupSpec() {
-        // Crate replication user
+        // Create replication user
         def userb = artifactory2.security().builders().userBuilder()
         def builder = userb.name('sync').email('sync@foo.bar').admin(true)
         builder.password('password')
@@ -127,13 +143,13 @@ class BuildSyncTest extends Specification {
         def checkreq = new ArtifactoryRequestImpl().apiUrl("api/build/$buildName/$buildNumber")
         checkreq.method(ArtifactoryRequest.Method.GET)
         checkreq.responseType(ArtifactoryRequest.ContentType.JSON)
-        return artifactory.restCall(checkreq)
+        return new groovy.json.JsonSlurper().parseText( artifactory.restCall(checkreq).getRawBody())
     }
 
     def deleteBuild(artifactory, buildName) {
         def deletereq = new ArtifactoryRequestImpl().apiUrl("api/build/$buildName")
         deletereq.method(ArtifactoryRequest.Method.DELETE)
-        deletereq.setQueryParams(deleteAll: 1)
+        deletereq.setQueryParams(deleteAll: "1")
         artifactory.restCall(deletereq)
     }
 

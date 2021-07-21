@@ -1,13 +1,14 @@
 import spock.lang.Specification
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class PreventCCRejectedTest extends Specification {
     def 'prevent cc rejected test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
@@ -25,6 +26,7 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appVersion', '3.14').
             withParameter('status', 'approved').sync()
         def conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        conn.setRequestProperty("Authorization", "Basic ${'admin:password'.bytes.encodeBase64().toString()}")
         def code1 = conn.getResponseCode()
 
         then:
@@ -37,6 +39,7 @@ class PreventCCRejectedTest extends Specification {
             withParameter('appVersion', '3.14').
             withParameter('status', 'rejected').sync()
         conn = new URL(baseurl + '/maven-local/sample;buildInfo.governance.blackduck.appName=sampleapp;buildInfo.governance.blackduck.appVersion=3.14').openConnection()
+        conn.setRequestProperty("Authorization", "Basic ${'admin:password'.bytes.encodeBase64().toString()}")
         def code2 = conn.getResponseCode()
 
         then:

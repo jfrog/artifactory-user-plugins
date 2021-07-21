@@ -3,10 +3,10 @@ import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.builder.UserBuilder
 
 class CleanExternalUsersTest extends Specification {
@@ -16,7 +16,8 @@ class CleanExternalUsersTest extends Specification {
     def 'clean external users test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def oktaMockServer = new OktaMockServer(port: oktaMockServerPort)
         oktaMockServer.start()
 
@@ -74,6 +75,7 @@ class CleanExternalUsersTest extends Specification {
                         def responseBytes = responseBody.toString().bytes
 
                         exchange.getResponseHeaders().set('Content-Type', 'application/json')
+                        exchange.getResponseHeaders().set('Link', '<foobar>; rel=self')
                         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBytes.size())
                         exchange.getResponseBody().write(responseBytes)
 

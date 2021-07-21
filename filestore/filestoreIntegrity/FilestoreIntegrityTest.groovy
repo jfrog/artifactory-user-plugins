@@ -1,14 +1,15 @@
 import spock.lang.Specification
 import org.jfrog.lilypad.Control
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import groovy.json.JsonSlurper
 
 class FilestoreIntegrityTest extends Specification {
     def 'filestore integrity test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
 
         def builder = artifactory.repositories().builders()
@@ -19,9 +20,12 @@ class FilestoreIntegrityTest extends Specification {
         artifactory.repository('maven-local').upload('foo/bar/file', new ByteArrayInputStream('test'.getBytes('utf-8'))).doUpload()
         String sha1 = artifactory.repository('maven-local').file('foo/bar/file').info().getChecksums().getSha1()
         String folder = sha1.take(2)
-        String path = "/var/opt/jfrog/artifactory/data/filestore/${folder}/"
-        Control.deleteFolder(8088, path + sha1)
-        Control.createFolder(8088, path + 'changed')
+        String path1 = "/var/opt/jfrog/artifactory/data/filestore/${folder}/"
+        String path2 = "/var/opt/jfrog/artifactory/data/artifactory/filestore/${folder}/"
+        Control.deleteFolder(8088, path1 + sha1)
+        Control.createFolder(8088, path1 + 'changed')
+        Control.deleteFolder(8088, path2 + sha1)
+        Control.createFolder(8088, path2 + 'changed')
 
         when:
         def conn = new URL(baseurl + '/api/plugins/execute/filestoreIntegrity').openConnection()

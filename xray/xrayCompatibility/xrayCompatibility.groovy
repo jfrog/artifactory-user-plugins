@@ -183,7 +183,7 @@ def tryMigrateConfig() {
   log.info("Successfully migrated the Xray configuration.")
   // Delete the old config file and this plugin
   log.info("Deleting compatibility files.")
-  def etcdir = ctx.artifactoryHome.haAwareEtcDir
+  def etcdir = ctx.artifactoryHome.etcDir
   def groovyfile = new File(etcdir, "plugins/xrayCompatibility.groovy")
   def configfile = new File(etcdir, "plugins/xrayCompatibility.json")
   groovyfile.delete()
@@ -730,7 +730,7 @@ def readConfigFile() {
   synchronized (configMutex) {
     if (!configData) {
       def defaultcfg = ['config': null, 'index': []]
-      def etcdir = ctx.artifactoryHome.haAwareEtcDir
+      def etcdir = ctx.artifactoryHome.etcDir
       def cfgfile = new File(etcdir, "plugins/xrayCompatibility.json")
       try {
         configData = new JsonSlurper().parse(cfgfile)
@@ -760,7 +760,7 @@ def updateConfigFile(callback) {
     def json = cfg.clone()
     callback(json)
     if (cfg == json) return true
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def cfgfile = new File(etcdir, "plugins/xrayCompatibility.json")
     try {
       cfgfile.text = new JsonBuilder(json).toString()

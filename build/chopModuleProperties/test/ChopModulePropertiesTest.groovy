@@ -1,6 +1,6 @@
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.apache.http.client.HttpResponseException
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
@@ -13,7 +13,8 @@ class ChopModulePropertiesTest extends Specification {
         setup: 
 
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def file = new File("./src/test/groovy/ChopModulePropertiesTest/build.json")
         def request = new JsonSlurper().parse(file)
@@ -32,7 +33,7 @@ class ChopModulePropertiesTest extends Specification {
         .method(ArtifactoryRequest.Method.GET)
         .responseType(ArtifactoryRequest.ContentType.JSON)
 
-        def response = artifactory.restCall(getBuildInfo)
+        def response = new groovy.json.JsonSlurper().parseText( artifactory.restCall(getBuildInfo).getRawBody())
 
 
         then:
@@ -41,12 +42,9 @@ class ChopModulePropertiesTest extends Specification {
         cleanup:
 
         ArtifactoryRequest delete = new ArtifactoryRequestImpl().apiUrl("api/build/test-build")
-        .setQueryParams(deleteAll: 1)
+        .setQueryParams(deleteAll: "1")
         .method(ArtifactoryRequest.Method.DELETE)
         artifactory.restCall(delete)
 
     }
 }
-
-
-

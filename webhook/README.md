@@ -136,8 +136,30 @@ Webhook Formatters
 -----------------
 
 * default - The default formatter
+* keel - A POST formatted specifically for keel.sh
 * slack - A POST formatted specifically for Slack
 * spinnaker - A POST formatted specifically for Spinnaker
+
+### Using the keel format
+
+In order to work with keel format, you need to set your docker registry url in your config file
+( to be prepended to the image name + tag in the webhook)
+
+```json
+{
+  "webhooks": {
+    "keel": {
+        "url": "https://keel.example.com/v1/webhooks/native",
+        "events": [
+          "docker.tagCreated"
+        ],
+        "format": "keel"
+    }
+  },
+  "dockerRegistryUrl": "docker-registry.example.com"
+}
+
+```
 
 #### Using the slack format
 

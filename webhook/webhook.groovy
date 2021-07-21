@@ -77,6 +77,9 @@ class Globals {
         default: [
             description: "The default formatter", formatter: new ResponseFormatter ( )
         ],
+        keel: [
+            description: "A POST formatted specifically for keel.sh", formatter: new KeelFormatter ( )
+        ],
         slack: [
             description: "A POST formatted specifically for Slack", formatter: new SlackFormatter ( )
         ],
@@ -301,6 +304,27 @@ class ResponseFormatter {
                     event: event,
                     data: data.content
             )
+        }
+        return builder
+    }
+}
+
+/**
+ * Keel formatter
+ */
+class KeelFormatter {
+    def format(String event, JsonBuilder data) {
+        def builder = new JsonBuilder()
+        def json = data.content
+        def imagePath 
+        if (WebHook.dockerRegistryUrl()) {
+          imagePath = "${WebHook.dockerRegistryUrl()}/${json.docker.image}"
+        } else {
+          imagePath = "${WebHook.baseUrl()}/${json.repoKey}/${json.docker.image}"
+        }
+        builder {
+          name "${imagePath}"
+          tag json.docker.tag
         }
         return builder
     }
@@ -538,6 +562,7 @@ class WebHook {
     def debug = false
     def connectionTimeout = 15000
     def baseUrl
+    def dockerRegistryUrl
     def ctx = null
     def log = null
     // Used for async POSTS
@@ -580,6 +605,14 @@ class WebHook {
      */
     static String baseUrl() {
         return me.baseUrl
+    }
+
+    /**
+     * Get the dockerRegistryUrl value
+     * @return value if the dockerRegistryUrl value is set
+     */
+    static String dockerRegistryUrl() {
+        return me.dockerRegistryUrl
     }
 
     /**
@@ -794,6 +827,9 @@ class WebHook {
             // BaseUrl
             if (config.containsKey("baseurl"))
                 me.baseUrl = config.baseurl
+            // DockerRegistryUrl
+            if (config.containsKey("dockerRegistryUrl"))
+                me.dockerRegistryUrl = config.dockerRegistryUrl
         }
     }
 

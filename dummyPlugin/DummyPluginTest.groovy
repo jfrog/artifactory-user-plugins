@@ -1,13 +1,14 @@
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class DummyPluginTest extends Specification {
     def 'simple dummy plugin test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         when:
         def json = new JsonSlurper().parseText(artifactory.plugins().execute('dummyPlugin').sync())

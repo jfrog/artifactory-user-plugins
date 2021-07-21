@@ -1,4 +1,4 @@
-artifactory 8088, {
+artifactory 8088, max: '6.6.0', {
     plugin 'build/buildSync'
     dependency 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
     dependency 'net.sf.json-lib:json-lib:2.4:jdk15'
@@ -7,7 +7,7 @@ artifactory 8088, {
     sed 'buildSync.json', /"password": "AKCp2.*a2iwX"/, '"password": "password"'
 }
 
-artifactory 8081, {
+artifactory 8081, max: '6.6.0', {
     plugin 'build/buildSync'
     dependency 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
     dependency 'net.sf.json-lib:json-lib:2.4:jdk15'

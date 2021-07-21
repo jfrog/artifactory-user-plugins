@@ -43,7 +43,13 @@ def propList = ['key': [
         { c, v -> c.domain = v ?: null }
     ], 'defaultProxy': [
         Boolean.class, 'boolean',
-        { c, v -> c.defaultProxy = v ?: false }
+        { c, v ->
+            try {
+                c.platformDefault = v ?: false
+            } catch (MissingPropertyException ex) {
+                c.defaultProxy = v ?: false
+            }
+        }
     ], 'redirectedToHosts': [
         CharSequence.class, 'string',
         { c, v -> c.redirectedToHosts = v ?: null }]]
@@ -70,6 +76,12 @@ executions {
             status = 404
             return
         }
+        def defaultProxy = null
+        try {
+            defaultProxy = proxy.platformDefault ?: false
+        } catch (MissingPropertyException ex) {
+            defaultProxy = proxy.defaultProxy ?: false
+        }
         def json = [
             key: proxy.key ?: null,
             host: proxy.host ?: null,
@@ -78,7 +90,7 @@ executions {
             password: proxy.password ?: null,
             ntHost: proxy.ntHost ?: null,
             domain: proxy.domain ?: null,
-            defaultProxy: proxy.defaultProxy ?: false,
+            defaultProxy: defaultProxy,
             redirectedToHosts: proxy.redirectedToHosts]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
@@ -163,7 +175,11 @@ executions {
         }
         def cfg = ctx.centralConfig.mutableDescriptor
         try {
-            cfg.addProxy(proxy, false)
+            try {
+                cfg.addProxy(proxy, false)
+            } catch (MissingMethodException ex) {
+                cfg.addProxy(proxy)
+            }
         } catch (AlreadyExistsException ex) {
             message = "Proxy with key '${json['key']}' already exists"
             status = 409
@@ -253,7 +269,11 @@ executions {
             status = 400
             return
         }
-        cfg.proxyChanged(proxy, true)
+        try {
+            cfg.proxyChanged(proxy, false)
+        } catch (MissingMethodException ex) {
+            cfg.proxyChanged(proxy)
+        }
         ctx.centralConfig.saveEditedDescriptorAndReload(cfg)
         status = 200
     }

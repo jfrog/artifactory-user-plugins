@@ -47,9 +47,9 @@ import java.security.Security
 storage {
     Properties props = new Properties()
     props.load(new FileReader(
-        new File(ctx.artifactoryHome.haAwareEtcDir, "plugins/pgpSign.properties")))
+        new File(ctx.artifactoryHome.etcDir, "plugins/pgpSign.properties")))
     File secretKeyFile =
-        new File(ctx.artifactoryHome.haAwareEtcDir, props.secretKeyFile)
+        new File(ctx.artifactoryHome.etcDir, props.secretKeyFile)
     char[] passphrase = props.passphrase.toCharArray()
 
     afterCreate { item ->

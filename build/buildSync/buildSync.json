@@ -4,19 +4,19 @@
     "servers": [
         {
             "key": "local-1",
-            "url": "http://localhost:8081/artifactory",
+            "url": "http://localhost:8081/",
             "user": "sync",
             "password": "AKCp2UNCd8uK7hQoxZnszftnogpgLcjo2EVFaFE4PGtRHnAcBHr43H7nJmWb4JhVUqBwa2iwX"
         },
         {
             "key": "art-us",
-            "url": "https://artifactory-us.jfrog.info/artifactory",
+            "url": "https://artifactory-us.jfrog.info/",
             "user": "sync",
             "password": "AKCp2UNCd7wqJLNMF7teKBWL7MeWRBuXLQRWQ2cxrCw6WbEHZrjVXYP6HyDoLYHTxqiSgbirQ"
         },
         {
             "key": "gcart-us",
-            "url": "https://gcartifactory-us.jfrog.info/artifactory",
+            "url": "https://gcartifactory-us.jfrog.info/",
             "user": "sync",
             "password": "AKCp2UNCd7xAH5guHik92Ctdtdxw4utwkfsdcTPxxNNiD1UwdB8ft44yHwk4AmpHdM7uVkYzy"
         }
@@ -25,7 +25,7 @@
         {
             "key": "GCMaven",
             "source": "gcart-us",
-            "buildNames": ["[Mm]aven.*"],
+            "buildNames": ["[Mm]aven*"],
             "delete": false,
             "activatePlugins": true,
             "reinsert": false

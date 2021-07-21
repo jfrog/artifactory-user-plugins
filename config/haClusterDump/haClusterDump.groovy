@@ -37,7 +37,7 @@ executions {
         def members = servers.collect {
             [serverId: it.serverId,
              localMember: curr == it,
-             address: "${new URL(it.contextUrl).host}:$it.membershipPort",
+             address: "${new URL('http://' + it.contextUrl).host}:$it.membershipPort",
              contextUrl: it.contextUrl,
              heartbeat: df.format(new Date(it.lastHeartbeat)),
              serverState: getServerState(haCommonAddon, it),

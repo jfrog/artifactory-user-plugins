@@ -78,7 +78,7 @@ jobs {
     */
     updateRepoWithWhiteSource(cron: "0 10 18 * * ?") {
         log.info("Starting job updateRepoData With WhiteSource")
-        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
+        def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURL())
         String[] repositories = config.repoKeys as String[]
         for (String repository : repositories) {
             Map<String, ItemInfo> sha1ToItemMap = new HashMap<String, ItemInfo>()
@@ -106,7 +106,7 @@ storage {
      */
     afterCreate { item ->
         if (!item.isFolder()) {
-            def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.haAwareEtcDir, PROPERTIES_FILE_PATH).toURL())
+            def config = new ConfigSlurper().parse(new File(ctx.artifactoryHome.etcDir, PROPERTIES_FILE_PATH).toURL())
             Map<String, ItemInfo> sha1ToItemMap = new HashMap<String, ItemInfo>()
             sha1ToItemMap.put(repositories.getFileInfo(item.getRepoPath()).getChecksumsInfo().getSha1(), item)
             setItemsPoliciesAndExtraData(sha1ToItemMap, config, item.getRepoKey())

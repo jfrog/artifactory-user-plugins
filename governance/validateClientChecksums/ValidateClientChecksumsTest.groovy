@@ -1,6 +1,6 @@
 import spock.lang.Specification
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 import org.apache.http.client.HttpResponseException
 
@@ -15,7 +15,8 @@ class ValidateClientChecksumsTest extends Specification {
         setup:
 
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('local-repo')

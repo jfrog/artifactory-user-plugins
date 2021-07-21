@@ -35,7 +35,7 @@ import org.codehaus.jackson.map.ObjectMapper
 @Field def config = loadConfig()
 
 def loadConfig() {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def propsfile = new File(etcdir, configFileLocation)
     def props = new JsonSlurper().parse(propsfile)
     def target = props.target
@@ -50,7 +50,7 @@ def loadConfig() {
 }
 
 def getCron() {
-    def etcdir = ctx.artifactoryHome.haAwareEtcDir
+    def etcdir = ctx.artifactoryHome.etcDir
     def propsfile = new File(etcdir, configFileLocation)
     def props = new JsonSlurper().parse(propsfile)
     return props.cron

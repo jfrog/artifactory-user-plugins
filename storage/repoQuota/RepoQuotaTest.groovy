@@ -1,14 +1,15 @@
 import spock.lang.Specification
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
 class RepoQuotaTest extends Specification {
     def 'repo quota test'() {
         setup:
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
 
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')

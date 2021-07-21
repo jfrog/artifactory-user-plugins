@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 import org.jfrog.artifactory.client.model.repository.settings.impl.MavenRepositorySettingsImpl
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class BackupsConfigTest extends Specification {
     def 'backups plugin test'() {
@@ -15,7 +15,9 @@ class BackupsConfigTest extends Specification {
         def auth = "Basic ${'admin:password'.bytes.encodeBase64()}"
         def conn = null
 
-        def artifactory = create('http://localhost:8088/artifactory', 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl('http://localhost:8088/artifactory')
+                .setUsername('admin').setPassword('password').build()
+
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('maven-local')
         .repositorySettings(new MavenRepositorySettingsImpl()).build()
@@ -40,7 +42,7 @@ class BackupsConfigTest extends Specification {
             createArchive: false,
             excludedRepositories: null,
             sendMailOnError: true,
-            excludeBuilds: true,
+            excludeBuilds: false,
             excludeNewRepositories: false]
         conn = new URL("$baseurl/addBackup").openConnection()
         conn.doOutput = true

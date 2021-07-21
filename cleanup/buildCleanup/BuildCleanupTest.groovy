@@ -3,14 +3,15 @@ import spock.lang.Specification
 
 import java.text.SimpleDateFormat
 
-import static org.jfrog.artifactory.client.ArtifactoryClient.create
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 
 class BuildCleanupTest extends Specification {
     def 'build cleanup test'() {
         setup:
         def auth = "Basic ${'admin:password'.bytes.encodeBase64().toString()}"
         def baseurl = 'http://localhost:8088/artifactory'
-        def artifactory = create(baseurl, 'admin', 'password')
+        def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
+            .setUsername('admin').setPassword('password').build()
         def date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
         def json = new JsonBuilder()
         json name: 'testbuild', number: '0', started: date.format(new Date())

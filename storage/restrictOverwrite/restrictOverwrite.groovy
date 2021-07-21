@@ -33,7 +33,7 @@ storage {
 }
 
 def restrictOverwrite(rpath) {
-    def artetc = ctx.artifactoryHome.haAwareEtcDir
+    def artetc = ctx.artifactoryHome.etcDir
     def config = new File(artetc, FILE_PATH)
     def repos = new JsonSlurper().parse(config)
     // if the repository is not in our list, we don't deal with it

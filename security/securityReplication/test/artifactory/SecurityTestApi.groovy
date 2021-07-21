@@ -7,7 +7,7 @@ import definitions.GroupClass
 import definitions.UserClass
 import definitions.Constants
 import org.jfrog.artifactory.client.Artifactory
-import org.jfrog.artifactory.client.ArtifactoryClient
+import org.jfrog.artifactory.client.ArtifactoryClientBuilder
 import org.jfrog.artifactory.client.ArtifactoryRequest
 import org.jfrog.artifactory.client.impl.ArtifactoryRequestImpl
 import org.jfrog.artifactory.client.model.builder.PrincipalsBuilder
@@ -17,7 +17,7 @@ import org.jfrog.artifactory.client.model.Group
 import org.jfrog.artifactory.client.model.Principal
 import org.jfrog.artifactory.client.model.Principals
 import org.jfrog.artifactory.client.model.PermissionTarget
-import groovyx.net.http.HttpResponseException
+import org.apache.http.client.HttpResponseException
 
 /**
  * Created by stanleyfong on 8/18/16.
@@ -130,29 +130,29 @@ class SecurityTestApi {
     }
 
     def getUserApiKey (String userName, String password) {
-        Artifactory artifactory = new ArtifactoryClient().create(art.getUri() + "/artifactory", userName, password)
+        Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(art.getUri() + "/artifactory").setUsername(userName).setPassword(password).build()
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
             .method (ArtifactoryRequest.Method.GET)
             .responseType(ArtifactoryRequest.ContentType.JSON)
-        def response = artifactory.restCall(securityRequest)
+        def response = new groovy.json.JsonSlurper().parseText( artifactory.restCall(securityRequest).getRawBody())
         return response['apiKey']
     }
 
     def regenerateUserApiKey (String userName, String password) {
-        Artifactory artifactory = new ArtifactoryClient().create(art.getUri() + "/artifactory", userName, password)
+        Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(art.getUri() + "/artifactory").setUsername(userName).setPassword(password).build()
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
                 .method (ArtifactoryRequest.Method.PUT)
                 .responseType(ArtifactoryRequest.ContentType.JSON)
-        def response = artifactory.restCall(securityRequest)
+        def response = new groovy.json.JsonSlurper().parseText( artifactory.restCall(securityRequest).getRawBody())
         return response['apiKey']
     }
 
     def createUserApiKey (String userName, String password) {
-        Artifactory artifactory = new ArtifactoryClient().create(art.uri + "/artifactory", userName, password)
+        Artifactory artifactory = ArtifactoryClientBuilder.create().setUrl(art.getUri() + "/artifactory").setUsername(userName).setPassword(password).build()
         ArtifactoryRequest securityRequest = new ArtifactoryRequestImpl().apiUrl("api/security/apiKey")
                 .method (ArtifactoryRequest.Method.POST)
                 .responseType(ArtifactoryRequest.ContentType.JSON)
-        def response = artifactory.restCall(securityRequest)
+        def response = new groovy.json.JsonSlurper().parseText( artifactory.restCall(securityRequest).getRawBody())
         return response['apiKey']
     }
 
