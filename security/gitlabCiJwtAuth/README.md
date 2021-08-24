@@ -37,7 +37,8 @@ build:
     - docker push $REGISTRY_IMAGE:$CI_COMMIT_SHA
 ```
 
-This would be paired with a group in artifactory that has a write permission to the `docker-local`
-repo at path `platform/k8s/**` to limit this particular repo to push to a unique registry path.
+This would be paired with a group named `gitlab-platform-k8s` in artifactory that has a write
+permission to the `docker-local` repo at path `platform/k8s/**` to limit this particular repo to
+push to a unique registry path.
 
 jfrog plugin docs: https://www.jfrog.com/confluence/display/JFROG/User+Plugins#UserPlugins-Realms
