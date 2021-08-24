@@ -28,7 +28,7 @@ import java.security.interfaces.RSAPublicKey
  *
  * This plugin allows gitlab projects to authenticate directly with artifactory
  * using job-specific signed JWT tokens and the claims they contain to drive
- * dynamic autorization policies without the need to manage users and credentials
+ * dynamic authorization policies without the need to manage users and credentials
  * between gitlab and artifactory.
  *
  * @author <a href="mailto:josh@6bit.com">Josh Perry</a>
