@@ -12,17 +12,19 @@ class UniqueNugetDeployTest extends Specification {
         def artifactory = ArtifactoryClientBuilder.create().setUrl(baseurl)
             .setUsername('admin').setPassword('password').build()
 
+        NugetRepositorySettingsImpl settings = new NugetRepositorySettingsImpl()
+	settings.setDownloadContextPath("Download")
         def builder = artifactory.repositories().builders()
         def local = builder.localRepositoryBuilder().key('nuget-local')
-        .repositorySettings(new NugetRepositorySettingsImpl()).build()
+        .repositorySettings(settings).build()
         artifactory.repositories().create(0, local)
 
         def far = builder.localRepositoryBuilder().key('nuget-far')
-        .repositorySettings(new NugetRepositorySettingsImpl()).build()
+        .repositorySettings(settings).build()
         artifactory.repositories().create(0, far)
 
         def remote = builder.remoteRepositoryBuilder().key('nuget-remote').username('admin').password('password')
-        remote.repositorySettings(new NugetRepositorySettingsImpl())
+        remote.repositorySettings(settings)
         remote.url('http://localhost:8088/artifactory/api/nuget/nuget-far')
         artifactory.repositories().create(0, remote.build())
         // TODO when creating a nuget repository via the REST API, the

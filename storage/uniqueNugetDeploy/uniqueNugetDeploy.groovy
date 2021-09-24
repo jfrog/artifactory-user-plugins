@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.sun.jersey.core.util.MultivaluedMapImpl
 import org.artifactory.addon.nuget.rest.NuGetRequestContext
 import org.artifactory.addon.nuget.search.delegate.packages.PackageEntryRequestDelegate
 import org.artifactory.exception.CancelException
@@ -86,7 +85,7 @@ storage {
         def urlid = "(Id='$id',Version='$ver')"
         def repoService = ctx.beanForType(InternalRepositoryService.class)
         def ps3 = new LinkedMultiValueMap()
-        def ps4 = new MultivaluedMapImpl()
+        def ps4 = new MultivaluedHashMap()
         def context = new NuGetRequestContext()
         try {
             context.uriInfo = new FakeUriInfo(ps4)
@@ -121,7 +120,7 @@ storage {
                 def nrparams = [workContext, repoKey] as Object[]
                 def newRepo = ngas.newInstance(nrparams)
                 def uri = context.uriInfo
-                def lhparams = [newRepo, uri, null] as Object[]
+                def lhparams = ["GET", newRepo, uri, null] as Object[]
                 def localHandler = nglrh.newInstance(lhparams)
                 response = localHandler.packageEntry(urlid)
             } else if (repo.isReal()) {
