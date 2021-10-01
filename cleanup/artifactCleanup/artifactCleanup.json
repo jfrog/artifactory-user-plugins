@@ -10,6 +10,6 @@
     "paceTimeMS": 500,
     "disablePropertiesSupport": true,
     "keepArtifacts": true,
-    "keepArtifactsRegex": "~/.\\_-\\d+\\.\\d+\\.\\d+\\-\\d{2}\\.\\d\\.\\*/"
+    "keepArtifactsRegex": "~/.*-[.\\d+]+-\\d{2}\\.[1-4][\\.\\w+]*/"
   }]
 }
