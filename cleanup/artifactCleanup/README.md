@@ -53,7 +53,7 @@ The following properties are supported by each policy descriptor object:
 - `paceTimeMS`: The number of milliseconds to delay between delete operations. Default *0*.
 - `disablePropertiesSupport`: Disable the support of Artifactory Properties (see above *Artifactory Properties support* section).
 - `keepArtifacts`: Enable protection of artifacts that should not be deleted. Default *false*.
-- `keepArtifactsRegex`: Regular expression for protecting artifacts to not be deleted. Default `/.*-[\.\d+]*[-+][\.\d+]*\..*/`.
+- `keepArtifactsRegex`: Regular expression for protecting artifacts to not be deleted. Default `~/.*-[\.\d+]*[-+][\.\d+]*\..*/`.
 
 An example file could contain the following json:
 
@@ -71,11 +71,20 @@ An example file could contain the following json:
             "paceTimeMS": 500,
             "disablePropertiesSupport": true,
             "keepArtifacts": true,
-            "keepArtifactsRegex": "~/.\_-\d+\.\d+\.\d+\-\d{2}\.\d\.\*/"
+            "keepArtifactsRegex": "~/.*-[.\\d+]+-\\d{2}\\.[1-4][\\.\\w+]*/"
         }
     ]
 }
 ```
+
+The regular expression used in the above example prevents the plugin from deleting artifacts that contain a version X.Y.Z and release number based on year and quarter (eg. 21.3).
+
+  ```bash
+  my-artifact-1.2.0-21.3
+  my-artifact-1.2.0-21.3.zip
+  my-artifact-1.2.0-21.3+4.5.6
+  my-artifact-1.2.0-21.3+4.5.6.zip
+  ```
 
 **Note**: If a deprecated `artifactCleanup.properties` is defined it will only be applied if no `artifactCleanup.json` is present.
 
@@ -97,7 +106,7 @@ The following properties are supported by each policy descriptor object:
 
 An example file could contain the following policy:
 
-```
+```groovy
 policies = [
                [ "0 0 5 ? * 1", [ "libs-release-local" ], 3, 500, true, true, true, ~/.*-\d+\.\d+\.\d+\.*/ ],
            ]
@@ -117,6 +126,23 @@ For Artifactory 5.x or higher:
 For Artifactory 5.x or higher, using the depracted `months` parameter:
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=months=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true"`
 
+For Artifactory 5.x or higher, using the `keepArtifactsRegex` parameter:
+
+In order to pass a regular expression to a POST request we need to encode the expression to an URL-encoded format. You can either do this by using this
+Python3 one-liner:
+
+```bash
+python3 -c "import urllib.parse, sys; print(urllib.parse.quote_plus(sys.argv[1]))" "~/.*-[\.\d+]*[-+][\.\d+]*\..*/"
+```
+
+or use [www.urlencoder.org](https://www.urlencoder.org).
+
+Once you have encoded the regular expression you can call the cleanup script:
+
+```bash
+curl -X POST -uadmin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanup?params=timeUnit=month;timeInterval=1;repos=libs-release-local;dryRun=true;paceTimeMS=2000;disablePropertiesSupport=true;keepArtifactsRegex=~%2F.%2A-%5B%5C.%5Cd%2B%5D%2A%5B-%2B%5D%5B%5C.%5Cd%2B%5D%2A%5C..%2A%2F"
+```
+
 Admin users and users inside the `cleaners` group can execute the plugin.
 
 There is also ability to control the running script. The following operations can occur
@@ -124,7 +150,7 @@ There is also ability to control the running script. The following operations ca
 Operation
 ---------
 
-The plugin have 4 control options:
+The plugin has 4 control options:
 
 - `stop`: When detected, the loop deleting artifacts is exited and the script ends. Example:
 
