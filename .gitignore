@@ -10,3 +10,4 @@
 *.iml
 
 .DS_Store
+${env.ARTIFACTORY_HOME}/etc/plugins/dummyPlugin.groovy

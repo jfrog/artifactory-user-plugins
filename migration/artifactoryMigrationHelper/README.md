@@ -55,15 +55,15 @@ This user plugin moves only repository and artifact data and metadata. If you wi
 
 To install this plugin:
 
-1. Place file `artifactoryMigrationHelper.json` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`
+1. Place file `artifactoryMigrationHelper.json` under the master Artifactory server `${ARTIFACTORY_HOME}/var/etc/artifactory/plugins`
 2. Edit `artifactoryMigrationHelper.json` file content according to your preferences/environment
-3. Place file `artifactoryMigrationHelper.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/etc/plugins`
+3. Place file `artifactoryMigrationHelper.groovy` under the master Artifactory server `${ARTIFACTORY_HOME}/var/etc/artifactory/plugins`
 4. Request [user plugins reload](https://www.jfrog.com/confluence/display/RTF/Artifactory+REST+API#ArtifactoryRESTAPI-ReloadPlugins)
 2. Verify in the system logs that the plugin loaded correctly.
 
 ### Logging
 
-To enable logging, add the following lines to `$ARTIFACTORY_HOME/etc/logback.xml` file. There is no need to restart Artifactory for this change to take effect:
+To enable logging, add the following lines to `$ARTIFACTORY_HOME/var/etc/artifactory/logback.xml` file. There is no need to restart Artifactory for this change to take effect:
 
 ```xml
 <logger name="artifactoryMigrationHelper">
