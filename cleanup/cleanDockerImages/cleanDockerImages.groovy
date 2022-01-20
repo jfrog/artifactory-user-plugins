@@ -89,13 +89,13 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDat
         // - implement daysPassed policy first and delete the images that
         //   qualify
         // - aggregate the image info to group by image and sort by create
+        //   (byDownloadDate=false) or downloaded/updated (byDownloadDate=true)
         //   date for maxCount policy
-        if (checkDaysPassedForDelete(childItem, currentPath, byDownloadDate)) {
+        if (checkDaysPassedForDelete(childItem, byDownloadDate)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
         } else if ((maxCount = getMaxCountForDelete(childItem)) > 0) {
             log.debug("Adding to IMAGES MAP: $parentRepoPath")
-            def parentCreatedDate = parentInfo.created
             def parentId = parentRepoPath.parent.id
             def oldmax = maxCount
             if (parentId in imagesCount) oldmax = imagesCount[parentId]
@@ -103,7 +103,8 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDat
             if (!imagesPathMap.containsKey(parentId)) {
                 imagesPathMap[parentId] = []
             }
-            imagesPathMap[parentId] << [parentRepoPath, childItem.created]
+            def itemLastUsedDate = getItemLastUsedDate(childItem, byDownloadDate)
+            imagesPathMap[parentId] << [parentRepoPath, itemLastUsedDate]
         }
         break
     }
@@ -111,7 +112,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDat
 
 // Check Last Downloaded Date for a specified path and return the value as
 // long (epoch).
-/// Returns 0 when image was never downloaded.
+/// Returns 0 when item was never downloaded.
 def getLastDownloadedDate(itemPath) {
     def lastDownloadedDate = 0
     def itemStats = repositories.getStats(itemPath)
@@ -125,9 +126,9 @@ def getLastDownloadedDate(itemPath) {
 }
 
 // Retrieve and return item last use date as 'long' (epoch)
-// By default this is the item creation date.
-// When 'byDownloadDate' this will be either last download date, falling back to last update date
-def getFileLastUsedDate(item, byDownloadDate=false) {
+// For 'byDownloadDate=false' this is the item creation date (original plugin behaviour).
+// When 'byDownloadDate=true', this will be last download date or last modification date (for items never downloaded).
+def getItemLastUsedDate(item, byDownloadDate) {
     def lastDownloadedDate = null
     def itemLastUse = item.created
 
@@ -135,22 +136,24 @@ def getFileLastUsedDate(item, byDownloadDate=false) {
       lastDownloadedDate = getLastDownloadedDate(item.repoPath)
       itemLastUse = (lastDownloadedDate) ? lastDownloadedDate : item.getLastUpdated()
     }
+
     log.debug("itemLastUse = ${itemLastUse} item.created = ${item.created} item.getLastUpdated = ${item.getLastUpdated()}")
     return itemLastUse
 }
 
 // This method checks if the docker image's manifest has the property
 // "com.jfrog.artifactory.retention.maxDays" for purge
-def checkDaysPassedForDelete(item, itemPath, byDownloadDate) {
+def checkDaysPassedForDelete(item, byDownloadDate) {
     def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
     if (!prop) return false
-    log.debug("PROPERTY maxDays FOUND = $prop IN MANIFEST FILE ${itemPath}")
+
+    log.debug("PROPERTY maxDays FOUND = $prop IN MANIFEST FILE ${item.repoPath}")
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false
 
-    def fileLastUseDate = getFileLastUsedDate(item, byDownloadDate)
+    def fileLastUseDate = getItemLastUsedDate(item, byDownloadDate)
     return ((new Date().time - fileLastUseDate) / oneday) >= prop
 }
 
@@ -160,6 +163,7 @@ def getMaxCountForDelete(item) {
     def maxCountProp = "docker.label.com.jfrog.artifactory.retention.maxCount"
     def prop = repositories.getProperty(item.repoPath, maxCountProp)
     if (!prop) return 0
+
     log.debug("PROPERTY maxCount FOUND = $prop IN MANIFEST FILE ${item}")
     prop = prop.isInteger() ? prop.toInteger() : 0
     return prop > 0 ? prop : 0

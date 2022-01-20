@@ -33,13 +33,13 @@ plugin supports the following policies:
 
 - `maxDays`: The maximum number of days a Docker image can exist in an
   Artifactory repository. Any images older than this will be deleted.
-    * when `byDownloadDate=true`: images downloaded within last `maxDays` will
+    * when `byDownloadDate=true`: images downloaded or updated within last `maxDays` will
       be preserved
 - `maxCount`: The maximum number of versions of a particular image which should
   exist. For example, if there are 10 versions of a Docker image and `maxCount`
   is set to 6, the oldest 4 versions of the image will be deleted.
     * when `byDownloadDate=true`: image age will be determined by first checking
-     the _Last Downloaded Date_ and _Creation Date_ will be checked only when this image has never
+     the _Last Downloaded Date_ and _Modification Date_ will be checked only when this image has never
      been downloaded.
 
 To set these labels for an image, add them to the Dockerfile before building:
@@ -63,4 +63,9 @@ A dry run can also be triggered:
 
 ``` shell
 curl -XPOST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/cleanDockerImages?params=dryRun=true"
+```
+
+Or a special mode of operation to preserve last recently used images:
+``` shell
+curl -XPOST -uadmin:password "http://localhost:8081/artifactory/api/plugins/execute/cleanDockerImages?params=byDownloadDate=true"
 ```
