@@ -22,21 +22,36 @@ import org.artifactory.resource.ResourceStreamHandle
 def propList = ['enableIntegration': [
         Boolean.class, 'boolean',
         { c, v -> c.enableIntegration = v ?: false }
+    ], 'verifyAudienceRestriction': [
+        Boolean.class, 'boolean',
+        { c, v -> c.verifyAudienceRestriction = v ?: false }
     ], 'loginUrl': [
         CharSequence.class, 'string',
         { c, v -> c.loginUrl = v ?: null }
     ], 'logoutUrl': [
         CharSequence.class, 'string',
         { c, v -> c.logoutUrl = v ?: null }
+    ], 'certificate': [
+        CharSequence.class, 'string',
+        { c, v -> c.certificate = v ?: null }
     ], 'serviceProviderName': [
         CharSequence.class, 'string',
         { c, v -> c.serviceProviderName = v ?: null }
     ], 'noAutoUserCreation': [
         Boolean.class, 'boolean',
         { c, v -> c.noAutoUserCreation = v ?: false }
-    ], 'certificate': [
-        CharSequence.class, 'string',
-        { c, v -> c.certificate = v ?: null }
+    ], 'allowUserToAccessProfile': [
+        Boolean.class, 'boolean',
+        { c, v -> c.allowUserToAccessProfile = v ?: false }
+    ], 'useEncryptedAssertion': [
+        Boolean.class, 'boolean',
+        { c, v -> c.useEncryptedAssertion = v ?: false }
+    ], 'autoRedirect': [
+        Boolean.class, 'boolean',
+        { c, v -> c.autoRedirect = v ?: false }
+    ], 'syncGroups': [
+        Boolean.class, 'boolean',
+        { c, v -> c.syncGroups = v ?: false }
     ], 'groupAttribute': [
         CharSequence.class, 'string',
         { c, v -> c.groupAttribute = v ?: null }
@@ -51,11 +66,16 @@ executions {
         if (cfg == null) cfg = new SamlSettings()
         def json = [
             enableIntegration: cfg.isEnableIntegration() ?: false,
+            verifyAudienceRestriction: cfg.verifyAudienceRestriction ?: false,
             loginUrl: cfg.loginUrl ?: null,
             logoutUrl: cfg.logoutUrl ?: null,
+            certificate: cfg.certificate ?: null,
             serviceProviderName: cfg.serviceProviderName ?: null,
             noAutoUserCreation: cfg.noAutoUserCreation ?: false,
-            certificate: cfg.certificate ?: null,
+            allowUserToAccessProfile: cfg.allowUserToAccessProfile ?: false,
+            useEncryptedAssertion: cfg.useEncryptedAssertion ?: false,
+            autoRedirect: cfg.autoRedirect ?: false,
+            syncGroups: cfg.syncGroups ?: false,
             groupAttribute: cfg.groupAttribute ?: null,
             emailAttribute: cfg.emailAttribute ?: null]
         message = new JsonBuilder(json).toPrettyString()
