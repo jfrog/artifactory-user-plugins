@@ -36,7 +36,14 @@ def propList = ['enableIntegration': [
         { c, v -> c.noAutoUserCreation = v ?: false }
     ], 'certificate': [
         CharSequence.class, 'string',
-        { c, v -> c.certificate = v ?: null }]]
+        { c, v -> c.certificate = v ?: null }
+    ], 'groupAttribute': [
+        CharSequence.class, 'string',
+        { c, v -> c.groupAttribute = v ?: null }
+    ], 'emailAttribute': [
+        CharSequence.class, 'string',
+        { c, v -> c.emailAttribute = v ?: null }
+    ]]
 
 executions {
     getSaml(version: '1.0', httpMethod: 'GET') { params ->
@@ -48,7 +55,9 @@ executions {
             logoutUrl: cfg.logoutUrl ?: null,
             serviceProviderName: cfg.serviceProviderName ?: null,
             noAutoUserCreation: cfg.noAutoUserCreation ?: false,
-            certificate: cfg.certificate ?: null]
+            certificate: cfg.certificate ?: null,
+            groupAttribute: cfg.groupAttribute ?: null,
+            emailAttribute: cfg.emailAttribute ?: null]
         message = new JsonBuilder(json).toPrettyString()
         status = 200
     }

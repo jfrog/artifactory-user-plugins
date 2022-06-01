@@ -16,6 +16,8 @@ returned JSON string has the following fields:
 - `serviceProviderName`: The SAML service provider name
 - `noAutoUserCreation`: Whether to automatically create users on SAML login
 - `certificate`: The SAML certificate as a base64 string
+- `groupAttribute`: The group attribute in the SAML login XML response
+- `emailAttribute`: If Auto Create Artifactory Users is enabled or an internal user exists, the system will set the user’s email to the value in this attribute that is returned by the SAML login XML response.
 
 For example:
 
@@ -27,7 +29,9 @@ $ curl -u admin:password 'http://localhost:8081/artifactory/api/plugins/execute/
     "logoutUrl": "http://mylogout",
     "serviceProviderName": "my-service-provider",
     "noAutoUserCreation": true,
-    "certificate": "my-certificate"
+    "certificate": "my-certificate",
+    "groupAttribute": "groups",
+    "emailAttribute": "email"
 }
 ```
 
