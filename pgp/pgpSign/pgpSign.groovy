@@ -62,7 +62,7 @@ storage {
         log.debug("Does list contain: " + (repos.contains(item.getRepoKey())))
         if (!(repositories.getRepositoryConfiguration(item.getRepoKey()).getType().equals("local") && (repos.contains(item.getRepoKey())))) {
             log.debug("Item repo is not local or not in list")
-            // Only local that matches name from "repos" should be signed
+            // Only a local repository that matches name from "repos" should be signed
             return
         } else if (item.isFolder()) {
             log.debug("Ignoring creation of new folder: ${itemKey}:${itemPath}")
