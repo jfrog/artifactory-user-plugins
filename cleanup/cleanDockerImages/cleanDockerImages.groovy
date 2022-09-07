@@ -27,11 +27,18 @@ executions {
         def deleted = []
         def etcdir = ctx.artifactoryHome.etcDir
         def propsfile = new File(etcdir, "plugins/cleanDockerImages.properties")
-        def repos = new ConfigSlurper().parse(propsfile.toURL()).dockerRepos
+        def propConfigData = new ConfigSlurper().parse(propsfile.toURL())
+        def repos = propConfigData.dockerRepos
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
+
+        //first load the value from file, then possibly override it
+        def byDownloadDate = propConfigData.byDownloadDate ? propConfigData.byDownloadDate : false
+        byDownloadDate = params['byDownloadDate'] ? params['byDownloadDate'][0] as boolean : byDownloadDate
+
+        log.info("cleanDockerImages: Options dryRun=${dryRun}, byDownloadDate=${byDownloadDate}")
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
-            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun)
+            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun, byDownloadDate)
             deleted.addAll(del)
         }
         def json = [status: 'okay', dryRun: dryRun, deleted: deleted]
@@ -40,10 +47,10 @@ executions {
     }
 }
 
-def buildParentRepoPaths(path, dryRun) {
+def buildParentRepoPaths(path, dryRun, byDownloadDate) {
     def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
     def parentInfo = repositories.getItemInfo(path)
-    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount)
+    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDate)
     for (img in oldSet) {
         deleted << img.id
         if (!dryRun) repositories.delete(img)
@@ -67,13 +74,13 @@ def buildParentRepoPaths(path, dryRun) {
 // - delete the images immediately if the maxDays policy applies
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
-def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
+def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDate) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount)
+            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, byDownloadDate)
             continue
         }
         log.debug("Scanning File: $currentPath.name")
@@ -82,13 +89,13 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
         // - implement daysPassed policy first and delete the images that
         //   qualify
         // - aggregate the image info to group by image and sort by create
+        //   (byDownloadDate=false) or downloaded/updated (byDownloadDate=true)
         //   date for maxCount policy
-        if (checkDaysPassedForDelete(childItem)) {
+        if (checkDaysPassedForDelete(childItem, byDownloadDate)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
         } else if ((maxCount = getMaxCountForDelete(childItem)) > 0) {
             log.debug("Adding to IMAGES MAP: $parentRepoPath")
-            def parentCreatedDate = parentInfo.created
             def parentId = parentRepoPath.parent.id
             def oldmax = maxCount
             if (parentId in imagesCount) oldmax = imagesCount[parentId]
@@ -96,23 +103,58 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount) {
             if (!imagesPathMap.containsKey(parentId)) {
                 imagesPathMap[parentId] = []
             }
-            imagesPathMap[parentId] << [parentRepoPath, childItem.created]
+            def itemLastUsedDate = getItemLastUsedDate(childItem, byDownloadDate)
+            imagesPathMap[parentId] << [parentRepoPath, itemLastUsedDate]
         }
         break
     }
 }
 
+// Check Last Downloaded Date for a specified path and return the value as
+// long (epoch).
+/// Returns 0 when item was never downloaded.
+def getLastDownloadedDate(itemPath) {
+    def lastDownloadedDate = 0
+    def itemStats = repositories.getStats(itemPath)
+    if (itemStats) {
+        lastDownloadedDate = itemStats.getLastDownloaded()
+        log.debug("lastDownloadedDate: STAT lastDownloadedDate =${lastDownloadedDate} (${new Date(lastDownloadedDate)})")
+    } else {
+        log.debug("NO STATS for ${itemPath} found")
+    }
+    return lastDownloadedDate
+}
+
+// Retrieve and return item last use date as 'long' (epoch)
+// For 'byDownloadDate=false' this is the item creation date (original plugin behaviour).
+// When 'byDownloadDate=true', this will be last download date or last modification date (for items never downloaded).
+def getItemLastUsedDate(item, byDownloadDate) {
+    def lastDownloadedDate = null
+    def itemLastUse = item.created
+
+    if (byDownloadDate) {
+      lastDownloadedDate = getLastDownloadedDate(item.repoPath)
+      itemLastUse = (lastDownloadedDate) ? lastDownloadedDate : item.getLastUpdated()
+    }
+
+    log.debug("itemLastUse = ${itemLastUse} item.created = ${item.created} item.getLastUpdated = ${item.getLastUpdated()}")
+    return itemLastUse
+}
+
 // This method checks if the docker image's manifest has the property
 // "com.jfrog.artifactory.retention.maxDays" for purge
-def checkDaysPassedForDelete(item) {
+def checkDaysPassedForDelete(item, byDownloadDate) {
     def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
     def prop = repositories.getProperty(item.repoPath, maxDaysProp)
     if (!prop) return false
-    log.debug("PROPERTY $maxDaysProp FOUND = $prop IN MANIFEST FILE")
+
+    log.debug("PROPERTY maxDays FOUND = $prop IN MANIFEST FILE ${item.repoPath}")
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false
-    return ((new Date().time - item.created) / oneday) >= prop
+
+    def fileLastUseDate = getItemLastUsedDate(item, byDownloadDate)
+    return ((new Date().time - fileLastUseDate) / oneday) >= prop
 }
 
 // This method checks if the docker image's manifest has the property
@@ -121,7 +163,8 @@ def getMaxCountForDelete(item) {
     def maxCountProp = "docker.label.com.jfrog.artifactory.retention.maxCount"
     def prop = repositories.getProperty(item.repoPath, maxCountProp)
     if (!prop) return 0
-    log.debug "PROPERTY $maxCountProp FOUND = $prop IN MANIFEST FILE"
+
+    log.debug("PROPERTY maxCount FOUND = $prop IN MANIFEST FILE ${item}")
     prop = prop.isInteger() ? prop.toInteger() : 0
     return prop > 0 ? prop : 0
 }
