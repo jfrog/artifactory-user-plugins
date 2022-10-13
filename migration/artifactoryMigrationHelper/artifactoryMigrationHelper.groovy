@@ -274,7 +274,10 @@ def getRemoteArtifactoryRepositories() {
 
 def copyLocalRepositoryToRemoteArtifactory(repoKey) {
     def repositoryService = ctx.beanForType(InternalRepositoryService.class)
-    def repoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey)
+    //Following worked until RT 6.x
+    //def repoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey)
+    //New API change in RT 7.x
+    def repoDescriptor = repositoryService.localOrFederatedRepoDescriptorByKey(repoKey)
     def repoConfiguration = new LocalRepositoryConfigurationImpl(repoDescriptor)
     createRemoteArtifactoryRepo(repoKey, repoConfiguration)
 }
@@ -298,6 +301,8 @@ def createRemoteArtifactoryRepo(repoKey, repoConfiguration) {
     def repoConfigurationJson = new ObjectMapper().writeValueAsString(repoConfiguration)
     log.debug "Repo Configuration: $repoConfigurationJson"
     repoConfigurationJson = removeNullProperties(repoConfigurationJson)
+    // Need to set new  field "rclass: <type_of_repo>" in  RT 7.x 
+    repoConfigurationJson = setRclass(repoConfigurationJson)
     log.debug "Cleaned Repo Configuration: $repoConfigurationJson"
 
     def url = config.target + "api/repositories/$repoKey"
@@ -317,6 +322,14 @@ def createRemoteArtifactoryRepo(repoKey, repoConfiguration) {
     } finally {
         conn?.disconnect()
     }
+}
+
+// Need to set new  field "rclass: <type_of_repo>" in  RT 7.x . This field will have same value as the "type" field already in the json
+def setRclass(json) {
+    def slurper = new JsonSlurper().parseText(json)
+
+    slurper.rclass = slurper.type
+    return new JsonBuilder(slurper).toPrettyString()
 }
 
 def removeNullProperties(json) {
