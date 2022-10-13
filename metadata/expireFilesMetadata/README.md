@@ -23,7 +23,7 @@ Here is JSon File Sample:
     "repositories": {
         "msys2-remote": {
             "delay": 1800,
-            "patterns": ["**/*.db", "**/*.sig"]
+            "patterns": ["*.db", "**/*.db", "*.sig", "**/*.sig"]
         }
     }
 }
@@ -58,7 +58,7 @@ This can fix issues with MSYS2 db metadata files. Thus you need :
     "repositories": {
         "msys2-remote": {
             "delay": 1800,
-            "patterns": ["**/*.db", "**/*.sig"]
+            "patterns": ["*.db", "**/*.db", "*.sig", "**/*.sig"]
         }
     }
 }
@@ -101,7 +101,7 @@ $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 >     "repositories": {
 >         "generic-remote-msys2": {
 >             "delay": 1800,
->             "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]
+>             "patterns": ["*.db", "**/*.db", "*.xz*", "**/*.xz*", "*.sig", "**/*.sig"]
 >         }
 >     }
 > }' 'http://localhost:8088/artifactory/api/plugins/execute/expireFilesMetadataConfig?params=action=reset'
