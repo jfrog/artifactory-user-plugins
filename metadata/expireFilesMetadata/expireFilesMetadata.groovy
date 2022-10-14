@@ -23,6 +23,7 @@ import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 import org.artifactory.resource.ResourceStreamHandle
 
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.transform.Field
 
@@ -57,6 +58,11 @@ executions {
         }
 
         config.repositories << json.repositories
+    }
+
+    getExpireFilesMetadataConfig(httpMethod: 'GET') {
+        message = new JsonBuilder(config).toPrettyString()
+        status = 200
     }
 }
 

@@ -105,5 +105,15 @@ $ curl -u admin:password -X POST -H 'Content-Type: application/json' -d '{
 >         }
 >     }
 > }' 'http://localhost:8088/artifactory/api/plugins/execute/expireFilesMetadataConfig?params=action=reset'
+```
 
+getExpireFilesMetadataConfig
+-------------------------
+
+`getExpireFilesMetadataConfig` fetches the current Expire Files Metadata JSON configuration.
+
+Example
+
+```
+$ curl -u admin:password 'http://localhost:8088/artifactory/api/plugins/execute/getExpireFilesMetadataConfig'
 ```
