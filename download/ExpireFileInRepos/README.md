@@ -2,13 +2,15 @@ Artifactory expireFileInRemoteRepos User Plugin
 ====================================================
 
 An implementation of the beforeDownloadRequest execution point. This
-plugin causes artifacts (including binaries) to expire and be re-cached when downloaded from a remote
+plugin causes artifacts (including binaries) to expire and be re-cached when downloaded from a remote/virtual
 repository.
 
 ## Features
 
-To use the plugin, modify the script by adding the names of the remote repositories you wish to expire files in. 
-The names are to be added to the list 'reposToExpire' 
+To use the plugin, modify the script by adding the names of the repositories you wish to expire artifacts in. 
+The names are to be added to the list 'reposToExpire'.
+Note: using this plugin, when downloading artifacts from virtual repositories - artifacts are expired and served from 
+the source repo for all underlying repos
 
 ## Installation
 

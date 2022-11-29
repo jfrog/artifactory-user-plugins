@@ -21,7 +21,8 @@ final List<String> reposToExpire = List.of(/*TODO: add repo names*/)
 
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
-        if (reposToExpire.contains(repoPath.repoKey) && isRemote(repoPath.repoKey)) {
+        if ((isRemote(repoPath.repoKey) || isVirtual(repoPath.repoKey))
+                && reposToExpire.contains(repoPath.repoKey)) {
             log.debug 'Repository ${repoPath.repoKey} is marked for file expiration. Expiring file: ${repoPath.name}'
             expired = true
         }
@@ -30,4 +31,8 @@ download {
 
 def isRemote(String repoKey) {
     return repositories.getRemoteRepositories().contains(repoKey)
+}
+
+def isVirtual(String repoKey) {
+    return repositories.getVirtualRepositories().contains(repoKey)
 }
