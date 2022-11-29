@@ -1,4 +1,4 @@
-Artifactory expireFileInRemoteRepos User Plugin
+Artifactory expireFileInRepos User Plugin
 ====================================================
 
 An implementation of the beforeDownloadRequest execution point. This
