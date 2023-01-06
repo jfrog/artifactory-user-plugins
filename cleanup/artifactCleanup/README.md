@@ -110,8 +110,16 @@ The plugin have 4 control options:
 - `resume`: Resume normal execution. Example:
 
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=resume"`
-- `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value. Example:
+- `adjustPaceTimeMS`: Modify the running delay factor by increasing/decreasing the delay value.
 
+This plugin's default case will safely resume execution, which will allow it to reload the artifactCleanup.json config 
+file. 
+Helpful on a k8 cluster where you don't want to have to reload the pods and redeploy the plugin to pick up changes to the 
+accompanying json file. Just 
+pass a non-recognized control option. Example:
+
+`curl -X POST -v -u admin:password 
+"http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=RELOADJSON"`
 
 For Artifactory 4.x
 `curl -X POST -v -u admin:password "http://localhost:8080/artifactory/api/plugins/execute/cleanupCtl?params=command=adjustPaceTimeMS|value=-1000"` 
