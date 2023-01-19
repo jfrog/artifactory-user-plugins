@@ -128,7 +128,7 @@ if ( deprecatedConfigFile.exists() ) {
 }
 
 if ( configFile.exists() ) {
-  
+
     def config = new JsonSlurper().parse(configFile.toURL())
     log.info "Schedule job policy list: $config.policies"
 
@@ -149,7 +149,7 @@ if ( configFile.exists() ) {
             }
         }
         count++
-    }  
+    }
 }
 
 if ( deprecatedConfigFile.exists() && configFile.exists() ) {
@@ -204,17 +204,17 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
                 cntNoDeletePermissions++
             }
             if (dryRun) {
-                log.info "Found $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                log.info "Found $it "
                 log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
                 log.info "\t==> canDelete: ${security.canDelete(it)}"
 
             } else {
                 if (security.canDelete(it)) {
-                    log.info "Deleting $it, $cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.info "Deleting $it"
                     repositories.delete it
+                    log.info "Deleted..."
                 } else {
-                    log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), " +
-                            "$cntFoundArtifacts/$artifactsCleanedUp.size total $bytesFound bytes"
+                    log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), "
                 }
             }
         } catch (ItemNotFoundRuntimeException ex) {
