@@ -23,6 +23,7 @@ import org.artifactory.repo.RepoPath
 import org.artifactory.request.Request
 import org.artifactory.resource.ResourceStreamHandle
 
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.transform.Field
 
@@ -58,15 +59,21 @@ executions {
 
         config.repositories << json.repositories
     }
+
+    getExpireFilesMetadataConfig(httpMethod: 'GET') {
+        message = new JsonBuilder(config).toPrettyString()
+        status = 200
+    }
 }
 
 download {
     beforeDownloadRequest { Request request, RepoPath repoPath ->
         config.repositories.each{ repoName, repoConfig ->
             if (repoName == repoPath.repoKey) {
+                long delayMilliseconds = repoConfig.delay * 1000
                 repoConfig.patterns.each { pattern ->
                     PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
-                    if (isRemote(repoPath.repoKey) && isGeneric(repoPath.repoKey) && shouldExpire(repoPath, repoConfig.delay)) {
+                    if (isRemote(repoPath.repoKey) && isGeneric(repoPath.repoKey) && shouldExpire(repoPath, delayMilliseconds)) {
                         if (matcher.matches(Paths.get(repoPath.path))){
                             log.debug "Expiring " + pattern
                             expired = true
