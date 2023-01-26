@@ -1,5 +1,5 @@
 import groovy.json.JsonBuilder
-import org.artifactory.storage.db.binstore.dao.BinariesDao
+import org.jfrog.storage.binstore.db.dao.BinariesDao
 
 executions {
   // Check the integrity of the filestore. This REST endpoint returns a JSON
