@@ -19,7 +19,9 @@ class SamlConfigTest extends Specification {
             loginUrl: 'http://mylogin', logoutUrl: 'http://mylogout',
             serviceProviderName: 'my-service-provider',
             noAutoUserCreation: false,
-            certificate: 'my-certificate']
+            certificate: 'my-certificate',
+            groupAttribute: 'groups',
+            emailAttribute: 'email']
         conn = new URL("$baseurl/setSaml").openConnection()
         conn.doOutput = true
         conn.requestMethod = 'POST'
@@ -44,7 +46,9 @@ class SamlConfigTest extends Specification {
             loginUrl: 'http://mynewlogin', logoutUrl: 'http://mynewlogout',
             serviceProviderName: 'my-new-service-provider',
             noAutoUserCreation: true,
-            certificate: 'my-new-certificate']
+            certificate: 'my-new-certificate',
+            groupAttribute: 'groups',
+            emailAttribute: 'email']
         conn = new URL("$baseurl/setSaml").openConnection()
         conn.doOutput = true
         conn.requestMethod = 'POST'
