@@ -64,6 +64,11 @@ executions {
         } else if ( params['months'] ) {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
+	    if ( !repos || (repos.length == 0) ) {
+            def errorMessage = 'repos parameter must be specified.'
+            log.error errorMessage
+            throw new CancelException(errorMessage, 400)
+	    }
 
         artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
     }
@@ -108,11 +113,17 @@ if ( deprecatedConfigFile.exists() ) {
         def count=1
         config.policies.each{ policySettings ->
             def cron = policySettings[ 0 ] ? policySettings[ 0 ] as String : ["0 0 5 ? * 1"]
-            def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : ["__none__"]
+            def repos = policySettings[ 1 ] ? policySettings[ 1 ] as String[] : null
             def months = policySettings[ 2 ] ? policySettings[ 2 ] as int : 6
             def paceTimeMS = policySettings[ 3 ] ? policySettings[ 3 ] as int : 0
             def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
             def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
+
+            if ( !repos || (repos.length == 0) ) {
+                def errorMessage = 'repos parameter must be specified for cron job to be scheduled.'
+                log.error errorMessage
+                throw new CancelException(errorMessage, 400)
+            }
 
             jobs {
                 "scheduledCleanup_$count"(cron: cron) {
@@ -135,12 +146,18 @@ if ( configFile.exists() ) {
     def count=1
     config.policies.each{ policySettings ->
         def cron = policySettings.containsKey("cron") ? policySettings.cron as String : ["0 0 5 ? * 1"]
-        def repos = policySettings.containsKey("repos") ? policySettings.repos as String[] : ["__none__"]
+        def repos = policySettings.containsKey("repos") ? policySettings.repos as String[] : null
         def timeUnit = policySettings.containsKey("timeUnit") ? policySettings.timeUnit as String : DEFAULT_TIME_UNIT
         def timeInterval = policySettings.containsKey("timeInterval") ? policySettings.timeInterval as int : DEFAULT_TIME_INTERVAL
         def paceTimeMS = policySettings.containsKey("paceTimeMS") ? policySettings.paceTimeMS as int : 0
         def dryRun = policySettings.containsKey("dryRun") ? new Boolean(policySettings.dryRun) : false
         def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
+
+        if ( !repos || (repos.length == 0) ) {
+            def errorMessage = 'repos parameter must be specified for cron jobs to be scheduled.'
+            log.error errorMessage
+            throw new CancelException(errorMessage, 400)
+        }
 
         jobs {
             "scheduledCleanup_$count"(cron: cron) {
@@ -159,6 +176,11 @@ if ( deprecatedConfigFile.exists() && configFile.exists() ) {
 private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
     log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
 
+    if ( !repos || (repos.length == 0) ) {
+        def errorMessage = 'repos parameter must be specified before initiating cleanup.'
+        log.error errorMessage
+        throw new CancelException(errorMessage, 400)
+    }
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
     def skip = [:]
     if ( ! disablePropertiesSupport && repos){
