@@ -64,11 +64,11 @@ executions {
         } else if ( params['months'] ) {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
-	    if ( !repos || (repos.length == 0) ) {
+        if ( !repos || (repos.length == 0) ) {
             def errorMessage = 'repos parameter must be specified.'
             log.error errorMessage
             throw new CancelException(errorMessage, 400)
-	    }
+        }
 
         artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
     }
