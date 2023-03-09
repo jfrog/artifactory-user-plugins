@@ -64,14 +64,8 @@ executions {
         } else if ( params['months'] ) {
             log.warn('Deprecated month parameter and the new timeInterval are used in parallel: month has been ignored.', properties)
         }
-        
-        cancelOnNullrepos(repos,'repos parameter must be specified.')
 
-        if ( !repos || (repos.length == 0) ) {
-            def errorMessage = 'repos parameter must be specified.'
-            log.error errorMessage
-            throw new CancelException(errorMessage, 400)
-        }
+        cancelOnNullRepos(repos,'repos parameter must be specified.')
 
         artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
     }
@@ -122,7 +116,7 @@ if ( deprecatedConfigFile.exists() ) {
             def dryRun = policySettings[ 4 ] ? policySettings[ 4 ] as Boolean : false
             def disablePropertiesSupport = policySettings[ 5 ] ? policySettings[ 5 ] as Boolean : false
 
-            cancelOnNullrepos(repos,'repos parameter must be specified for cron jobs to be scheduled.')
+            cancelOnNullRepos(repos,'repos parameter must be specified for cron jobs to be scheduled.')
 
             jobs {
                 "scheduledCleanup_$count"(cron: cron) {
@@ -152,7 +146,7 @@ if ( configFile.exists() ) {
         def dryRun = policySettings.containsKey("dryRun") ? new Boolean(policySettings.dryRun) : false
         def disablePropertiesSupport = policySettings.containsKey("disablePropertiesSupport") ? new Boolean(policySettings.disablePropertiesSupport) : false
 
-        cancelOnNullrepos(repos,'repos parameter must be specified for cron jobs to be scheduled.')
+        cancelOnNullRepos(repos,'repos parameter must be specified for cron jobs to be scheduled.')
 
         jobs {
             "scheduledCleanup_$count"(cron: cron) {
@@ -171,7 +165,7 @@ if ( deprecatedConfigFile.exists() && configFile.exists() ) {
 private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
     log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
 
-    cancelOnNullrepos(repos,'repos parameter must be specified before initiating cleanup.' )
+    cancelOnNullRepos(repos,'repos parameter must be specified before initiating cleanup.')
 
     // Create Map(repo, paths) of skiped paths (or others properties supported in future ...)
     def skip = [:]
@@ -319,7 +313,7 @@ private def mapTimeUnitToCalendar (String timeUnit) {
     }
 }
 
-def cancelOnNullrepos(String[] repos, String errorMessage) {
+private def cancelOnNullRepos(String[] repos, String errorMessage) {
     if ( !repos || (repos.length == 0) ) {
         log.error errorMessage
         throw new CancelException(errorMessage, 400)
