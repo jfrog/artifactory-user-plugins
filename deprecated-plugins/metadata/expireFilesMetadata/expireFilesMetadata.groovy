@@ -104,6 +104,9 @@ def shouldExpire(RepoPath repoPath, long expire) {
     ItemInfo itemInfo = repositories.getItemInfo(repoPath)
     long cacheAge = getCacheAge(itemInfo)
 
+    // Convert expire from seconds to miliseconds to match cacheAge
+    expire = expire * 1000
+    log.info "Delay from expired files metadata plugin: " + expire
     return cacheAge > expire || cacheAge == -1
 }
 
