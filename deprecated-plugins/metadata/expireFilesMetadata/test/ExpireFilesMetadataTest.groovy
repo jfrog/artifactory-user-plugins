@@ -54,7 +54,7 @@ class ExpireFilesMetadataTest extends Specification {
                 '           "patterns": ["**/*.jar"]' +
                 '       },' +
                 '       "msys2-remote": {' +
-                '           "delay": 1800,' +
+                '           "delay": 30,' +
                 '           "patterns": ["**/*.db", "**/*.xz*", "**/*.sig"]' +
                 '       }' +
                 '   }' +
@@ -73,6 +73,7 @@ class ExpireFilesMetadataTest extends Specification {
         // Perform first download request
         def infoFirstDownloadRequest =  downloadAndGetInfo(remote, virtual, packagesPath)
         // Perform second download request
+        sleep(2000l)
         def infoSecondDownloadRequest = downloadAndGetInfo(remote, virtual, packagesPath)
 
         then:
