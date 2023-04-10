@@ -245,7 +245,7 @@ class ArtifactCleanupTest extends Specification {
         def group = artifactory.security().builders().groupBuilder().name('cleaners')
         artifactory.security().createOrUpdateGroup(group.build())
         def user = artifactory.security().builders().userBuilder().name('nobody')
-        user.email('nobody@foo.bar').password('password').admin(false).groups(['cleaners'])
+        user.email('nobody@foo.bar').password('Password1!').admin(false).groups(['cleaners'])
         artifactory.security().createOrUpdate(user.build())
         def princ = artifactory.security().builders().principalBuilder().name('nobody')
         princ.privileges(Privilege.DELETE, Privilege.DEPLOY, Privilege.READ)
@@ -254,9 +254,9 @@ class ArtifactCleanupTest extends Specification {
         perm.repositories('maven-local').includesPattern('**/ban/**').principals(princs.build())
         artifactory.security().createOrReplacePermissionTarget(perm.build())
 
-        when:        
+        when:
         ArtifactoryClientBuilder.create().setUrl('http://localhost:8088/artifactory')
-            .setUsername('nobody').setPassword('password').build().
+            .setUsername('nobody').setPassword('Password1!').build().
             plugins().execute('cleanup').
             withParameter('repos', 'maven-local').
             withParameter('timeUnit', 'month').
