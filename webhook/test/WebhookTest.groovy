@@ -1181,7 +1181,7 @@ executions {
                 write.setRequestProperty(k, v)
             }
         }
-        write.method = method
+        write.setRequestMethod(method)
         write.doOutput = true
         def writer = null, reader = null
         try {

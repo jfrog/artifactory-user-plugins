@@ -744,7 +744,7 @@ class WebHook {
     private String callPost(String urlString, String content) {
         def url = new URL(urlString)
         def post = url.openConnection()
-        post.method = "POST"
+        post.setRequestMethod("POST")
         post.doOutput = true
         post.setConnectTimeout(connectionTimeout)
         post.setReadTimeout(connectionTimeout)
