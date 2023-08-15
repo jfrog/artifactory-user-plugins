@@ -34,7 +34,7 @@ realms {
             def settings = new LdapGroupsSettings()
             // 'il-users' is an existing Ldap Group Setting Name in Artifactory
             // All the permissions given to the group will be inherited by the user
-            settings.ldapGroupSettingsName = 'il-users'
+            settings.ldapGroupSettingsName = 'okta-LDAP'
             def newgroups = security.getCurrentUserGroupNames(settings) as List
             newgroups.removeAll(groups)
             if (!newgroups.isEmpty()) {
