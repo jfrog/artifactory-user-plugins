@@ -85,7 +85,7 @@ def deleteEmptyDirsRecursively(RepoPath path) {
         // now let's check again
         if (repositories.getChildren(path).empty) {
             // it is folder, and no children - delete!
-            log.info "Deleting empty directory($path)"
+            log.debug "Deleting empty directory($path)"
             repositories.delete path
             deletedDirs += 1
         }
