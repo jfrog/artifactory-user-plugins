@@ -30,6 +30,7 @@ executions {
         def propConfigData = new ConfigSlurper().parse(propsfile.toURL())
         def repos = propConfigData.dockerRepos
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
+        def maxDaysForDelete = params['maxDaysForDelete']
 
         //first load the value from file, then possibly override it
         def byDownloadDate = propConfigData.byDownloadDate ? propConfigData.byDownloadDate : false
@@ -38,7 +39,7 @@ executions {
         log.info("cleanDockerImages: Options dryRun=${dryRun}, byDownloadDate=${byDownloadDate}")
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
-            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun, byDownloadDate)
+            def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun, maxDaysForDelete, byDownloadDate)
             deleted.addAll(del)
         }
         def json = [status: 'okay', dryRun: dryRun, deleted: deleted]
@@ -47,10 +48,10 @@ executions {
     }
 }
 
-def buildParentRepoPaths(path, dryRun, byDownloadDate) {
+def buildParentRepoPaths(path, dryRun, maxDaysForDelete, byDownloadDate) {
     def deleted = [], oldSet = [], imagesPathMap = [:], imagesCount = [:]
     def parentInfo = repositories.getItemInfo(path)
-    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDate)
+    simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxDaysForDelete, byDownloadDate)
     for (img in oldSet) {
         deleted << img.id
         if (!dryRun) repositories.delete(img)
@@ -74,13 +75,13 @@ def buildParentRepoPaths(path, dryRun, byDownloadDate) {
 // - delete the images immediately if the maxDays policy applies
 // - Aggregate the images that qualify for maxCount policy (to get deleted in
 //   the execution closure)
-def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDate) {
+def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, maxDaysForDelete, byDownloadDate) {
     def maxCount = null
     def parentRepoPath = parentInfo.repoPath
     for (childItem in repositories.getChildren(parentRepoPath)) {
         def currentPath = childItem.repoPath
         if (childItem.isFolder()) {
-            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, byDownloadDate)
+            simpleTraverse(childItem, oldSet, imagesPathMap, imagesCount, maxDaysForDelete, byDownloadDate)
             continue
         }
         log.debug("Scanning File: $currentPath.name")
@@ -91,7 +92,7 @@ def simpleTraverse(parentInfo, oldSet, imagesPathMap, imagesCount, byDownloadDat
         // - aggregate the image info to group by image and sort by create
         //   (byDownloadDate=false) or downloaded/updated (byDownloadDate=true)
         //   date for maxCount policy
-        if (checkDaysPassedForDelete(childItem, byDownloadDate)) {
+        if (checkDaysPassedForDelete(childItem, maxDaysForDelete, byDownloadDate)) {
             log.debug("Adding to OLD MAP: $parentRepoPath")
             oldSet << parentRepoPath
         } else if ((maxCount = getMaxCountForDelete(childItem)) > 0) {
@@ -141,15 +142,14 @@ def getItemLastUsedDate(item, byDownloadDate) {
     return itemLastUse
 }
 
-// This method checks if the docker image's manifest has the property
-// "com.jfrog.artifactory.retention.maxDays" for purge
-def checkDaysPassedForDelete(item, byDownloadDate) {
-    def maxDaysProp = "docker.label.com.jfrog.artifactory.retention.maxDays"
+// This method checks if maxDaysForDelete is provided and compares an artifact's last
+// download date to the limit
+def checkDaysPassedForDelete(item, maxDaysForDelete, byDownloadDate) {
     def oneday = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)
-    def prop = repositories.getProperty(item.repoPath, maxDaysProp)
+    def prop = maxDaysForDelete
     if (!prop) return false
 
-    log.debug("PROPERTY maxDays FOUND = $prop IN MANIFEST FILE ${item.repoPath}")
+    log.debug("PROPERTY maxDays FOUND = $prop")
     prop = prop.isInteger() ? prop.toInteger() : null
     if (prop == null) return false
 
