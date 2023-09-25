@@ -30,13 +30,13 @@ executions {
         def propConfigData = new ConfigSlurper().parse(propsfile.toURL())
         def repos = propConfigData.dockerRepos
         def dryRun = params['dryRun'] ? params['dryRun'][0] as boolean : false
-        def maxDaysForDelete = params['maxDaysForDelete']
+        def maxDaysForDelete = params['maxDaysForDelete'][0]
 
         //first load the value from file, then possibly override it
         def byDownloadDate = propConfigData.byDownloadDate ? propConfigData.byDownloadDate : false
         byDownloadDate = params['byDownloadDate'] ? params['byDownloadDate'][0] as boolean : byDownloadDate
 
-        log.info("cleanDockerImages: Options dryRun=${dryRun}, byDownloadDate=${byDownloadDate}")
+        log.info("cleanDockerImages: Options dryRun=${dryRun}, byDownloadDate=${byDownloadDate}, maxDaysForDelete=${maxDaysForDelete}")
         repos.each {
             log.debug("Cleaning Docker images in repo: $it")
             def del = buildParentRepoPaths(RepoPathFactory.create(it), dryRun, maxDaysForDelete, byDownloadDate)
