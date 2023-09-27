@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException
 import org.artifactory.exception.CancelException
 
+import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
 import groovy.time.TimeCategory
 import groovy.time.TimeDuration
@@ -67,7 +68,10 @@ executions {
 
         cancelOnNullRepos(repos,'repos parameter must be specified.')
 
-        artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
+        def deleted = artifactCleanup(timeUnit, timeInterval, repos, log, paceTimeMS, dryRun, disablePropertiesSupport)
+        def json = [status: 'okay', dryRun: dryRun, deleted: deleted]
+        message = new JsonBuilder(json).toPrettyString()
+        status = 200
     }
 
     cleanupCtl(groups: [pluginGroup]) { params ->
@@ -163,6 +167,8 @@ if ( deprecatedConfigFile.exists() && configFile.exists() ) {
 }
 
 private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, log, paceTimeMS, dryRun = false, disablePropertiesSupport = false) {
+    def deleted = []
+    
     log.info "Starting artifact cleanup for repositories $repos, until $timeInterval ${timeUnit}s ago with pacing interval $paceTimeMS ms, dryrun: $dryRun, disablePropertiesSupport: $disablePropertiesSupport"
 
     cancelOnNullRepos(repos,'repos parameter must be specified before initiating cleanup.')
@@ -215,12 +221,13 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
                 log.info "Found $it "
                 log.info "\t==> currentUser: ${security.currentUser().getUsername()}"
                 log.info "\t==> canDelete: ${security.canDelete(it)}"
-
+                deleted << it.id
             } else {
                 if (security.canDelete(it)) {
                     log.info "Deleting $it"
                     repositories.delete it
                     log.info "Deleted..."
+                    deleted << it.id
                 } else {
                     log.info "Can't delete $it (user ${security.currentUser().getUsername()} has no delete permissions), "
                 }
@@ -248,6 +255,7 @@ private def artifactCleanup(String timeUnit, int timeInterval, String[] repos, l
             log.info "$cntNoDeletePermissions artifacts could not be deleted due to lack of permissions ($bytesFoundWithNoDeletePermission bytes)"
         }
     }
+    return deleted
 }
 
 private def getSkippedPaths(String[] repos) {

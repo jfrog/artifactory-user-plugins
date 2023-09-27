@@ -1,14 +1,14 @@
 {
     "policies": [
         {
-            "cron": "0 0 1 ? * 1",
+            "cron": "0 0 5 31 2 ?",
             "repos": [
                 "libs-release-local"
             ],
             "timeUnit": "day",
-            "timeInterval": 3,
+            "timeInterval": 90,
             "dryRun": true,
-            "paceTimeMS": 500,
+            "paceTimeMS": 0,
             "disablePropertiesSupport": true
         }
     ]
