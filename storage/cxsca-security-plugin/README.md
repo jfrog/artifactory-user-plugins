@@ -1,5 +1,4 @@
-Artifactory Checkmarx SCA User Plugin
-=============================================
+# Artifactory Checkmarx SCA User Plugin
 
 The Checkmarx SCA plugin for JFrog Artifactory runs a Checkmarx SCA scan on each of your Jfrog artifacts, and uses the scan results to enrich the properties shown in the JFrog Artifactory UI. This integrates scanning of artifacts into your DevOps workflow, providing easy visibility into possible risks that could make your applications vulnerable.
 
@@ -7,8 +6,16 @@ You can set a risk threshold so that artifacts with risks of a specified severit
 
 When you install the plugin, Checkmarx scans all artifacts currently in your Artifactory. In addition, each time that an artifact is downloaded the plugin runs a Checkmarx SCA scan on that item. In order to avoid redundant scanning of the same artifact, a cache mechanism is used to reuse scan results for a fixed period of time (default: 6 hr).
 
-Installation
-------------
+
+## Features
+
+Free tool, no Checkmarx account required
+View risks in artifact properties
+Block download of vulnerable artifacts
+Block download of artifacts that have licenses that aren't included in your "allowed" list
+
+
+## Installation
 
 To install this plugin:
 
@@ -19,8 +26,7 @@ To install this plugin:
 3. If your JFrog instance is not configured to reload plugins automatically (this is the default configuration), then you will need to manually reload the plugins (e.g., POST http://<JFrogURL>/artifactory/api/plugins/reload).
  
 
-Event Logs
---------
+## Event Logs
 
 By default the plugin logs are written to the general system logs file. By default the log level is set as INFO.
 You can configure the logs to be sent to a dedicated Checkmarx log file. You can also change the log level.
@@ -54,7 +60,8 @@ To create a dedicated log file:
 </logger>
 ```
 	  
-### Execution ###
+## Usage
+
 By default, when an artifact is reused within 6 hours the scan data from the cache is reused instead of triggering a new scan. If you would like to adjust the time span, use the following procedure.
 1. Open the cxsca-security-plugin.properties file.
 2. In the line `sca.data.expiration-time=21600`, replace `21600` with the desired time span for using the cache (in seconds).
