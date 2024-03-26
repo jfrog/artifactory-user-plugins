@@ -28,7 +28,8 @@ You can configure the logs to be sent to a dedicated Checkmarx log file. You can
 To create a dedicated log file:
 1. Open the ${ARTIFACTORY_HOME}/var/etc/artifactory/logback.xml) file.
 2. Append the following snippet to the file in order to create a dedicated log file.
-```<appender name="CXSCA" class="ch.qos.logback.core.rolling.RollingFileAppender">
+```
+<appender name="CXSCA" class="ch.qos.logback.core.rolling.RollingFileAppender">
   <File>${log.dir}/cxsca.log</File>
 
   <rollingPolicy class="org.jfrog.common.logging.logback.rolling.FixedWindowWithDateRollingPolicy">
@@ -44,11 +45,14 @@ To create a dedicated log file:
       <pattern>%date{yyyy-MM-dd'T'HH:mm:ss.SSS, UTC}Z [jfrt ] [%-5p] [%-16X{uber-trace-id}] [%-30.30(%c{3}:%L)] [%-20.20thread] - %m%n</pattern>
     </layout>
   </encoder>
-</appender>```
+</appender>
+```
 3. If you would also like to change the log level, add the following code to the file:
-```<logger name="com.checkmarx.sca.cxsca-security-plugin" additivity="false" level="DEBUG">
+```
+<logger name="com.checkmarx.sca.cxsca-security-plugin" additivity="false" level="DEBUG">
   <appender-ref ref="CXSCA"/>
-</logger>```
+</logger>
+```
 	  
 ### Execution ###
 By default, when an artifact is reused within 6 hours the scan data from the cache is reused instead of triggering a new scan. If you would like to adjust the time span, use the following procedure.
