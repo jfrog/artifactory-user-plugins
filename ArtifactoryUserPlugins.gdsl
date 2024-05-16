@@ -12,6 +12,7 @@ contributor(context(scriptScope())) {
     property name: 'ctx', type: 'org.artifactory.spring.InternalArtifactoryContext', doc: 'Internal Artifactory context'
 
     // plugin types
+    method name: 'upload', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating upload events'
     method name: 'download', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating download events'
     method name: 'storage', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'A section for handling and manipulating storage events'
     method name: 'jobs', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: '''A section for defining scheduled jobs.<p>
@@ -87,6 +88,17 @@ contributor(context(scope: closureScope()), {
         method name: 'afterRemoteDownload', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'Handle after remote download events.'
 
         method name: 'beforeDownload', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: 'Handle before local download events.'
+    }
+    if (enclosingCall('upload')) {
+        method name: 'beforeUploadRequest', type: 'void', params: [closure: 'groovy.lang.Closure'], doc: '''Handle before any upload events, at this point the request passed all of Artifactory's filters (authentication etc) and is about to reach the
+                repositories.<p>
+                Context variables:
+                modifiedRepoPath (org.artifactory.repo.RepoPath)
+                Forces Artifactory to store the file at the specified repository path.
+                <p>Closure parameters:
+                request (org.artifactory.request.Request) - a read-only parameter of the request.
+                repoPath (org.artifactory.repo.RepoPath) -  a read-only parameter of the request RepoPath (containing the repository the resource should be at).'''
+
     }
     if (enclosingCall('altRemotePath')) {
         property name: 'path', type: 'java.lang.String', doc: 'the new path value. Defaults to the original RepoPath\'s path.'
