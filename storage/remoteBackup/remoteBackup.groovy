@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import groovy.json.JsonException
 import groovy.transform.Field
 import groovy.json.JsonSlurper
 import groovy.json.JsonBuilder
@@ -51,7 +52,17 @@ storage {
   afterCreate { item ->
     def etcdir = ctx.artifactoryHome.etcDir
     def cfgfile = new File(etcdir, REMOTE_BACKUP)
-    def cfg = new JsonSlurper().parse(cfgfile)
+    def configExists = isRemoteBackupConfigExists(cfgfile.toString())
+    if (!configExists) {
+      return [complete="remoteBackup.json doesn't exists in plugins directory", total=0]
+    }
+    def cfg = getRemoteBackupConfigJSON(cfgfile.toString())
+    if (cfg == null) {
+      return [complete="Failed to read remoteBackup.json", total=0]
+    }
+    if (cfg == null) {
+      return [complete="Failed to read remoteBackup.json", total=0]
+    }
     if (item.repoKey in cfg && !item.isFolder()) {
       asSystem {
         def dest = cfg[item.repoKey]
@@ -69,7 +80,14 @@ storage {
 def runBackup(repos) {
   def etcdir = ctx.artifactoryHome.etcDir
   def cfgfile = new File(etcdir, REMOTE_BACKUP)
-  def cfg = new JsonSlurper().parse(cfgfile)
+  def configExists = isRemoteBackupConfigExists(cfgfile.toString())
+  if (!configExists) {
+    return [complete="remoteBackup.json doesn't exists in plugins directory", total=0]
+  }
+  def cfg = getRemoteBackupConfigJSON(cfgfile.toString())
+  if (cfg == null) {
+    return [complete="Failed to parse remoteBackup.json", total=0]
+  }
   if (repos) {
     def cfgtmp = [:]
     for (repo in repos) {
@@ -105,4 +123,24 @@ def runBackup(repos) {
     }
   }
   return [complete, total]
+}
+
+def isRemoteBackupConfigExists(String configFilePath) {
+  def configFile = new File(configFilePath)
+  if (!configFile.exists()) {
+    log.warn("File $configFilePath does not exist")
+    return false
+  }
+  return true
+}
+
+def getRemoteBackupConfigJSON(String configFilePath) {
+  try {
+    def configFile = new File(configFilePath)
+    def cfg = new JsonSlurper().parse(configFile)
+    return cfg
+  } catch (JsonException e) {
+    log.warn("File $configFilePath is not a valid JSON file: {}", e.message)
+    return null
+  }
 }
