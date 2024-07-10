@@ -1,6 +1,6 @@
 # Artifactory Checkmarx SCA User Plugin
 
-The Checkmarx SCA plugin for JFrog Artifactory runs a Checkmarx SCA scan on each of your Jfrog artifacts, and uses the scan results to enrich the properties shown in the JFrog Artifactory UI. This integrates scanning of artifacts into your DevOps workflow, providing easy visibility into possible risks that could make your applications vulnerable.
+The Checkmarx SCA plugin for JFrog Artifactory runs a Checkmarx SCA scan on each of your Jfrog artifacts and uses the scan results to enrich the properties shown in the JFrog Artifactory UI. This integrates scanning of artifacts into your DevOps workflow, providing easy visibility into possible risks that could make your applications vulnerable.
 
 You can set a risk threshold so that artifacts with risks of a specified severity level will automatically be blocked from download.
 
