@@ -68,12 +68,32 @@ storage {
         def dest = cfg[item.repoKey]
         try {
           def destpath = RepoPathFactory.create(dest, item.relPath)
-          repositories.copy(item.repoPath, destpath)
+          def isCopyAllowed = canCopyBasedOnPackageType(item, repositories)
+          if (isCopyAllowed) {
+            repositories.copy(item.repoPath, destpath)
+          } else {
+            log.warn("Skipping copying $item.repoPath to $dest as it is not allowed because it is local generated path")
+          }
         } catch (Exception ex) {
           log.warn("Unable to backup $item.repoPath to $dest: $ex.message")
         }
       }
     }
+  }
+}
+
+static def canCopyBasedOnPackageType(item, repositories) {
+  def packageType = repositories.getRepositoryConfiguration(item.getRepoKey()).getPackageType()
+  def path = item.repoPath.getPath()
+  switch (packageType) {
+    case "npm":
+      return !path.startsWith(".npm")
+    case "rpm":
+      return !path.startsWith("repodata")
+    case "deb":
+      return !path.startsWith("dists")
+    default:
+      return true
   }
 }
 
@@ -97,6 +117,11 @@ def runBackup(repos) {
     cfg = cfgtmp
   }
   def complete = 0, total = 0
+  // This is to avoid copying the metadata files for example
+  // .npm is for npm repositories
+  // repodata is for yum repositories
+  // dists is for debian repositories
+  def localGeneratedPaths = [".npm", "repodata", "dists"]
   for (repopair in cfg.entrySet()) {
     def src = repopair.key, dest = repopair.value
     def quer = new JsonBuilder([type: 'file', repo: src]).toString()
@@ -113,6 +138,9 @@ def runBackup(repos) {
               repositories.getFileInfo(destpath).checksumsInfo.sha1))) {
           total += 1
           try {
+            if (localGeneratedPaths.any { path.startsWith(it) }){
+              continue
+            }
             repositories.copy(srcpath, destpath)
             complete += 1
           } catch (Exception ex) {
