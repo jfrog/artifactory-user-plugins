@@ -1,0 +1,87 @@
+name: Bug Report
+description: File a bug report.
+title: "[Bug]: "
+labels: ["bug", "triage", "needs-triage", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: contact
+    attributes:
+      label: Plugin Name
+      description: Name of the plugin issue is seen?
+      placeholder: ex. artifactCleanup.groovy
+    validations:
+      required: true
+  - type: input
+    id: plugin-path
+    attributes:
+      label: Plugin Path?
+      description: Path of plugin from root of repository?
+      placeholder: ex. cleanup/artifactCleanup.groovy
+    validations:
+      required: true
+  - type: dropdown
+    id: isDeprecated
+    attributes:
+      label: IsDeprecated
+      description: Is the plugin in deprecated-plugins folder(deprecated-plugins)?
+      options:
+        - Yes (Default)
+        - No
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: config/properties
+      description: Please copy and paste any relevant config.json or properties.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: rtVersion
+    attributes:
+      label: Artifactory Version?
+      description: Version of Artifactory in Semantic format?
+      placeholder: ex. 7.XX.X
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternatives Explored
+      description: Have you considered any alternative solutions or workarounds out of box in Artifactory?
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue Summary
+      description: Summary of the Issue you are facing?
+      render: shell
+    validations:
+      required: true
+  - type: dropdown
+    id: selfFix
+    attributes:
+      label: Can you fix it?
+      description: Can you fix the issue by yourself?
+      options:
+        - Yes (Default)
+        - No
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Expected Solution
+      description: What is the solution expected?
+      render: shell
+    validations:
+      required: true
