@@ -29,8 +29,8 @@ body:
       label: IsDeprecated
       description: Is the plugin in deprecated-plugins folder(deprecated-plugins)?
       options:
-        - Yes (Default)
-        - No
+        - "Yes"
+        - "No"
       default: 0
     validations:
       required: true
@@ -72,8 +72,8 @@ body:
       label: Can you fix it?
       description: Can you fix the issue by yourself?
       options:
-        - Yes (Default)
-        - No
+        - "Yes"
+        - "No"
       default: 0
     validations:
       required: true
