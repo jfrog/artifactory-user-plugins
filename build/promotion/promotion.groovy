@@ -30,6 +30,7 @@ import org.artifactory.util.StringInputStream
 
 import static groovy.xml.XmlUtil.serialize
 import static org.artifactory.repo.RepoPathFactory.create
+import groovy.xml.XmlUtil
 
 promotions {
     /**
@@ -273,13 +274,16 @@ def getStageRepoPath(Artifact stageArtifact, Set<FileInfo> stageArtifactsList) {
 // it complains about Node.parent when I refer to <parent> tag
 private StatusHolder generateAndDeployReleasePomFile(RepoPath stageRepoPath, releaseRepoPath, List<FileInfo> innerModuleDependencies, Set<FileInfo> stageArtifactsList, String snapExp) {
     def stagePom = repositories.getStringContent(stageRepoPath)
-    def project = new XmlSlurper(false, false).parseText(stagePom)
+    def parser = new groovy.xml.XmlParser()
+    parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+    parser.setFeature("http://xml.org/sax/features/external-general-entities", false)
+    def project = parser.parseText(stagePom)
     if (!project.version.isEmpty()) {
-        project.version = extractVersion(project.version.text(), snapExp)
+        project.version[0].value = extractVersion(project.version.text(), snapExp)
     }
     // also try the parent
     if (!project.parent.version.isEmpty()) {
-        project.parent.version = extractVersion(project.parent.version.text(), snapExp)
+        project.parent.version[0].value = extractVersion(project.parent.version.text(), snapExp)
     }
 
     innerModuleDependencies.each { FileInfo artifact ->
@@ -295,16 +299,17 @@ private StatusHolder generateAndDeployReleasePomFile(RepoPath stageRepoPath, rel
 }
 
 private StringInputStream streamXml(xml) {
-    String result = new StreamingMarkupBuilder().bind { mkp.yield xml }
-    new StringInputStream(serialize(result))
+    def serialized = XmlUtil.serialize(xml)
+    new StringInputStream(serialized)
 }
 
 // Pars the xml and modify values and deploy
 private StatusHolder generateAndDeployReleaseIvyFile(RepoPath stageRepoPath, releaseRepoPath, List<FileInfo> innerModuleDependencies, String snapExp) {
     def stageIvy = repositories.getStringContent(stageRepoPath)
     // stageIvy.replace('m:classifier','classifier')
-    def slurper = new XmlSlurper(false, false)
-    slurper.keepWhitespace = true
+    def slurper = new groovy.xml.XmlParser(false, false)
+    slurper.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+    slurper.setFeature("http://xml.org/sax/features/external-general-entities", false)
     def releaseIvy = slurper.parseText(stageIvy)
     def info = releaseIvy.info[0]
     def stageRev = info.@revision.text()
