@@ -14,3 +14,11 @@ Copyright &copy; 2011-, JFrog Ltd.
 
 [Artifactory]: http://artifactory.jfrog.org
 [groovy user plugins]: http://wiki.jfrog.org/confluence/display/RTF/User+Plugins
+
+**Upgrade Notice:** Artifactory Plugins Upgraded to Groovy 4 in Artifactory Version 7.101.0<br>
+Artifactory has been upgraded to Groovy 4. Please note that the promotion plugin has been upgraded in order to be compatible with Groovy version upgrade. Upgrading this plugin requires moving to Groovy 4, which may also affect User Plugins.<br>
+**Which Branch to use?**<br>
+**master:** For development with Groovy 4.<br>
+**artifactory-java-lower-than-21:** For development before the Groovy 4 upgrade.<br>
+
+Please update your development environment to maintain compatibility with the new Java and Groovy versions.
