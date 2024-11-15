@@ -13,7 +13,16 @@ This should only take a minute to complete and is a one-time process.
 - Clone the forked repository to your local machine and perform the proposed changes. 
 - To develop and test plugins you can use any non-production Artifactory instance you have access. All you need to do is to place the plugin files at `<ARTIFACTORY_HOME>/etc/plugins`. You can also use [artifactory-user-plugins-devenv](https://github.com/JFrogDev/artifactory-user-plugins-devenv) to setup your development environment.
 - Make sure your changes follow the Acceptance Criteria below.
-- When you are confident about the changes, create a Pull Request pointing to the master branch of this repository. 
+- When you are confident about the changes, create a Pull Request pointing to the master branch of this repository.
+  
+### Accept JFrog's Contributor License Agreement (CLA)
+
+Before we can accept your contributions, you must agree to our Contributor License Agreement (CLA). 
+
+To sign the CLA, include the following comment in your pull request:
+
+`I have read the CLA Document and I hereby sign the CLA`
+
 
 ## Acceptance Criteria ##
 
