@@ -2,18 +2,57 @@
 
 > **Note**: JFrog Workers is the recommended cloud-native solution for extending the JFrog Platform (including Artifactory). While user plugins are still supported, we recommend using JFrog Workers where possible for better scalability, security, and performance. [Learn more about JFrog Workers](https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/I4E5sOhWWpIHHfdV37__Iw).
 
-## Upgrade Notice
+## Upgrade Notice: Groovy 4 Compatibility
 
-1. **Groovy 4 Upgrade**: Artifactory is upgraded to Groovy 4 in version *7.101.0* (released on 25th Nov 2024 for cloud), which leads user plugins compatible with groovy 4. The promotion plugin has been updated for compatibility with Groovy 4. This upgrade may affect existing user plugins, so ensure you test your plugins after upgrading.
+**Artifactory Version: 7.101 (released November 25, 2024 for cloud)**
 
-   - **Branch Compatibility**:
-     - **master**: Artifactory 7.101.0 & above
-        > **Note**: Groovy 3 no longer supported on master branch
-     - **artifactory-groovy-3**: Artifactory 7.100.0 & below
+Artifactory has been upgraded to Groovy 4 starting from version 7.101. This includes several important updates, most notably the promotion plugin (JFrog Supported), updated for compatibility with Groovy 4. However, this upgrade may break compatibility with your custom plugins developed for earlier Groovy versions (Groovy 3 or older). To learn the differences between Groovy 3 and 4, refer to [Release notes for Groovy 4.0
+](https://groovy-lang.org/releasenotes/groovy-4.0.html)
 
-1. **JDK17 Compatibility**: With the introduction of JDK17 support in Artifactory version **7.43** and above, many older user plugins may no longer be compatible. Deprecated plugins are now moved to the [deprecated directory](http://github.com/jfrog/artifactory-user-plugins/tree/master/deprecated-plugins).
+**JFrog Supported Plugins**
 
-Please consider migrating to JFrog Workers for cloud-native and future-proof solutions.
+- **Promotion Plugin**
+  
+    The promotion plugin has been updated to work with Groovy 4. If you're using this plugin in your environment, redeploy it after upgrading to Groovy 4.
+
+- **Other Plugins**
+  
+  Other Plugins (Groovy 3 or older versions) work without redeploying after 7.101 or above upgrade.
+
+
+> **Backward Compatibililty**:
+> We do not support backward compatibility.
+
+### Key Points to Consider
+
+#### Groovy 4 Compatibility
+
+Starting from Artifactory 7.101, Groovy 4 is the default version.
+
+- **artifactory-user-plugins Branch Compatibility**
+
+    - **master**: Artifactory 7.101 and above
+
+        > **Note**:
+        <br>Groovy 3 is no longer supported in the master branch of **artifactory-user-plugins**. Ensure that your plugins are compatible with Groovy 4.
+
+    - **artifactory-groovy-3**: Artifactory 7.100 and below
+  
+- **JDK 17 Compatibility**
+  
+    Artifactory versions 7.43 and above have introduced JDK 17 support. This may cause older user plugins to break. Any JFrog-supported deprecated plugins are shown in [Deprecated Directory](http://github.com/jfrog/artifactory-user-plugins/tree/master/deprecated-plugins).
+
+    > **Note**<br>
+    >We recommend not using Deprecated Plugins as we don't test them anymore. If you are still using Deprecated Plugins, test them thoroughly to achieve the desired results.
+  
+#### Custom Plugins
+If you have custom plugins developed before Groovy 4, you must update them to ensure compatibility with Groovy 4, as Artifactory version 7.101 (and above) will come bundled with Groovy 4. Plugins written for earlier versions of Groovy (Groovy 3 or older) may no longer work and will require changes and redeployed to work correctly from  Artifactory version 7.101 (and above).
+
+> **Note:** Test your plugins thoroughly after upgrading Artifactory to 7.101 (and above).
+
+
+#### Migrating to JFrog Workers
+Consider migrating your plugins to JFrog Workers for a cloud-native and future-proof solution.
 
 
 ## Documentation References
