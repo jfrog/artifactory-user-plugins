@@ -73,18 +73,18 @@ JFrog Workers are supported only for **Enterprise X** and **Plus** licenses. Wor
 
 The following are the Worker alternatives for Artifactory plugins:
 
-| User Plugins | Worker Alternative |
-|-------------|--------------------|
-| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | [ArtifactCleanup Worker](https://github.com/jfrog/workers-sample/tree/main/samples/artifactory/GENERIC_EVENT/artifact-cleanup) |
+| User Plugins | Worker Alternative | Other Alternative |
+|-------------|--------------------|--------------------|
+| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | [ArtifactCleanup Worker](https://github.com/jfrog/workers-sample/tree/main/samples/artifactory/GENERIC_EVENT/artifact-cleanup) | [Cleanup Policies](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) <br> For Enterprise + Customers only| 
 | [backUpFolder](https://github.com/jfrog/artifactory-user-plugins/blob/master/backup/backupFolders/README.md) | X |
 | [promotions](https://github.com/jfrog/artifactory-user-plugins/blob/master/build/promotion/README.md) | X |
-| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X |
-| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | [cleanDockerImages Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/clean-docker-images/README.md) |
-| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | [deleteByPropertyValue Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-by-property-value/README.md) |
-| [deleteDeprecatedPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | X |
+| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X | X |
+| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | [cleanDockerImages Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/clean-docker-images/README.md) | [Cleanup Policies](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) <br> For Enterprise + Customers only | 
+| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | [deleteByPropertyValue Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-by-property-value/README.md) |X |
+| [deleteDeprecatedPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | X | X |
 | [deleteEmptyDirsPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteEmptyDirs/README.md) | [deleteEmptyDirsWorker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-empty-dirs/README.md) |
 | [mavenSnapshotCleanupWhenRelease](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/mavenSnapshotCleanupWhenRelease/README.md) | X |
-| [cleanOldBuilds](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | X |
+| [cleanOldBuilds](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | X | X |
 | [remoteBackup](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/remoteBackup/README.md) | [remoteBackup Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/remote-backup/README.md) |
 | [repoQuota](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/repoQuota/README.md) | [repoQuota Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/BEFORE_UPLOAD/repo-quota/README.md) |
 | [restrictOverwrite](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/restrictOverwrite/README.md) | [restrictOverwrite Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/BEFORE_UPLOAD/restrict-overwrite/README.md) |
@@ -93,7 +93,7 @@ The following are the Worker alternatives for Artifactory plugins:
 | [getP2Urls](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/getAndSetP2Url/README.md) | X |
 | [getPropertySetsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/propertySetsConfig/README.md) | X |
 | [getProxiesList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/proxiesConfig/README.md) | X |
-| [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | X |
+| [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | X | X |
 | [webhook](https://github.com/yashprit-jfrog/artifactory-user-plugins/blob/master/webhook/README.md) | X |
 
 > **Note**: For some user plugins, there is no direct worker sample available. You may need to adapt or refactor existing functionality using workers, depending on your specific use case.
