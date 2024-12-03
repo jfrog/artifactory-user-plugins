@@ -13,7 +13,7 @@ Artifactory has been upgraded to Groovy 4 starting from version 7.101. This incl
 
 - **Promotion Plugin**
   
-    The promotion plugin has been updated to work with Groovy 4. If you're using this plugin in your environment, redeploy it after upgrading to Groovy 4.
+    The promotion plugin has been updated to work with Groovy 4. If you're using this plugin in your environment, redeploy it after upgrading to 7.101 or above.
 
 - **Other Plugins**
   
@@ -60,7 +60,15 @@ Consider migrating your plugins to JFrog Workers for a cloud-native and future-p
 - [User Plugin Documentation](https://jfrog.com/help/r/jfrog-integrations-documentation/user-plugins): Guide to writing and using custom Artifactory plugins.
 - [JFrog Workers Documentation](https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/I4E5sOhWWpIHHfdV37__Iw): Learn more about JFrog Workers for extending Artifactory in a cloud-native way.
 
-## Worker Alternatives for Plugins
+## Product feature
+Artifactory now has the inbuilt feature for some of the plugins.
+
+| User Plugins | Product Feature |
+|-------------|--------------------|
+| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+
+## Alternatives for Plugins
 JFrog Workers are supported only for **Enterprise X** and **Plus** licenses. Workers offer an alternative to Artifactory user plugins, enabling you to extend the JFrog Platform using cloud-native, scalable, and secure solutions.
 
 The following are the Worker alternatives for Artifactory plugins:
