@@ -2,18 +2,57 @@
 
 > **Note**: JFrog Workers is the recommended cloud-native solution for extending the JFrog Platform (including Artifactory). While user plugins are still supported, we recommend using JFrog Workers where possible for better scalability, security, and performance. [Learn more about JFrog Workers](https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/I4E5sOhWWpIHHfdV37__Iw).
 
-## Upgrade Notice
+## Upgrade Notice: Groovy 4 Compatibility
 
-1. **Groovy 4 Upgrade**: Artifactory is upgraded to Groovy 4 in version *7.101.0* (released on 25th Nov 2024 for cloud), which leads user plugins compatible with groovy 4. The promotion plugin has been updated for compatibility with Groovy 4. This upgrade may affect existing user plugins, so ensure you test your plugins after upgrading.
+**Artifactory Version: 7.101 (released November 25, 2024 for cloud)**
 
-   - **Branch Compatibility**:
-     - **master**: Artifactory 7.101.0 & above
-        > **Note**: Groovy 3 no longer supported on master branch
-     - **artifactory-groovy-3**: Artifactory 7.100.0 & below
+Artifactory has been upgraded to Groovy 4 starting from version 7.101. This includes several important updates, most notably the promotion plugin (JFrog Supported), updated for compatibility with Groovy 4. However, this upgrade may break compatibility with your custom plugins developed for earlier Groovy versions (Groovy 3 or older). To learn the differences between Groovy 3 and 4, refer to [Release notes for Groovy 4.0
+](https://groovy-lang.org/releasenotes/groovy-4.0.html)
 
-1. **JDK17 Compatibility**: With the introduction of JDK17 support in Artifactory version **7.43** and above, many older user plugins may no longer be compatible. Deprecated plugins are now moved to the [deprecated directory](http://github.com/jfrog/artifactory-user-plugins/tree/master/deprecated-plugins).
+**JFrog Supported Plugins**
 
-Please consider migrating to JFrog Workers for cloud-native and future-proof solutions.
+- **Promotion Plugin**
+  
+    The promotion plugin has been updated to work with Groovy 4. If you're using this plugin in your environment, redeploy it after upgrading to 7.101 or above.
+
+- **Other Plugins**
+  
+  Other Plugins (Groovy 3 or older versions) work without redeploying after 7.101 or above upgrade.
+
+
+> **Backward Compatibililty**:
+> We do not support backward compatibility.
+
+### Key Points to Consider
+
+#### Groovy 4 Compatibility
+
+Starting from Artifactory 7.101, Groovy 4 is the default version.
+
+- **artifactory-user-plugins Branch Compatibility**
+
+    - **master**: Artifactory 7.101 and above
+
+        > **Note**:
+        <br>Groovy 3 is no longer supported in the master branch of **artifactory-user-plugins**. Ensure that your plugins are compatible with Groovy 4.
+
+    - **artifactory-groovy-3**: Artifactory 7.100 and below
+  
+- **JDK 17 Compatibility**
+  
+    Artifactory versions 7.43 and above have introduced JDK 17 support. This may cause older user plugins to break. Any JFrog-supported deprecated plugins are shown in [Deprecated Directory](http://github.com/jfrog/artifactory-user-plugins/tree/master/deprecated-plugins).
+
+    > **Note**<br>
+    >We recommend not using Deprecated Plugins as we don't test them anymore. If you are still using Deprecated Plugins, test them thoroughly to achieve the desired results.
+  
+#### Custom Plugins
+If you have custom plugins developed before Groovy 4, you must update them to ensure compatibility with Groovy 4, as Artifactory version 7.101 (and above) will come bundled with Groovy 4. Plugins written for earlier versions of Groovy (Groovy 3 or older) may no longer work and will require changes and redeployed to work correctly from  Artifactory version 7.101 (and above).
+
+> **Note:** Test your plugins thoroughly after upgrading Artifactory to 7.101 (and above).
+
+
+#### Migrating to JFrog Workers
+Consider migrating your plugins to JFrog Workers for a cloud-native and future-proof solution.
 
 
 ## Documentation References
@@ -21,23 +60,31 @@ Please consider migrating to JFrog Workers for cloud-native and future-proof sol
 - [User Plugin Documentation](https://jfrog.com/help/r/jfrog-integrations-documentation/user-plugins): Guide to writing and using custom Artifactory plugins.
 - [JFrog Workers Documentation](https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/I4E5sOhWWpIHHfdV37__Iw): Learn more about JFrog Workers for extending Artifactory in a cloud-native way.
 
-## Worker Alternatives for Plugins
+## Product feature
+Artifactory now has the inbuilt feature for some of the plugins.
+
+| User Plugins | Product Feature |
+|-------------|--------------------|
+| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+
+## Alternatives for Plugins
 JFrog Workers are supported only for **Enterprise X** and **Plus** licenses. Workers offer an alternative to Artifactory user plugins, enabling you to extend the JFrog Platform using cloud-native, scalable, and secure solutions.
 
 The following are the Worker alternatives for Artifactory plugins:
 
-| User Plugins | Worker Alternative |
-|-------------|--------------------|
-| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | [ArtifactCleanup Worker](https://github.com/jfrog/workers-sample/tree/main/samples/artifactory/GENERIC_EVENT/artifact-cleanup) |
+| User Plugins | Worker Alternative | Other Alternative |
+|-------------|--------------------|--------------------|
+| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | [ArtifactCleanup Worker](https://github.com/jfrog/workers-sample/tree/main/samples/artifactory/GENERIC_EVENT/artifact-cleanup) | [Cleanup Policies](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) <br> For Enterprise + Customers only| 
 | [backUpFolder](https://github.com/jfrog/artifactory-user-plugins/blob/master/backup/backupFolders/README.md) | X |
 | [promotions](https://github.com/jfrog/artifactory-user-plugins/blob/master/build/promotion/README.md) | X |
-| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X |
-| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | [cleanDockerImages Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/clean-docker-images/README.md) |
-| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | [deleteByPropertyValue Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-by-property-value/README.md) |
-| [deleteDeprecatedPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | X |
+| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X | X |
+| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | [cleanDockerImages Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/clean-docker-images/README.md) | [Cleanup Policies](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) <br> For Enterprise + Customers only | 
+| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | [deleteByPropertyValue Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-by-property-value/README.md) |X |
+| [deleteDeprecatedPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | X | X |
 | [deleteEmptyDirsPlugin](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteEmptyDirs/README.md) | [deleteEmptyDirsWorker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-empty-dirs/README.md) |
 | [mavenSnapshotCleanupWhenRelease](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/mavenSnapshotCleanupWhenRelease/README.md) | X |
-| [cleanOldBuilds](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | X |
+| [cleanOldBuilds](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | X | X |
 | [remoteBackup](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/remoteBackup/README.md) | [remoteBackup Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/remote-backup/README.md) |
 | [repoQuota](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/repoQuota/README.md) | [repoQuota Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/BEFORE_UPLOAD/repo-quota/README.md) |
 | [restrictOverwrite](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/restrictOverwrite/README.md) | [restrictOverwrite Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/BEFORE_UPLOAD/restrict-overwrite/README.md) |
@@ -46,7 +93,7 @@ The following are the Worker alternatives for Artifactory plugins:
 | [getP2Urls](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/getAndSetP2Url/README.md) | X |
 | [getPropertySetsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/propertySetsConfig/README.md) | X |
 | [getProxiesList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/proxiesConfig/README.md) | X |
-| [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | X |
+| [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | X | X |
 | [webhook](https://github.com/yashprit-jfrog/artifactory-user-plugins/blob/master/webhook/README.md) | X |
 
 > **Note**: For some user plugins, there is no direct worker sample available. You may need to adapt or refactor existing functionality using workers, depending on your specific use case.
