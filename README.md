@@ -2,12 +2,17 @@
 
 > **Note**: JFrog Workers is the recommended cloud-native solution for extending the JFrog Platform (including Artifactory). While user plugins are still supported, we recommend using JFrog Workers where possible for better scalability, security, and performance. [Learn more about JFrog Workers](https://jfrog.com/help/r/ybbUNZGwwAmzW2qGyL9Zdw/I4E5sOhWWpIHHfdV37__Iw).
 
+
 ## Upgrade Notice: Groovy 4 Compatibility
 
 **Artifactory Version: 7.101 (released November 25, 2024 for cloud)**
 
 Artifactory has been upgraded to Groovy 4 starting from version 7.101. This includes several important updates, most notably the promotion plugin (JFrog Supported), updated for compatibility with Groovy 4. However, this upgrade may break compatibility with your custom plugins developed for earlier Groovy versions (Groovy 3 or older). To learn the differences between Groovy 3 and 4, refer to [Release notes for Groovy 4.0
 ](https://groovy-lang.org/releasenotes/groovy-4.0.html)
+
+<details>
+
+<summary>To learn more, expand this drop-down</summary>
 
 **JFrog Supported Plugins**
 
@@ -53,7 +58,7 @@ If you have custom plugins developed before Groovy 4, you must update them to en
 
 #### Migrating to JFrog Workers
 Consider migrating your plugins to JFrog Workers for a cloud-native and future-proof solution.
-
+</details>
 
 ## Documentation References
 - [Artifactory Documentation](https://jfrog.com/help/p/devops-home): Official documentation for Artifactory features, setup, and configuration.
