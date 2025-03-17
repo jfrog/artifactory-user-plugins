@@ -97,11 +97,11 @@ The following are the Worker alternatives for Artifactory plugins
 | [preventUnapproved](https://github.com/jfrog/artifactory-user-plugins/blob/master/governance/preventUnapproved/README.md) | [preventUnapproved worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/BEFORE_DOWNLOAD/restrict-download-by-property-value/README.md) |
 | [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | [deleteByPropertyValue Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-by-property-value/README.md) |
 | [remoteBackup](https://github.com/jfrog/artifactory-user-plugins/blob/master/storage/remoteBackup/README.md) | [remoteBackup Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/remote-backup/README.md) |
-| [backUpFolder](https://github.com/jfrog/artifactory-user-plugins/blob/master/backup/backupFolders/README.md) | X |
-| [deleteDeprecated](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | X |
-| [mavenSnapshotCleanupWhenRelease](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/mavenSnapshotCleanupWhenRelease/README.md) | X |
-| [oldBuildCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | X |
-| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X |
+| [backUpFolder](https://github.com/jfrog/artifactory-user-plugins/blob/master/backup/backupFolders/README.md) | X (worker limitation to support external modules) |
+| [deleteDeprecated](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | [deleteDeprecated Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/delete-deprecated/README.md) |
+| [mavenSnapshotCleanupWhenRelease](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/mavenSnapshotCleanupWhenRelease/README.md) | [mavenSnapshotCleanupWhenRelease Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/eventCombinationWorkers/mavenSnapshotCleanupWhenRelease/README.md) |
+| [oldBuildCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | [oldBuildCleanup Worker](https://github.com/jfrog/workers-sample/blob/main/samples/artifactory/GENERIC_EVENT/oldBuildCleanup/README.md) |
+| [checksums](https://github.com/jfrog/artifactory-user-plugins/blob/master/checksums/README.md) | X (worker limitation to support external modules) |
 
 > **Note**: For some user plugins, there is no direct worker sample available. You may need to adapt or refactor existing functionality using workers, depending on your specific use case.
 
