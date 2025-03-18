@@ -276,7 +276,7 @@ private def getSkippedPaths(String[] repos) {
         // Simplify list to have only parent paths
         def paths = []
         for (path in pathsTmp.sort{ it }) {
-            if (paths.size == 0 || ! path.startsWith(paths[-1])) {
+            if (paths.size() == 0 || ! path.startsWith(paths[-1])) {
                 if (log.isTraceEnabled()){
                     log.trace "skip added for " + repoKey + ":" + path
                 }
@@ -284,8 +284,8 @@ private def getSkippedPaths(String[] repos) {
             }
         }
 
-        if (paths.size > 0){
-            skip[repoKey] = paths.toArray(new String[paths.size])
+        if (paths.size() > 0){
+            skip[repoKey] = paths.toArray(new String[paths.size()])
         }
     }
     def timeStop = new Date()
