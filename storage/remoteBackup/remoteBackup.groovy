@@ -35,7 +35,12 @@ jobs {
 
 executions {
   remoteBackup() { params ->
-    def repos = params?.getAt('repos') ?: null
+    def repos
+    if (params == null || params.isEmpty()) {
+        repos = []
+    } else {
+        repos = params?.getAt('repos') ?: []
+    }
     def (complete, total) = runBackup(repos)
     if (complete instanceof CharSequence) {
       message = "Error copying items: $complete"
