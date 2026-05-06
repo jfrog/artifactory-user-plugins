@@ -77,7 +77,7 @@ Artifactory now has the inbuilt feature for some of the plugins.
 | [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-artifactory-documentation/configure-repository-layouts) |
 | [webhook](https://github.com/jfrog/artifactory-user-plugins/blob/master/webhook/README.md) | [Product Feature](https://jfrog.com/help/r/jfrog-platform-administration-documentation/webhooks) |
 | [getP2Urls](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/getAndSetP2Url/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-artifactory-documentation/additional-settings-for-docker-virtual-repositories) | 
-| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | Cleanup Policy  |
+| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | Cleanup Policy Roadmap |
 | [deleteDeprecated](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | Cleanup Policy  |
 | [oldBuildCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | Cleanup Policy  |
 
