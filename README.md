@@ -70,16 +70,16 @@ Artifactory now has the inbuilt feature for some of the plugins.
 
 | User Plugins | Product Feature |
 |-------------|--------------------|
-| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
-| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | Cleanup Policy (supported only for **Enterprise Plus** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+| [artifactCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/artifactCleanup/README.md) | Cleanup Policy (supported only for **Enterprise X and above** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
+| [cleanDockerImages](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/cleanDockerImages/README.md) | Cleanup Policy (supported only for **Enterprise X and above** licenses), [learn more](https://jfrog.com/help/r/jfrog-platform-administration-documentation/cleanup-policies) | 
 | [getPropertySetsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/propertySetsConfig/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-artifactory-documentation/property-sets)|
 | [getProxiesList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/proxiesConfig/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-platform-administration-documentation/manage-proxy-servers)|
 | [getLayoutsList](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/repoLayoutsConfig/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-artifactory-documentation/configure-repository-layouts) |
 | [webhook](https://github.com/jfrog/artifactory-user-plugins/blob/master/webhook/README.md) | [Product Feature](https://jfrog.com/help/r/jfrog-platform-administration-documentation/webhooks) |
 | [getP2Urls](https://github.com/jfrog/artifactory-user-plugins/blob/master/config/getAndSetP2Url/README.md) | [UI Feature](https://jfrog.com/help/r/jfrog-artifactory-documentation/additional-settings-for-docker-virtual-repositories) | 
-| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | Cleanup Policy Roadmap |
-| [deleteDeprecated](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | Cleanup Policy Roadmap |
-| [oldBuildCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | Cleanup Policy Roadmap |
+| [deleteByPropertyValue](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteByPropertyValue/README.md) | Cleanup Policy  |
+| [deleteDeprecated](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/deleteDeprecated/README.md) | Cleanup Policy  |
+| [oldBuildCleanup](https://github.com/jfrog/artifactory-user-plugins/blob/master/cleanup/oldBuildCleanup/README.md) | Cleanup Policy  |
 
 ## Worker alternative for Plugins
 JFrog Workers are supported only for **Enterprise X** and **Plus** licenses. Workers offer an alternative to Artifactory user plugins, enabling you to extend the JFrog Platform using cloud-native, scalable, and secure solutions.
