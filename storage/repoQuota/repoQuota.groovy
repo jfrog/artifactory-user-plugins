@@ -61,7 +61,8 @@ storage {
  * name (java.lang.String) - the name of the property being deleted.
  */
  beforePropertyDelete { item, name ->
-   if (name == "repository.path.quota" && !security.isAdmin()) {
+   String repoPath = item.getRepoPath().getPath();
+   if (name == "repository.path.quota" && !security.isAdmin() && !repoPath.contains("sha256__")) {
      throw new CancelException("Not authorized to delete this property.", 401)
    }
  }
