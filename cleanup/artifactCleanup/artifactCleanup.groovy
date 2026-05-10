@@ -94,6 +94,7 @@ executions {
                 break
             default:
                 log.info "Missing or invalid command, '$command'"
+                break
         }
     }
 }
