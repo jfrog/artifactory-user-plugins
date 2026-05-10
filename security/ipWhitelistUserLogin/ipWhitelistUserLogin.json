@@ -1,0 +1,12 @@
+{
+  "users": {
+    "alice": {
+      "allow": ["172.21.0.", "127.0.0."],
+      "assignGroup": "ip-allowed"
+    },
+    "bob": {
+      "allow": ["172.21.0.", "127.0.0."],
+      "assignGroup": "ip-allowed-bob"
+    }
+  }
+}
